@@ -1491,10 +1491,10 @@ function cargarDashboard() {
     const criticas = (r.data?.criticas  ?? r.criticas ?? 0);
     const recientes = r.data?.recientes ?? r.recientes ?? [];
 
-    setText('kpi-act',  activos);
-    setText('kpi-std',  standby);
-    setText('kpi-cer',  cerrados);
-    setText('kpi-nar',  criticas);
+    setText('k-act',  activos);
+    setText('k-stby', standby);
+    setText('k-cerr', cerrados);
+    setText('k-nar',  criticas);
 
     // Badge sidebar narrativas
     const bxNar = document.getElementById('bx-nar');
@@ -1528,7 +1528,7 @@ function cargarDashboard() {
 
   // Alertas externas — llamada separada porque puede tardar (AEMET + CSN)
   gas('getAlertasExternas', undefined, res => {
-    renderAlertas(res.data || []);
+    renderAlertas(res);
   });
 }
 
