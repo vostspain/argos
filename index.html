@@ -565,8 +565,8 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     </div>
     <div class="card">
       <div class="tw"><table>
-        <thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Gravedad</th><th>Estado</th><th>Ubicación</th><th>Apertura</th><th>Acciones</th></tr></thead>
-        <tbody id="t-inc"><tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Gravedad</th><th>Estado</th><th>Ubicación</th><th>Apertura</th><th>Duración</th><th>Acciones</th></tr></thead>
+        <tbody id="t-inc"><tr><td colspan="9" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
       </table></div>
     </div>
   </section>
@@ -1580,8 +1580,35 @@ function cargarAlertasExternas() {
 }
 
 // ═══ INCIDENTES ══════════════════════════════════════════════
+
+// Calcula la duración entre dos timestamps en formato "dd/MM/yyyy HH:mm:ss"
+// Si no se pasa fin, usa el momento actual (para incidentes abiertos)
+function calcularDuracion(inicio, fin) {
+  if (!inicio || inicio === '—') return '—';
+  try {
+    const parse = s => {
+      const [fecha, hora] = s.trim().split(' ');
+      const [dd, mm, yyyy] = fecha.split('/');
+      return new Date(`${yyyy}-${mm}-${dd}T${hora}`);
+    };
+    const start = parse(inicio);
+    const end   = fin && fin !== '—' ? parse(fin) : new Date();
+    const seg   = Math.floor((end - start) / 1000);
+    if (seg < 0) return '—';
+    const h = Math.floor(seg / 3600);
+    const m = Math.floor((seg % 3600) / 60);
+    if (h >= 24) {
+      const d = Math.floor(h / 24);
+      const hr = h % 24;
+      return `${d}d ${hr}h ${m}min`;
+    }
+    if (h > 0) return `${h}h ${m}min`;
+    return `${m}min`;
+  } catch(_) { return '—'; }
+}
+
 function cargarIncidentes() {
-  document.getElementById('t-inc').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr>';
+  document.getElementById('t-inc').innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px"><div class="sp"></div></td></tr>';
   gas('getIncidentes', undefined, res => {
     APP.incs = res.data || [];
     renderInc(APP.incs);
@@ -1601,23 +1628,31 @@ function filtrarInc() {
 function renderInc(list) {
   const t = document.getElementById('t-inc');
   if (!list.length) {
-    t.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>'; return;
+    t.innerHTML = '<tr><td colspan="9"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>'; return;
   }
-  t.innerHTML = [...list].reverse().map(o => `<tr>
-    <td><span class="mono">${o.ID_Incidente||'—'}</span></td>
-    <td><strong>${tc(o.Nombre,38)}</strong></td>
-    <td><span class="bx bx-m">${o.Tipo||'—'}</span></td>
-    <td>${bGrav(o.Gravedad)}</td>
-    <td>${bEst(o.Estado)}</td>
-    <td>${tc(o.Ubicacion,22)}</td>
-    <td class="mono">${o.Timestamp||'—'}</td>
-    <td>
-      <div class="fx g8">
-        <button class="btn btn-gh btn-sm" onclick='seleccionarIncTrabajo(${JSON.stringify(o)})'>Trabajar</button>
-        ${o.Estado!=='Cerrado'?`<button class="btn btn-r btn-sm" onclick="confirmarCierre('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Cerrar</button>`:''}
-      </div>
-    </td>
-  </tr>`).join('');
+  t.innerHTML = [...list].reverse().map(o => {
+    const abierto  = o.Estado !== 'Cerrado';
+    const duracion = calcularDuracion(o.Timestamp, o.Fecha_Cierre || null);
+    const durLabel = abierto
+      ? `<span style="font-family:var(--mono);font-size:11px;color:var(--secondary)">⏱ ${duracion}</span>`
+      : `<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${duracion}</span>`;
+    return `<tr>
+      <td><span class="mono">${o.ID_Incidente||'—'}</span></td>
+      <td><strong>${tc(o.Nombre,38)}</strong></td>
+      <td><span class="bx bx-m">${o.Tipo||'—'}</span></td>
+      <td>${bGrav(o.Gravedad)}</td>
+      <td>${bEst(o.Estado)}</td>
+      <td>${tc(o.Ubicacion,22)}</td>
+      <td class="mono" style="font-size:11px">${o.Timestamp||'—'}</td>
+      <td>${durLabel}</td>
+      <td>
+        <div class="fx g8">
+          <button class="btn btn-gh btn-sm" onclick='seleccionarIncTrabajo(${JSON.stringify(o)})'>Trabajar</button>
+          ${abierto?`<button class="btn btn-r btn-sm" onclick="confirmarCierre('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Cerrar</button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
 }
 
 function seleccionarIncTrabajo(inc) {
