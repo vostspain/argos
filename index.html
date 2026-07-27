@@ -1682,21 +1682,14 @@ function abrirModalNuevoInc() {
           <input id="i-ubi" type="text" placeholder="Localidad o dirección" style="flex:1">
           <button class="btn btn-gh btn-sm" id="btn-geo" type="button" onclick="geocodificar()">📍 Geocodificar</button>
         </div>
+        <div class="fx g8" style="margin-top:6px">
+          <input id="i-lat" type="text" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:12px">
+          <input id="i-lon" type="text" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:12px">
+        </div>
+        <div id="mapa-mini" style="display:none"></div>
       </div>
       <div class="fg full"><label>Situación inicial</label>
         <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
-      <div class="fg">
-        <label>Latitud</label>
-        <input id="i-lat" type="text" placeholder="40.416775" oninput="sincronizarCoords()">
-      </div>
-      <div class="fg">
-        <label>Longitud</label>
-        <input id="i-lon" type="text" placeholder="-3.703790" oninput="sincronizarCoords()">
-      </div>
-      <div class="fg full">
-        <label style="font-size:11px;color:var(--muted)">Mapa — pincha para colocar el marcador, o usa Geocodificar</label>
-        <div id="mapa-mini"></div>
-      </div>
     </div>
   `, 'Crear incidente', 'btn-p', () => {
     const nombre = document.getElementById('i-nom').value.trim();
