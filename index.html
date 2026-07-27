@@ -1647,6 +1647,7 @@ function renderInc(list) {
       <td>${durLabel}</td>
       <td>
         <div class="fx g8">
+          <button class="btn btn-gh btn-sm" onclick='verEditarInc(${JSON.stringify(o)})'>Ver / Editar</button>
           <button class="btn btn-gh btn-sm" onclick='seleccionarIncTrabajo(${JSON.stringify(o)})'>Trabajar</button>
           ${abierto?`<button class="btn btn-r btn-sm" onclick="confirmarCierre('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Cerrar</button>`:''}
         </div>
@@ -1655,7 +1656,84 @@ function renderInc(list) {
   }).join('');
 }
 
-function seleccionarIncTrabajo(inc) {
+function verEditarInc(o) {
+  const cerrado  = o.Estado === 'Cerrado';
+  const duracion = calcularDuracion(o.Timestamp, o.Fecha_Cierre || null);
+  abrirModal('Ficha del incidente', `
+    <div style="margin-bottom:14px;padding:10px 14px;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--secondary)">
+      <div class="mono" style="font-size:11px;color:var(--muted)">${esc(o.ID_Incidente)}</div>
+      <div style="font-size:13px;margin-top:2px">
+        Apertura: <strong>${esc(o.Timestamp||'—')}</strong>
+        ${o.Fecha_Cierre ? ` · Cierre: <strong>${esc(o.Fecha_Cierre)}</strong>` : ''}
+        · Duración: <strong style="color:var(--secondary)">${duracion}</strong>
+      </div>
+    </div>
+    <div class="fgr">
+      <div class="fg full"><label>Nombre *</label>
+        <input id="ei-nom" type="text" value="${esc(o.Nombre||'')}" ${cerrado?'disabled':''}></div>
+      <div class="fg full"><label>Tipo de incidente</label>
+        <select id="ei-tipo" ${cerrado?'disabled':''}>${tiposSelect(o.Tipo||'')}</select></div>
+      <div class="fg"><label>Gravedad</label>
+        <select id="ei-grav" ${cerrado?'disabled':''}>
+          ${['Bajo','Medio','Alto','Extremo'].map(g=>`<option${g===o.Gravedad?' selected':''}>${g}</option>`).join('')}
+        </select></div>
+      <div class="fg"><label>Estado</label>
+        <select id="ei-est" ${cerrado?'disabled':''}>
+          ${['Activo','Standby','Cerrado'].map(s=>`<option${s===o.Estado?' selected':''}>${s}</option>`).join('')}
+        </select></div>
+      <div class="fg full">
+        <label>Ubicación</label>
+        <div class="fx g8">
+          <input id="ei-ubi" type="text" value="${esc(o.Ubicacion||'')}" style="flex:1" ${cerrado?'disabled':''}>
+          ${!cerrado?`<button class="btn btn-gh btn-sm" onclick="geocodificarEdicion()">📍 Geocodificar</button>`:''}
+        </div>
+        <div class="fx g8" style="margin-top:6px">
+          <input id="ei-lat" type="text" value="${esc(o.Latitud||'')}" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:12px" ${cerrado?'disabled':''}>
+          <input id="ei-lon" type="text" value="${esc(o.Longitud||'')}" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:12px" ${cerrado?'disabled':''}>
+        </div>
+      </div>
+      <div class="fg full"><label>Situación actual</label>
+        <textarea id="ei-sit" rows="3" ${cerrado?'disabled':''}>${esc(o.Situacion||'')}</textarea></div>
+    </div>
+    ${cerrado?'<div class="info-box" style="margin-top:8px">Este incidente está cerrado. Los datos son de solo lectura.</div>':''}
+  `, cerrado ? 'Cerrar' : 'Guardar cambios', cerrado ? 'btn-gh' : 'btn-p', () => {
+    if (cerrado) { cerrarModales(); return; }
+    const nombre = document.getElementById('ei-nom').value.trim();
+    if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+    gas('actualizarIncidente', {
+      id:        o.ID_Incidente,
+      nombre,
+      tipo:      document.getElementById('ei-tipo').value,
+      gravedad:  document.getElementById('ei-grav').value,
+      estado:    document.getElementById('ei-est').value,
+      ubicacion: document.getElementById('ei-ubi').value,
+      latitud:   document.getElementById('ei-lat').value,
+      longitud:  document.getElementById('ei-lon').value,
+      situacion: document.getElementById('ei-sit').value
+    }, () => {
+      toast('Incidente actualizado', 'ok');
+      cerrarModales();
+      cargarIncidentes();
+      if (_mapaDash) actualizarMapaDashboard();
+    });
+  });
+}
+
+async function geocodificarEdicion() {
+  const dir = document.getElementById('ei-ubi')?.value?.trim();
+  if (!dir) { toast('Introduce una ubicación primero', 'err'); return; }
+  try {
+    const resp = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(dir) + '&format=json&limit=1&accept-language=es', { headers:{'User-Agent':'ARGOS-VOST/2.0'} });
+    const data = await resp.json();
+    if (data.length > 0) {
+      document.getElementById('ei-lat').value = parseFloat(data[0].lat).toFixed(6);
+      document.getElementById('ei-lon').value = parseFloat(data[0].lon).toFixed(6);
+      toast('Coordenadas obtenidas', 'ok');
+    } else { toast('Ubicación no encontrada', 'info'); }
+  } catch(_) { toast('Error de geocodificación', 'err'); }
+}
+
+
   setIncActivo(inc);
   toast(`Incidente activo: ${inc.Nombre}`, 'ok');
 }
