@@ -307,7 +307,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── MAPA LEAFLET ── */
 #mapa-dashboard{height:340px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
-#mapa-mini{height:180px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
+#mapa-mini{height:140px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
 .leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
 .inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
@@ -1671,7 +1671,7 @@ function abrirModalNuevoInc() {
   abrirModal('Nuevo incidente', `
     <div class="fgr">
       <div class="fg full"><label>Nombre del incidente *</label>
-        <input id="i-nom" type="text" placeholder="Ej. DANA Gredos · Aviso Naranja"></div>
+        <input id="i-nom" type="text" placeholder="Ej. Sierra de la Culebra · Incendio forestal"></div>
       <div class="fg full"><label>Tipo de incidente</label>
         <select id="i-tipo">${tiposSelect('')}</select></div>
       <div class="fg"><label>Nivel de gravedad</label>
@@ -1683,6 +1683,8 @@ function abrirModalNuevoInc() {
           <button class="btn btn-gh btn-sm" id="btn-geo" type="button" onclick="geocodificar()">📍 Geocodificar</button>
         </div>
       </div>
+      <div class="fg full"><label>Situación inicial</label>
+        <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
       <div class="fg">
         <label>Latitud</label>
         <input id="i-lat" type="text" placeholder="40.416775" oninput="sincronizarCoords()">
@@ -1692,11 +1694,9 @@ function abrirModalNuevoInc() {
         <input id="i-lon" type="text" placeholder="-3.703790" oninput="sincronizarCoords()">
       </div>
       <div class="fg full">
-        <label>Mapa — pincha para colocar el marcador</label>
+        <label style="font-size:11px;color:var(--muted)">Mapa — pincha para colocar el marcador, o usa Geocodificar</label>
         <div id="mapa-mini"></div>
       </div>
-      <div class="fg full"><label>Situación inicial</label>
-        <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
     </div>
   `, 'Crear incidente', 'btn-p', () => {
     const nombre = document.getElementById('i-nom').value.trim();
