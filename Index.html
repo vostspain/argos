@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARGOS · VOST Spain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── TOKENS ── */
+:root{
+  --primary:#0F3460;--primary-h:#1A4A80;--primary-dim:rgba(15,52,96,.12);
+  --secondary:#0EA5E9;--accent:#38BDF8;
+  --text:#374151;--muted:#9CA3AF;--mid:#4A5568;
+  --alert:#F59E0B;--alert-bg:rgba(245,158,11,.1);
+  --green:#10B981;--green-bg:rgba(16,185,129,.1);
+  --red:#EF4444;--red-bg:rgba(239,68,68,.1);
+  --dark:#0D1B2A;--dark2:#0F2035;
+  --bg:#F4F6F9;--surface:#FFFFFF;--border:#E2E8F0;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',system-ui,sans-serif;
+  --serif:'Spectral',Georgia,serif;
+  --sw:230px;--th:58px;--r:8px;--rl:10px;
+}
+
+/* ── BASE ── */
+html,body{height:100%;font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden}
+body{display:flex}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;z-index:999;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s}
+#splash.gone{opacity:0;pointer-events:none}
+.sp-logo{font-family:var(--sans);font-size:36px;font-weight:800;color:#fff;letter-spacing:.06em}
+.sp-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.sp-spinner{width:22px;height:22px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--secondary);border-radius:50%;animation:rot .7s linear infinite;margin-top:6px}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sw);height:100vh;flex-shrink:0;background:var(--dark);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;z-index:100}
+.sb-brand{padding:20px 12px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px}
+#logo-svg{flex-shrink:0}
+#logo-img{height:110px;width:auto;max-width:200px;object-fit:contain;flex-shrink:0;display:none}
+.sb-txt{display:none}/* texto eliminado — el logo ya incluye nombre y marca */
+.sb-nav{flex:1;padding:8px 0;overflow-y:auto}
+.sb-sec{padding:14px 16px 3px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+.nb{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;border:none;background:none;width:calc(100% - 16px);text-align:left;cursor:pointer;color:rgba(255,255,255,.5);font-size:13px;font-weight:500;font-family:var(--sans);transition:background .13s,color .13s}
+.nb:hover{background:rgba(255,255,255,.06);color:#fff}
+.nb.active{background:rgba(14,165,233,.15);color:var(--secondary)}
+.nb svg{width:16px;height:16px;flex-shrink:0}
+.nb-bx{font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;background:var(--red);color:#fff;margin-left:auto;display:none}
+.nb-bx.on{display:block}
+
+/* ── WRAPPER ── */
+#wrapper{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* ── TOPBAR ── */
+#topbar{height:var(--th);background:var(--primary);border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
+#topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--secondary) 50%,transparent 100%);background-size:200% 100%;animation:scan 2.8s linear infinite}
+@keyframes scan{0%{background-position:-100% 0}100%{background-position:200% 0}}
+#tb-title{font-family:var(--sans);font-size:16px;font-weight:700;color:#fff}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.status-chip{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--green);font-size:11px;font-weight:700;letter-spacing:.04em}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pls 1.8s ease-out infinite}
+@keyframes pls{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+#clock{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5)}
+
+/* ── INCIDENT BANNER ── */
+#inc-banner{display:none;background:var(--primary-dim);border-bottom:1px solid var(--border);padding:8px 22px;display:none;align-items:center;gap:12px}
+#inc-banner.show{display:flex}
+.ib-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+#ib-nombre{font-weight:600;color:var(--primary)}
+#ib-id{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* ── CONTENT ── */
+#content{flex:1;overflow-y:auto;padding:22px}
+.view{display:none}
+.view.active{display:block}
+
+/* ── GRID ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mt16{margin-top:16px}.mt20{margin-top:20px}
+.fx{display:flex}.ai{align-items:center}.je{justify-content:flex-end}.fw{flex-wrap:wrap}.f1{flex:1}
+.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px}
+.card-title{font-family:var(--serif);font-weight:600;font-size:14px;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* ── KPI ── */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px 18px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.b::before{background:var(--secondary)}
+.kpi.a::before{background:var(--alert)}
+.kpi.r::before{background:var(--red)}
+.kpi.g::before{background:var(--green)}
+.kpi-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kpi-val{font-family:var(--sans);font-size:38px;font-weight:800;line-height:1;margin-bottom:4px}
+.kpi.b .kpi-val{color:var(--secondary)}.kpi.a .kpi-val{color:var(--alert)}
+.kpi.r .kpi-val{color:var(--red)}.kpi.g .kpi-val{color:var(--green)}
+.kpi-sub{font-size:11px;color:var(--muted)}
+
+/* ── SECTION HEADER ── */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.sh-title{font-family:var(--sans);font-size:20px;font-weight:800;color:var(--primary)}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:7px 12px;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F9FAFB}
+.mono{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* ── BADGES ── */
+.bx{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.bx-g{background:var(--green-bg);color:var(--green)}
+.bx-a{background:var(--alert-bg);color:var(--alert)}
+.bx-r{background:var(--red-bg);color:var(--red)}
+.bx-b{background:var(--primary-dim);color:var(--secondary)}
+.bx-m{background:#F3F4F6;color:var(--mid)}
+
+/* ── SEVERITY BADGES ── */
+.sv-Extremo{background:var(--red-bg);color:var(--red)}
+.sv-Alto{background:var(--alert-bg);color:var(--alert)}
+.sv-Medio{background:var(--primary-dim);color:var(--secondary)}
+.sv-Bajo{background:var(--green-bg);color:var(--green)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .13s,opacity .13s;border:none;font-family:var(--sans);white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--primary);color:#fff}.btn-p:hover:not(:disabled){background:var(--primary-h)}
+.btn-s{background:var(--secondary);color:#fff}.btn-s:hover:not(:disabled){background:#0891b2}
+.btn-g{background:var(--green-bg);color:var(--green);border:1px solid rgba(16,185,129,.3)}.btn-g:hover:not(:disabled){background:rgba(16,185,129,.2)}
+.btn-r{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3)}.btn-r:hover:not(:disabled){background:rgba(239,68,68,.2)}
+.btn-gh{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-gh:hover:not(:disabled){background:var(--bg);color:var(--text)}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ── FORMS ── */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fgr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgr .full{grid-column:span 2}
+label{font-size:11.5px;font-weight:600;color:var(--mid)}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;width:100%;transition:border-color .13s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--secondary)}
+select option{background:#fff}
+textarea{resize:vertical;min-height:80px}
+.range-row{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;accent-color:var(--primary)}
+.range-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--primary);min-width:18px;text-align:center}
+
+/* ── MODAL ── */
+#modal-bd{position:fixed;inset:0;z-index:200;background:rgba(13,27,42,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
+#modal-bd.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);width:min(620px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:mIn .18s ease-out}
+@keyframes mIn{from{opacity:0;transform:scale(.97) translateY(-8px)}}
+.mh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mh-title{font-family:var(--sans);font-weight:700;font-size:15px;color:var(--primary)}
+.m-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
+.mb{padding:20px;display:flex;flex-direction:column;gap:13px}
+.mf{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.ti{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 15px;font-size:13px;display:flex;align-items:center;gap:10px;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.12);animation:ti .2s ease-out}
+@keyframes ti{from{opacity:0;transform:translateX(16px)}}
+.ti.ok{border-left:3px solid var(--green)}.ti.err{border-left:3px solid var(--red)}.ti.info{border-left:3px solid var(--secondary)}
+
+/* ── SPINNER ── */
+.sp{width:16px;height:16px;border:2px solid rgba(15,52,96,.2);border-top-color:var(--primary);border-radius:50%;animation:rot .7s linear infinite;display:inline-block}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── DRAFT TABS ── */
+.ch-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:14px}
+.cht{padding:8px 14px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .13s,border-color .13s;font-family:var(--sans)}
+.cht.active{color:var(--primary);border-bottom-color:var(--primary)}
+.cht:hover{color:var(--text)}
+.draft-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:13px;line-height:1.75;min-height:120px;white-space:pre-wrap;word-break:break-word;color:var(--text);font-family:var(--sans)}
+.draft-empty{color:var(--muted);font-style:italic}
+
+/* ── NCRS METER ── */
+.ncrs-display{background:var(--bg);border:2px solid var(--border);border-radius:var(--rl);padding:14px 18px;text-align:center}
+.ncrs-num{font-family:var(--sans);font-size:42px;font-weight:800;line-height:1}
+.ncrs-tactica{font-size:12.5px;font-weight:600;margin-top:6px}
+.ncrs-1,.ncrs-2{color:var(--green)}.ncrs-3{color:var(--alert)}.ncrs-4,.ncrs-5{color:var(--red)}
+
+/* ── HIPOTESIS CARDS ── */
+.hip-card{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.hip-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.hip-body{padding:16px}
+.hip-cat{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
+.hip-H1{background:var(--primary-dim);color:var(--primary)}
+.hip-H2{background:var(--red-bg);color:var(--red)}
+.hip-H3{background:var(--alert-bg);color:var(--alert)}
+.hip-H4{background:var(--green-bg);color:var(--green)}
+.hip-prob{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.prob-Alta{background:var(--red-bg);color:var(--red)}
+.prob-Media{background:var(--alert-bg);color:var(--alert)}
+.prob-Baja{background:var(--green-bg);color:var(--green)}
+.prec-box{background:var(--bg);border-left:3px solid var(--secondary);padding:10px 12px;border-radius:0 6px 6px 0;margin-top:10px;font-size:12.5px;color:var(--mid)}
+
+/* ── ALERT BOXES ── */
+.info-box{background:var(--primary-dim);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:var(--secondary);margin-bottom:14px}
+.warn-box{background:var(--alert-bg);border:1px solid rgba(245,158,11,.25);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:#92400E;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
+.crit-box{background:var(--red-bg);border:1px solid rgba(239,68,68,.25);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:var(--red);margin-bottom:14px}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.ei{font-size:32px;margin-bottom:8px}.em{font-size:13px}
+
+/* ── ALERT CARDS ── */
+.alert-card{padding:11px 14px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px}
+.alert-card.rojo{border-left:3px solid var(--red);background:var(--red-bg)}
+.alert-card.naranja{border-left:3px solid var(--alert);background:var(--alert-bg)}
+.alert-card.csn{border-left:3px solid var(--muted);background:#F9FAFB}
+
+/* ── NCRS VISUAL SELECTOR ── */
+.ncrs-dim{display:flex;flex-direction:column;gap:6px}
+.ncrs-dim-label{font-size:11.5px;font-weight:600;color:var(--mid)}
+.ncrs-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.ncrs-btn-v{border:1.5px solid var(--border);border-radius:6px;padding:7px 4px;cursor:pointer;
+  font-family:var(--sans);background:var(--bg);color:var(--muted);transition:all .13s;
+  text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
+.ncrs-btn-v:hover{border-color:var(--secondary);color:var(--text)}
+.ncrs-btn-v .nv{font-weight:800;font-size:16px;line-height:1}
+.ncrs-btn-v .nd{font-size:9px;line-height:1.25;color:inherit;opacity:.85}
+.ncrs-btn-v.activo-1,.ncrs-btn-v.activo-2{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.ncrs-btn-v.activo-3{background:var(--alert-bg);border-color:var(--alert);color:var(--alert)}
+.ncrs-btn-v.activo-4,.ncrs-btn-v.activo-5{background:var(--red-bg);border-color:var(--red);color:var(--red)}
+
+/* ── AI THINKING BANNER ── */
+#ai-thinking{
+  display:none;position:sticky;top:0;z-index:50;
+  background:var(--primary);color:#fff;
+  padding:10px 22px;border-bottom:1px solid rgba(255,255,255,.1);
+  align-items:center;gap:12px;
+}
+#ai-thinking.show{display:flex}
+.ai-eye{animation:ai-pulse 1.2s ease-in-out infinite}
+@keyframes ai-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.92)}}
+.ai-msg{font-size:13px;font-weight:600;letter-spacing:.01em}
+.ai-sub{font-size:11px;color:rgba(255,255,255,.5);margin-left:auto;font-family:var(--mono)}
+.ai-dots::after{content:'';animation:dots 1.4s steps(4,end) infinite}
+@keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
+
+/* ── TABS COMUNICACIÓN ── */
+.mod-tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;gap:2px}
+.mod-tab{padding:9px 18px;border:none;background:none;color:var(--muted);cursor:pointer;
+  font-size:14px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;
+  font-family:var(--sans);transition:color .13s,border-color .13s}
+.mod-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.mod-tab:hover{color:var(--text)}
+
+/* ── PUBLICACIÓN CARD ── */
+.pub-card{border:1px solid var(--border);border-left:3px solid var(--green);
+  border-radius:var(--rl);padding:16px 18px;margin-bottom:12px;background:var(--surface)}
+.pub-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.pub-ts{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.pub-canal{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;
+  text-transform:uppercase;letter-spacing:.06em}
+.pub-x{background:#000;color:#fff}
+.pub-tg{background:#0088cc;color:#fff}
+.pub-wa{background:#25d366;color:#fff}
+.pub-pr{background:var(--primary);color:#fff}
+.pub-txt{font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
+  color:var(--text);background:var(--bg);border-radius:var(--r);padding:12px 14px;margin-top:8px}
+.pub-copy{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 10px;
+  font-size:11px;cursor:pointer;font-family:var(--sans);color:var(--muted);margin-top:8px}
+.pub-copy:hover{background:var(--bg);color:var(--text)}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{position:fixed;inset:0;z-index:998;background:var(--dark);display:none;align-items:center;justify-content:center;flex-direction:column}
+#login-screen.show{display:flex}
+.login-box{width:min(400px,92vw);text-align:center}
+.login-eye{margin:0 auto 20px;display:block}
+.login-brand{font-family:var(--sans);font-size:34px;font-weight:800;color:#fff;letter-spacing:.06em;margin-bottom:4px}
+.login-sub{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px}
+.login-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:var(--rl);padding:28px}
+.login-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;text-align:left;display:block}
+.login-input{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--sans);font-size:15px;padding:11px 14px;width:100%;transition:border-color .13s;text-align:center}
+.login-input:focus{outline:none;border-color:var(--secondary)}
+.login-input::placeholder{color:rgba(255,255,255,.25)}
+.login-btn{width:100%;padding:12px;background:var(--secondary);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:background .13s;margin-top:14px}
+.login-btn:hover:not(:disabled){background:#0891b2}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-err{background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:var(--r);padding:9px 13px;font-size:13px;color:var(--red);margin-top:12px;text-align:left;display:none}
+.login-ok{font-size:12px;color:rgba(255,255,255,.4);margin-top:12px;text-align:center}
+.otp-boxes{display:flex;gap:8px;justify-content:center;margin:4px 0}
+.otp-box{width:46px;height:54px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--mono);font-size:22px;font-weight:700;text-align:center;transition:border-color .13s}
+.otp-box:focus{outline:none;border-color:var(--secondary)}
+.login-back{background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;margin-top:14px;font-family:var(--sans)}
+.login-back:hover{color:#fff}
+.login-timer{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.3);margin-top:8px}
+
+/* ── TOPBAR USER ── */
+#tb-user{font-size:12px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:8px}
+#btn-logout{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans)}
+#btn-logout:hover{background:rgba(255,255,255,.08);color:#fff}
+
+/* ── ADMIN PANEL ── */
+.admin-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:rgba(167,139,250,.15);color:#A78BFA}
+
+/* ── MAPA LEAFLET ── */
+#mapa-dashboard{height:340px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
+#mapa-mini{height:180px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
+.leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
+.leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
+.inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
+  width:32px;height:32px;box-shadow:0 2px 6px rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.9);cursor:pointer}
+/* ── FOTOS EN ACTUALIZACIONES ── */
+.fotos-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:8px}
+.foto-slot{border:2px dashed var(--border);border-radius:var(--r);aspect-ratio:4/3;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  background:var(--bg);transition:border-color .13s;overflow:hidden;position:relative}
+.foto-slot:hover{border-color:var(--secondary)}
+.foto-slot img{width:100%;height:100%;object-fit:cover}
+.foto-slot .rm{position:absolute;top:3px;right:3px;background:rgba(239,68,68,.9);color:#fff;
+  border:none;border-radius:3px;padding:1px 5px;font-size:10px;cursor:pointer;display:none}
+.foto-slot:hover .rm{display:block}
+.foto-add{flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.foto-add svg{opacity:.5}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){#sidebar{width:52px}.sb-txt,.nb .lbl,.nb-bx,.sb-sec{display:none}.sb-brand{justify-content:center;padding:12px 8px}.nb{justify-content:center;padding:9px;margin:2px 6px}.nb svg{width:19px;height:19px}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){#content{padding:14px}.g4,.g3,.g2{grid-template-columns:1fr}.fgr{grid-template-columns:1fr}.fgr .full{grid-column:span 1}}
+</style>
+  <!-- Leaflet — carga diferida para no bloquear el render inicial -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-logo">ARGOS</div>
+  <div class="sp-sub">VOST Spain · Iniciando sistema</div>
+  <div class="sp-spinner"></div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+
+  <!-- PASO 1: Solicitar código -->
+  <div id="login-paso1" class="login-box">
+    <svg class="login-eye" width="56" height="56" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#0EA5E9" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#0EA5E9"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0D1B2A"/>
+      <line x1="14" y1="2" x2="14" y2="5" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="14" y1="23" x2="14" y2="26" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="2" y1="14" x2="5" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="23" y1="14" x2="26" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <div class="login-brand">ARGOS</div>
+    <div class="login-sub">VOST Spain · Acceso restringido</div>
+    <div class="login-card">
+      <label class="login-label" for="login-email">Tu dirección de correo electrónico</label>
+      <input class="login-input" id="login-email" type="email" placeholder="nombre@ejemplo.com"
+        onkeydown="if(event.key==='Enter') solicitarCodigo()">
+      <div class="login-err" id="login-err1"></div>
+      <button class="login-btn" id="btn-solicitar" onclick="solicitarCodigo()">Solicitar código de acceso</button>
+      <div class="login-ok" id="login-ok1" style="display:none">Comprueba tu bandeja de entrada.</div>
+    </div>
+  </div>
+
+  <!-- PASO 2: Introducir código OTP -->
+  <div id="login-paso2" class="login-box" style="display:none">
+    <svg class="login-eye" width="56" height="56" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#10B981" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#10B981"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0D1B2A"/>
+    </svg>
+    <div class="login-brand" style="font-size:26px">Introduce el código</div>
+    <div class="login-sub" id="login-desc-email">Enviado a —</div>
+    <div class="login-card">
+      <label class="login-label">Código de verificación (6 dígitos)</label>
+      <div class="otp-boxes">
+        <input class="otp-box" id="otp0" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(0)" onkeydown="otpKey(event,0)">
+        <input class="otp-box" id="otp1" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(1)" onkeydown="otpKey(event,1)">
+        <input class="otp-box" id="otp2" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(2)" onkeydown="otpKey(event,2)">
+        <input class="otp-box" id="otp3" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(3)" onkeydown="otpKey(event,3)">
+        <input class="otp-box" id="otp4" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(4)" onkeydown="otpKey(event,4)">
+        <input class="otp-box" id="otp5" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(5)" onkeydown="otpKey(event,5)">
+      </div>
+      <div class="login-err" id="login-err2"></div>
+      <button class="login-btn" id="btn-verificar" onclick="verificarCodigo()" disabled>Acceder a ARGOS</button>
+      <div class="login-timer" id="login-timer">Código válido 10:00</div>
+      <button class="login-back" onclick="volverPaso1()">← Usar otro email</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sb-brand">
+    <svg id="logo-svg" width="100" height="100" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#0EA5E9" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#0EA5E9"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0D1B2A"/>
+      <line x1="14" y1="2" x2="14" y2="5" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="14" y1="23" x2="14" y2="26" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="2" y1="14" x2="5" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="23" y1="14" x2="26" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <img id="logo-img" src="" alt="ARGOS">
+    <div class="sb-txt"><div class="t1">ARGOS</div><div class="t2">VOST Spain</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Sistema</div>
+    <button class="nb active" data-v="dashboard" onclick="irA('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span class="lbl">Dashboard</span>
+    </button>
+    <button class="nb" data-v="incidentes" onclick="irA('incidentes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="lbl">Incidentes</span>
+    </button>
+    <div class="sb-sec">Comunicación</div>
+    <button class="nb" data-v="actualizaciones" onclick="irA('actualizaciones')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+      <span class="lbl">Comunicación</span>
+      <span class="nb-bx" id="bx-act">!</span>
+    </button>
+    <button class="nb" data-v="notas" onclick="irA('notas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span class="lbl">Notas internas</span>
+    </button>
+    <div class="sb-sec">Inteligencia</div>
+    <button class="nb" data-v="narrativas" onclick="irA('narrativas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="lbl">Narrativas</span>
+      <span class="nb-bx" id="bx-nar">!</span>
+    </button>
+    <button class="nb" data-v="hipotesis" onclick="irA('hipotesis')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span class="lbl">Hipótesis</span>
+    </button>
+    <div class="sb-sec">Aprendizaje</div>
+    <button class="nb" data-v="lecciones" onclick="irA('lecciones')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+      <span class="lbl">Lecciones</span>
+    </button>
+
+    <!-- Solo visible para el administrador -->
+    <div id="sb-admin-sec" style="display:none">
+      <div class="sb-sec">Administración</div>
+      <button class="nb" data-v="admin" onclick="irA('admin')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="lbl">Control de acceso</span>
+      </button>
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN WRAPPER -->
+<div id="wrapper">
+  <header id="topbar">
+    <div id="tb-title">Dashboard</div>
+    <div class="tb-right">
+      <div class="status-chip"><span class="pulse"></span><span>ARGOS ACTIVO</span></div>
+      <div id="tb-user">
+        <span id="tb-nombre" style="font-size:12px;color:rgba(255,255,255,.7)"></span>
+        <button id="btn-logout" onclick="cerrarSesion()">Salir</button>
+      </div>
+      <div id="clock"></div>
+    </div>
+  </header>
+
+  <!-- INCIDENT BANNER -->
+  <div id="inc-banner">
+    <span class="ib-label">Incidente activo</span>
+    <span id="ib-nombre">—</span>
+    <span id="ib-id">—</span>
+    <div style="margin-left:auto">
+      <button class="btn btn-gh btn-sm" onclick="APP.incActivo=null;ocultarBanner()">× Deseleccionar</button>
+    </div>
+  </div>
+
+  <main id="content">
+
+  <!-- BANNER IA PENSANDO -->
+  <div id="ai-thinking">
+    <svg class="ai-eye" width="22" height="22" viewBox="0 0 28 28" fill="none">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#38BDF8" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#38BDF8"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0F3460"/>
+    </svg>
+    <div>
+      <div class="ai-msg"><span id="ai-msg-txt">Claude está analizando</span><span class="ai-dots"></span></div>
+    </div>
+    <div class="ai-sub" id="ai-timer"></div>
+  </div>
+
+  <!-- VISTAS -->
+  <section class="view active" id="view-dashboard">
+    <div class="sh">
+      <div class="sh-title">Panel de control</div>
+      <div class="fx ai g8">
+        <button class="btn btn-p" onclick="abrirModalNuevoInc()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo incidente
+        </button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="kpi b"><div class="kpi-lbl">Activos</div><div class="kpi-val" id="k-act">—</div><div class="kpi-sub">incidentes en curso</div></div>
+      <div class="kpi a"><div class="kpi-lbl">Standby</div><div class="kpi-val" id="k-stby">—</div><div class="kpi-sub">en seguimiento</div></div>
+      <div class="kpi g"><div class="kpi-lbl">Cerrados</div><div class="kpi-val" id="k-cerr">—</div><div class="kpi-sub">histórico total</div></div>
+      <div class="kpi r"><div class="kpi-lbl">Narrativas NCRS≥4</div><div class="kpi-val" id="k-nar">—</div><div class="kpi-sub">requieren desmentido</div></div>
+    </div>
+    <div class="g2 mt20">
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/></svg>
+          Incidentes recientes
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Nombre</th><th>Gravedad</th><th>Estado</th></tr></thead>
+          <tbody id="t-recientes"><tr><td colspan="4" style="text-align:center;padding:28px"><div class="sp"></div></td></tr></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          Alertas externas
+        </div>
+        <div id="ext-alerts"><div style="color:var(--muted);font-size:12px">Consultando AEMET y CSN...</div></div>
+      </div>
+    </div>
+    <div class="card mt20">
+      <div class="card-title fx ai" style="justify-content:space-between">
+        <span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          Mapa de incidentes
+        </span>
+        <div class="fx ai g8">
+          <label class="fx ai g8" style="font-size:12px;font-weight:500;cursor:pointer">
+            <input type="checkbox" id="map-show-closed" onchange="actualizarMapaDashboard()">
+            Ver cerrados
+          </label>
+        </div>
+      </div>
+      <div id="mapa-dashboard"></div>
+    </div>
+  </section>
+
+  <!-- ═══ INCIDENTES ═══ -->
+  <section class="view" id="view-incidentes">
+    <div class="sh">
+      <div class="sh-title">Incidentes</div>
+      <div class="fx ai g8 fw">
+        <input type="text" id="inc-buscar" placeholder="Buscar..." style="width:190px" oninput="filtrarInc()">
+        <select id="inc-estado" style="width:130px" onchange="filtrarInc()">
+          <option value="">Todos los estados</option>
+          <option>Activo</option><option>Standby</option><option>Cerrado</option>
+        </select>
+        <button class="btn btn-p" onclick="abrirModalNuevoInc()">+ Nuevo</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tw"><table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Gravedad</th><th>Estado</th><th>Ubicación</th><th>Apertura</th><th>Acciones</th></tr></thead>
+        <tbody id="t-inc"><tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ═══ ACTUALIZACIONES ═══ -->
+  <section class="view" id="view-actualizaciones">
+    <div class="sh"><div class="sh-title">Comunicación pública</div></div>
+    <div class="mod-tabs">
+      <button class="mod-tab active" id="tab-nueva" onclick="cambiarTabAct('nueva')">✏️ Nueva actualización</button>
+      <button class="mod-tab" id="tab-hist" onclick="cambiarTabAct('hist')">📋 Publicaciones realizadas</button>
+    </div>
+
+    <div id="act-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver y gestionar sus actualizaciones.</div>
+
+    <!-- Panel nueva actualización -->
+    <div id="act-panel-nueva" style="display:none">
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Nueva actualización</div>
+            <div class="fg" style="gap:10px">
+              <div class="fg"><label>Hechos verificados *</label>
+                <textarea id="a-hechos" rows="4" placeholder="Describe los hechos verificados que quieres comunicar. Incluye fuente oficial."></textarea></div>
+              <div class="fg"><label>Objetivo de comunicación</label>
+                <input id="a-obj" type="text" placeholder="Ej. Informar del avance de los medios, tranquilizar a la ciudadanía..."></div>
+              <div class="fg">
+                <label>Imágenes adjuntas (hasta 4 · JPG/PNG)</label>
+                <div class="fotos-grid" id="fotos-grid">
+                  <div class="foto-slot foto-add" id="foto-0" onclick="seleccionarFoto(0)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Foto 1</span>
+                  </div>
+                  <div class="foto-slot foto-add" id="foto-1" onclick="seleccionarFoto(1)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Foto 2</span>
+                  </div>
+                  <div class="foto-slot foto-add" id="foto-2" onclick="seleccionarFoto(2)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Foto 3</span>
+                  </div>
+                  <div class="foto-slot foto-add" id="foto-3" onclick="seleccionarFoto(3)">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span>Foto 4</span>
+                  </div>
+                </div>
+                <input type="file" id="foto-input" accept="image/jpeg,image/png,image/jpg" style="display:none" onchange="procesarFotoSeleccionada(event)">
+              </div>
+              <div class="fx g8 je">
+                <button class="btn btn-p" id="btn-crear-act" onclick="crearActualizacion()">Guardar actualización</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Historial de esta sesión</div>
+            <div class="tw"><table>
+              <thead><tr><th>Timestamp</th><th>Hechos</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="t-acts"><tr><td colspan="4" style="text-align:center;padding:28px"><div class="sp"></div></td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" id="drafts-panel">
+            <div class="card-title">Borradores IA</div>
+            <div id="drafts-estado" class="info-box">Selecciona una actualización y pulsa «Generar con IA» para crear los textos.</div>
+            <div id="drafts-content" style="display:none">
+              <div id="draft-pub-banner" style="display:none;margin-bottom:12px" class="info-box" style="background:var(--green-bg);border-color:rgba(16,185,129,.3);color:var(--green)"></div>
+              <div class="ch-tabs">
+                <button class="cht active" onclick="cambiarDraft('x',this)">𝕏 Twitter</button>
+                <button class="cht" onclick="cambiarDraft('telegram',this)">✈ Telegram</button>
+                <button class="cht" onclick="cambiarDraft('whatsapp',this)">💬 WhatsApp</button>
+                <button class="cht" onclick="cambiarDraft('prensa',this)">📰 Prensa</button>
+              </div>
+              <div id="draft-txt" class="draft-box draft-empty">Sin borrador generado.</div>
+              <div class="fx g8 mt16 je fw">
+                <button class="btn btn-gh btn-sm" id="btn-copiar" onclick="copiarDraft()">Copiar</button>
+                <button class="btn btn-gh btn-sm" id="btn-prensa" onclick="generarPrensaAct()" style="display:none">📰 Generar nota de prensa</button>
+                <button class="btn btn-s btn-sm" id="btn-gen-draft" onclick="generarDraftsAct()">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Generar con IA
+                </button>
+                <button class="btn btn-g btn-sm" id="btn-marcar-pub" onclick="marcarPublicado()">✓ Marcar como publicado</button>
+              </div>
+              <div id="advertencias-act" style="margin-top:10px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel historial de publicaciones -->
+    <div id="act-panel-hist" style="display:none">
+      <div id="hist-vacio" class="empty" style="display:none">
+        <div class="ei">📋</div><div class="em">Aún no hay publicaciones en este incidente.</div>
+      </div>
+      <div id="hist-lista"></div>
+    </div>
+
+  </section>
+
+  <!-- ═══ NOTAS INTERNAS ═══ -->
+  <section class="view" id="view-notas">
+    <div class="sh"><div class="sh-title">Notas internas</div></div>
+    <div class="warn-box" style="margin-bottom:16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Información de uso interno. <strong>No se genera contenido IA ni se publica.</strong> Solo visible para el equipo VOST Spain.</span>
+    </div>
+    <div id="notas-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver y añadir notas internas.</div>
+    <div id="notas-panel" style="display:none">
+      <div class="g2" style="align-items:start">
+        <div class="card">
+          <div class="card-title">Nueva nota</div>
+          <div class="fg" style="gap:10px">
+            <div class="fg"><label>Categoría</label>
+              <select id="n-cat">
+                <option>PMA / Reunión</option><option>Coordinación</option>
+                <option>Información personal / sensible</option><option>Recursos</option><option>General</option>
+              </select></div>
+            <div class="fg"><label>Contenido de la nota *</label>
+              <textarea id="n-cont" rows="5" placeholder="Ej. En reunión con responsable PMA se ha comentado que..."></textarea></div>
+            <div class="fx je"><button class="btn btn-p" onclick="guardarNota()">Guardar nota</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Notas del incidente</div>
+          <div id="lista-notas">
+            <div class="empty"><div class="ei">🔒</div><div class="em">Cargando notas...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ NARRATIVAS ═══ -->
+  <section class="view" id="view-narrativas">
+    <div class="sh"><div class="sh-title">Monitor de narrativas</div></div>
+    <div id="nar-sel-banner" class="info-box" style="display:none">Selecciona un incidente para gestionar sus narrativas.</div>
+    <div id="nar-panel" style="display:none">
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Registrar narrativa</div>
+            <div class="fg" style="gap:10px">
+              <div class="fg"><label>Descripción del contenido detectado *</label>
+                <textarea id="nr-desc" rows="3" placeholder="Describe la narrativa falsa o desinformación detectada..."></textarea></div>
+              <div class="fgr">
+                <div class="fg"><label>Plataforma</label>
+                  <select id="nr-plat">
+                    <option>X/Twitter</option><option>Instagram</option><option>Facebook</option>
+                    <option>TikTok</option><option>Telegram</option><option>WhatsApp</option>
+                    <option>Web/Medios</option><option>Otro</option>
+                  </select></div>
+                <div class="fg"><label>Fuente de origen</label>
+                  <input id="nr-fuente" type="text" placeholder="Cuenta, medio, perfil..."></div>
+                <div class="fg full"><label>URL del contenido</label>
+                  <input id="nr-url" type="url" placeholder="https://..."></div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding-top:14px">
+                <div style="font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Escala NCRS — Puntúa cada dimensión del 1 al 5</div>
+                <div style="display:flex;flex-direction:column;gap:14px">
+
+                  <div class="ncrs-dim">
+                    <div class="ncrs-dim-label">Alcance — ¿hasta dónde ha llegado?</div>
+                    <div class="ncrs-btns" id="sel-alc">
+                      <button class="ncrs-btn-v" onclick="selNcrs('alc',1,this)"><span class="nv">1</span><span class="nd">Solo detectada</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('alc',2,this)"><span class="nv">2</span><span class="nd">Comunidad local</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('alc',3,this)"><span class="nv">3</span><span class="nd">Regional</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('alc',4,this)"><span class="nv">4</span><span class="nd">Nacional</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('alc',5,this)"><span class="nv">5</span><span class="nd">Viral / Internacional</span></button>
+                    </div>
+                  </div>
+
+                  <div class="ncrs-dim">
+                    <div class="ncrs-dim-label">Verosimilitud — ¿qué tan convincente es?</div>
+                    <div class="ncrs-btns" id="sel-ver">
+                      <button class="ncrs-btn-v" onclick="selNcrs('ver',1,this)"><span class="nv">1</span><span class="nd">Fácilmente desmentible</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('ver',2,this)"><span class="nv">2</span><span class="nd">Poco convincente</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('ver',3,this)"><span class="nv">3</span><span class="nd">Moderadamente creíble</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('ver',4,this)"><span class="nv">4</span><span class="nd">Convincente</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('ver',5,this)"><span class="nv">5</span><span class="nd">Muy difícil de desmentir</span></button>
+                    </div>
+                  </div>
+
+                  <div class="ncrs-dim">
+                    <div class="ncrs-dim-label">Velocidad — ¿con qué rapidez se propaga?</div>
+                    <div class="ncrs-btns" id="sel-vel">
+                      <button class="ncrs-btn-v" onclick="selNcrs('vel',1,this)"><span class="nv">1</span><span class="nd">Estática, sin difusión</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('vel',2,this)"><span class="nv">2</span><span class="nd">Lenta, circula poco</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('vel',3,this)"><span class="nv">3</span><span class="nd">Moderada, creciendo</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('vel',4,this)"><span class="nv">4</span><span class="nd">Rápida, cuentas grandes</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('vel',5,this)"><span class="nv">5</span><span class="nd">Viral / Explosiva</span></button>
+                    </div>
+                  </div>
+
+                  <div class="ncrs-dim">
+                    <div class="ncrs-dim-label">Malicia — ¿parece intencionada?</div>
+                    <div class="ncrs-btns" id="sel-mal">
+                      <button class="ncrs-btn-v" onclick="selNcrs('mal',1,this)"><span class="nv">1</span><span class="nd">Error involuntario</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('mal',2,this)"><span class="nv">2</span><span class="nd">Negligencia</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('mal',3,this)"><span class="nv">3</span><span class="nd">Intención dudosa</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('mal',4,this)"><span class="nv">4</span><span class="nd">Probablemente hostil</span></button>
+                      <button class="ncrs-btn-v" onclick="selNcrs('mal',5,this)"><span class="nv">5</span><span class="nd">Campaña coordinada</span></button>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+              <div class="ncrs-display">
+                <div class="ncrs-num ncrs-1" id="ncrs-num">1</div>
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">NCRS Total</div>
+                <div class="ncrs-tactica ncrs-1" id="ncrs-tac">Solo monitorizar</div>
+              </div>
+              <div class="fx je"><button class="btn btn-p" onclick="guardarNarrativa()">Registrar narrativa</button></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">Narrativas detectadas</div>
+            <div id="lista-nar">
+              <div class="empty"><div class="ei">👁</div><div class="em">Cargando narrativas...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HIPÓTESIS ═══ -->
+  <section class="view" id="view-hipotesis">
+    <div class="sh"><div class="sh-title">Análisis predictivo</div></div>
+    <div id="hip-sel-banner" class="info-box" style="display:none">Selecciona un incidente para generar el análisis predictivo.</div>
+    <div id="hip-panel" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div class="fx ai g12 fw">
+          <div style="flex:1">
+            <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--primary)">Generación de hipótesis con IA + búsqueda web</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Claude analizará el incidente, buscará precedentes históricos reales en internet y generará 4 hipótesis operativas.</div>
+          </div>
+          <button class="btn btn-s" id="btn-gen-hip" onclick="generarHipotesis()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Generar análisis predictivo
+          </button>
+        </div>
+      </div>
+      <div id="hip-resultado">
+        <div class="empty"><div class="ei">🔮</div><div class="em">Pulsa el botón para iniciar el análisis.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ LECCIONES ═══ -->
+  <section class="view" id="view-lecciones">
+    <div class="sh">
+      <div class="sh-title">Lecciones aprendidas</div>
+      <div class="fx ai g8">
+        <button class="btn btn-gh" onclick="abrirImportarLecciones()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar archivo
+        </button>
+        <button class="btn btn-p" onclick="abrirModalNuevaLec()">+ Añadir lección</button>
+      </div>
+    </div>
+    <input type="file" id="file-lecciones" accept=".md,.txt,.pdf" style="display:none" onchange="procesarArchivoLecciones(event)">
+    <div id="lec-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver sus lecciones aprendidas.</div>
+    <div id="lec-panel" style="display:none">
+      <div class="card">
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Título</th><th>Categoría</th><th>Prioridad</th><th>Acción correctiva</th><th>Estado</th><th>Fuente</th><th></th></tr></thead>
+          <tbody id="t-lec"><tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ADMIN ═══ -->
+  <section class="view" id="view-admin">
+    <div class="sh">
+      <div>
+        <div class="sh-title">Control de acceso</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">Solo el administrador puede gestionar quién tiene acceso a ARGOS.</div>
+      </div>
+      <button class="btn btn-p" onclick="abrirModalNuevoUsuario()">+ Añadir usuario</button>
+    </div>
+    <div class="card">
+      <div class="tw"><table>
+        <thead><tr><th>Email</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Alta</th><th>Añadido por</th><th>Acciones</th></tr></thead>
+        <tbody id="t-acceso"><tr><td colspan="7" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal-bd" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"><div class="mh-title" id="m-title">Modal</div><button class="m-close" onclick="cerrarModales()">✕</button></div>
+    <div class="mb" id="m-body"></div>
+    <div class="mf"><button class="btn btn-gh" onclick="cerrarModales()">Cancelar</button><button class="btn" id="m-ok">Confirmar</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══ TIPOS DE INCIDENTE (Tácticas Operativas + Incidente Cibernético) ═══════
+const TIPOS_INCIDENTE = [
+  { grupo: 'Personas',
+    ops: ['Persona desaparecida'] },
+  { grupo: 'Montaña y medio natural',
+    ops: ['Búsqueda o rescate en montaña'] },
+  { grupo: 'Medio acuático',
+    ops: ['Rescate acuático / Incidente en medio acuático'] },
+  { grupo: 'Incendio',
+    ops: ['Incendio urbano','Incendio industrial','Incendio forestal'] },
+  { grupo: 'Mercancías peligrosas (TPC/TPF)',
+    ops: [
+      'TPC1/TPF1 — Avería sin incidencia en carga',
+      'TPC2/TPF2 — Continente dañado, sin fuga',
+      'TPC3/TPF3 — Fuga o derrame del contenido',
+      'TPC4/TPF4 — Incendio con fuga de contenido',
+      'TPC5/TPF5 — Explosión del contenido'
+    ]},
+  { grupo: 'Industria',
+    ops: ['Industria SEVESO'] },
+  { grupo: 'Ferrocarril',
+    ops: ['Ferrocarril — Arrollamiento (T1)','Ferrocarril — Descarrilamiento / Choque / Incendio (T2)'] },
+  { grupo: 'Aviación',
+    ops: ['Aviación — Fuera del aeropuerto (TXORI-1)','Aviación — En aeropuerto (TXORI-A/B/G)'] },
+  { grupo: 'Medio urbano',
+    ops: ['Rescate urbano / Medio urbano'] },
+  { grupo: 'Nuclear',
+    ops: ['Nuclear — Central nuclear','Nuclear — Riesgo radiactivo (RBQ)'] },
+  { grupo: 'Gas',
+    ops: ['Gas — Fuga / Incendio / Explosión'] },
+  { grupo: 'Contaminación ambiental',
+    ops: ['Contaminación ambiental'] },
+  { grupo: 'Meteorología',
+    ops: ['Meteorología adversa (METEO)'] },
+  { grupo: 'Logística',
+    ops: ['Abastecimiento'] },
+  { grupo: 'Geología',
+    ops: ['Desprendimientos / Deslizamientos'] },
+  { grupo: 'Social',
+    ops: ['Evacuación / Albergue'] },
+  { grupo: 'Infraestructura',
+    ops: ['Presas'] },
+  { grupo: 'Tráfico',
+    ops: ['Accidentes de tráfico (TG)'] },
+  { grupo: 'Sanitario / Masivo',
+    ops: ['Incidente Múltiples Víctimas (IMV)'] },
+  { grupo: 'Seguridad',
+    ops: ['Incidentes Extraordinarios Violentos (IEV)','Incidentes Conductas Autolíticas (ICA)'] },
+  { grupo: 'Rescate especializado',
+    ops: ['BREC — Búsqueda y Rescate en Estructuras Colapsadas'] },
+  { grupo: 'Laboral',
+    ops: ['Accidentes laborales (PG1)'] },
+  { grupo: 'Dispositivos',
+    ops: ['DRP — Dispositivos de Riesgo Previsible'] },
+  { grupo: 'Ciberseguridad',
+    ops: ['Incidente cibernético'] }
+];
+
+// Generar HTML para select con optgroups
+function tiposSelect(valPorDefecto) {
+  return TIPOS_INCIDENTE.map(g =>
+    '<optgroup label="' + g.grupo + '">' +
+    g.ops.map(o => '<option value="' + o + '"' + (o===valPorDefecto?' selected':'') + '>' + o + '</option>').join('') +
+    '</optgroup>'
+  ).join('');
+}
+
+// Icono SVG + color para cada tipo (mapa y badges)
+const TIPO_CONFIG = {
+  'Persona desaparecida':                        { color:'#7c3aed', svg:'<circle cx="12" cy="8" r="4" fill="white"/><path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" stroke-width="2" fill="none"/><text x="17" y="8" fill="white" font-size="7" font-weight="bold">?</text>' },
+  'Búsqueda o rescate en montaña':               { color:'#78716c', svg:'<path d="M3 20l5-9 3 5 3-4 7 8H3z" fill="white"/>' },
+  'Rescate acuático / Incidente en medio acuático':{ color:'#0284c7', svg:'<path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0M2 17c2-2 4-2 6 0s4 2 6 0 4-2 6 0" stroke="white" stroke-width="2" fill="none"/>' },
+  'Incendio urbano':                             { color:'#dc2626', svg:'<path d="M12 2C9 5 8 8 9 11c0 2 2 3 3 2-1-2 0-4 2-4-.5 2 1 4 1 6 0 2-1.5 3-3 3-2 0-4-2-4-5 0-5 4-9 4-11z" fill="white"/>' },
+  'Incendio industrial':                         { color:'#f97316', svg:'<path d="M3 21V9h3V7h4V5h4v2h4v2h3v12H3z" fill="none" stroke="white" stroke-width="1.5"/><path d="M9 12h2v2H9zm4 0h2v2h-2z" fill="white"/><path d="M10 2c0 2-2 3-2 5h8c0-2-2-3-2-5" fill="white"/>' },
+  'Incendio forestal':                           { color:'#16a34a', svg:'<path d="M12 2c-1 2-3 3-3 6 1-1 2-1 2-1-1 2-2 4-1 6 .5-1 1.5-1.5 1.5-1.5C11 14 10 17 12 19c2-2 1-5 .5-7 0 0 1 .5 1.5 1.5 1-2 0-4-1-6 0 0 1 0 2 1 0-3-2-4-3-6z" fill="white"/>' },
+  'TPC1/TPF1 — Avería sin incidencia en carga':  { color:'#d97706', svg:'<path d="M1 17h22v2H1zM5 13l3-8h8l3 8H5z" fill="white"/><circle cx="7" cy="18" r="2" fill="white"/><circle cx="17" cy="18" r="2" fill="white"/>' },
+  'TPC2/TPF2 — Continente dañado, sin fuga':     { color:'#b45309', svg:'<path d="M1 17h22v2H1zM5 13l3-8h8l3 8H5z" fill="white"/><path d="M12 5v6M9 8h6" stroke="#b45309" stroke-width="1.5"/><circle cx="7" cy="18" r="2" fill="white"/><circle cx="17" cy="18" r="2" fill="white"/>' },
+  'TPC3/TPF3 — Fuga o derrame del contenido':    { color:'#92400e', svg:'<path d="M5 14l3-9h8l3 9H5z" fill="white"/><path d="M9 17c0 2 1 4 3 4s3-2 3-4" fill="none" stroke="white" stroke-width="1.5"/><path d="M8 17l2 4M16 17l-2 4" stroke="white" stroke-width="1.5"/>' },
+  'TPC4/TPF4 — Incendio con fuga de contenido':  { color:'#ef4444', svg:'<path d="M5 14l3-9h8l3 9H5z" fill="white"/><path d="M10 17c-.5 1.5.5 3 2 3s2.5-1.5 2-3" fill="none" stroke="white" stroke-width="1.5"/><path d="M11 14c0 1.5-1 2-1 3.5M13 14c0 1.5 1 2 1 3.5" stroke="#fee2e2" stroke-width="1"/>' },
+  'TPC5/TPF5 — Explosión del contenido':         { color:'#7f1d1d', svg:'<circle cx="12" cy="12" r="4" fill="white"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1" stroke="white" stroke-width="2"/>' },
+  'Industria SEVESO':                            { color:'#6366f1', svg:'<path d="M3 21V9h4v12M10 21V5h4v16M17 21v-8h4v8" fill="white"/><path d="M1 21h22" stroke="white" stroke-width="1.5"/>' },
+  'Ferrocarril — Arrollamiento (T1)':            { color:'#475569', svg:'<rect x="4" y="4" width="16" height="12" rx="2" fill="none" stroke="white" stroke-width="1.8"/><circle cx="8" cy="18" r="2" fill="white"/><circle cx="16" cy="18" r="2" fill="white"/><path d="M4 10h16" stroke="white" stroke-width="1.5"/><path d="M2 20l4-4M22 20l-4-4" stroke="white" stroke-width="2"/>' },
+  'Ferrocarril — Descarrilamiento / Choque / Incendio (T2)': { color:'#334155', svg:'<rect x="4" y="4" width="16" height="12" rx="2" fill="none" stroke="white" stroke-width="1.8"/><circle cx="8" cy="18" r="2" fill="white"/><circle cx="16" cy="18" r="2" fill="white"/><path d="M2 22l20-4" stroke="white" stroke-width="2"/>' },
+  'Aviación — Fuera del aeropuerto (TXORI-1)':   { color:'#0369a1', svg:'<path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 12 2a1.5 1.5 0 0 0-1.5 1.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="white"/>' },
+  'Aviación — En aeropuerto (TXORI-A/B/G)':      { color:'#075985', svg:'<path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0 0 12 2a1.5 1.5 0 0 0-1.5 1.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z" fill="white"/><rect x="1" y="20" width="22" height="2" fill="white" opacity=".7"/>' },
+  'Rescate urbano / Medio urbano':               { color:'#4338ca', svg:'<path d="M3 21h18M5 21V7l7-4 7 4v14" fill="none" stroke="white" stroke-width="1.8"/><path d="M9 21v-5h6v5" fill="none" stroke="white" stroke-width="1.5"/><rect x="10" y="9" width="2" height="3" fill="white"/><rect x="13" y="9" width="2" height="3" fill="white"/>' },
+  'Nuclear — Central nuclear':                   { color:'#ca8a04', svg:'<circle cx="12" cy="12" r="3" fill="white"/><path d="M12 9V3M12 21v-6M9 12H3M21 12h-6M5.6 5.6l4.2 4.2M14.2 14.2l4.2 4.2M18.4 5.6l-4.2 4.2M9.8 14.2l-4.2 4.2" stroke="white" stroke-width="1.8"/>' },
+  'Nuclear — Riesgo radiactivo (RBQ)':           { color:'#a16207', svg:'<circle cx="12" cy="12" r="2.5" fill="white"/><path d="M12 9.5C10 8 8 4 8 4l2.5 4.5M12 9.5c2-1.5 6-.5 6-.5l-4.5 1M12 14.5c0 2.5-3.5 5.5-3.5 5.5l2-4.5M12 14.5c.5 2 3.5 5.5 3.5 5.5L13.5 11M9.5 12.8C7 14 3 13 3 13l4 1.5M14.5 11.2C17 10 21 11 21 11l-5 1.5" fill="none" stroke="white" stroke-width="1.5"/>' },
+  'Gas — Fuga / Incendio / Explosión':           { color:'#15803d', svg:'<path d="M12 2C8 2 5 5 5 9c0 2 1 4 2 5l-1 4h12l-1-4c1-1 2-3 2-5 0-4-3-7-7-7z" fill="none" stroke="white" stroke-width="1.8"/><path d="M9 22h6" stroke="white" stroke-width="1.5"/><path d="M10 12c-.5 2 .5 3 2 3s2.5-1 2-3" fill="none" stroke="white" stroke-width="1.5"/>' },
+  'Contaminación ambiental':                     { color:'#166534', svg:'<path d="M12 3C9 6 5 8 5 13a7 7 0 0 0 14 0c0-5-4-7-7-10z" fill="none" stroke="white" stroke-width="1.8"/><path d="M12 13v6M9 16l3-3 3 3" stroke="white" stroke-width="1.5"/>' },
+  'Meteorología adversa (METEO)':                { color:'#1d4ed8', svg:'<path d="M6 18a5 5 0 0 1 0-10 5 5 0 0 1 9.5-2A4.5 4.5 0 0 1 20.5 10 4.5 4.5 0 0 1 19 18H6z" fill="none" stroke="white" stroke-width="1.8"/><path d="M11 14l-2 4M15 14l-2 4M13 14l-2 4" stroke="white" stroke-width="1.5"/>' },
+  'Abastecimiento':                              { color:'#0e7490', svg:'<path d="M3 9h18v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z" fill="none" stroke="white" stroke-width="1.8"/><path d="M3 9l3-5h12l3 5" fill="none" stroke="white" stroke-width="1.8"/><path d="M9 9v12M15 9v12" stroke="white" stroke-width="1.5"/>' },
+  'Desprendimientos / Deslizamientos':           { color:'#92400e', svg:'<path d="M2 20l4-8 3 4 4-6 5 10H2z" fill="white"/><circle cx="18" cy="5" r="3" fill="white"/><path d="M15 8l3-3M21 4l-3 4" stroke="white" stroke-width="1.5"/>' },
+  'Evacuación / Albergue':                       { color:'#0f766e', svg:'<path d="M3 12L12 4l9 8M5 10v9a1 1 0 0 0 1 1h4v-5h4v5h4a1 1 0 0 0 1-1v-9" fill="none" stroke="white" stroke-width="1.8"/><path d="M16 18l2-3-3-1 4-4" stroke="white" stroke-width="1.5" fill="none"/>' },
+  'Presas':                                      { color:'#1e3a5f', svg:'<path d="M3 8h18v2H3z" fill="white"/><path d="M5 10v10M9 10v10M13 10v10M17 10v10" stroke="white" stroke-width="1.5"/><path d="M2 18c2-2 4-2 6 0s4 2 6 0 4-2 6 0" fill="none" stroke="white" stroke-width="1.8"/>' },
+  'Accidentes de tráfico (TG)':                  { color:'#9f1239', svg:'<path d="M5 17H3v-5l2-5h14l2 5v5h-2M5 17h14" fill="none" stroke="white" stroke-width="1.8"/><circle cx="8" cy="17" r="2" fill="white"/><circle cx="16" cy="17" r="2" fill="white"/><path d="M9 9h6" stroke="white" stroke-width="1.5"/>' },
+  'Incidente Múltiples Víctimas (IMV)':          { color:'#be185d', svg:'<circle cx="8" cy="7" r="3" fill="white"/><path d="M4 17c0-2.2 1.8-4 4-4s4 1.8 4 4v1H4v-1z" fill="white"/><circle cx="16" cy="7" r="3" fill="none" stroke="white" stroke-width="1.5"/><path d="M12 17c0-2.2 1.8-4 4-4s4 1.8 4 4v1h-8v-1z" fill="none" stroke="white" stroke-width="1.5"/>' },
+  'Incidentes Extraordinarios Violentos (IEV)':  { color:'#7f1d1d', svg:'<path d="M12 2L4 6v6c0 5.5 3.5 10.7 8 12 4.5-1.3 8-6.5 8-12V6l-8-4z" fill="none" stroke="white" stroke-width="1.8"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="2" fill="none"/>' },
+  'BREC — Búsqueda y Rescate en Estructuras Colapsadas': { color:'#1c1917', svg:'<path d="M3 21h18M5 11l7-9 7 9v10H5V11z" fill="none" stroke="white" stroke-width="1.8"/><path d="M9 21v-5h6v5M11 5h2v4h-2z" fill="white"/><path d="M2 21l4-8M22 21l-4-8M8 16l8-4" stroke="white" stroke-width="1.5"/>' },
+  'Incidentes Conductas Autolíticas (ICA)':      { color:'#9333ea', svg:'<path d="M12 21l-1-1c-5-4.5-8-7.5-8-11a5 5 0 0 1 9-3 5 5 0 0 1 9 3c0 3.5-3 6.5-8 11l-1 1z" fill="none" stroke="white" stroke-width="1.8"/><path d="M12 8v6M9 11h6" stroke="white" stroke-width="2"/>' },
+  'Accidentes laborales (PG1)':                  { color:'#b45309', svg:'<path d="M4 5h16v3H4zM6 8v12M18 8v12M4 20h16" fill="none" stroke="white" stroke-width="1.8"/><path d="M9 5V3h6v2" fill="none" stroke="white" stroke-width="1.5"/><circle cx="12" cy="14" r="2" fill="white"/>' },
+  'DRP — Dispositivos de Riesgo Previsible':     { color:'#0369a1', svg:'<path d="M4 15V5l8-3 8 3v10l-8 4-8-4z" fill="none" stroke="white" stroke-width="1.8"/><path d="M12 8v5M12 15v.5" stroke="white" stroke-width="2"/>' },
+  'Incidente cibernético':                       { color:'#1e40af', svg:'<rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="white" stroke-width="1.8"/><path d="M8 11V7a4 4 0 0 1 8 0v4" fill="none" stroke="white" stroke-width="1.8"/><circle cx="12" cy="16" r="1.5" fill="white"/><path d="M12 17.5v2" stroke="white" stroke-width="1.5"/>' },
+};
+
+// Obtener configuración de un tipo (con fallback)
+function getTipoConfig(tipo) {
+  // Buscar coincidencia exacta o parcial
+  if (TIPO_CONFIG[tipo]) return TIPO_CONFIG[tipo];
+  for (const k of Object.keys(TIPO_CONFIG)) {
+    if (tipo && tipo.startsWith(k.split(' — ')[0])) return TIPO_CONFIG[k];
+  }
+  return { color: '#64748b', svg: '<circle cx="12" cy="12" r="5" fill="white"/>' };
+}
+
+// ═══ LOGIN / OTP ═════════════════════════════════════════════
+
+let loginEmail   = '';
+let otpTimer     = null;
+let otpSecondsLeft = 600; // 10 minutos
+
+function mostrarLoginScreen() {
+  document.getElementById('login-screen').classList.add('show');
+}
+
+function ocultarLoginScreen() {
+  document.getElementById('login-screen').classList.remove('show');
+}
+
+function solicitarCodigo() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    mostrarErrLogin(1, 'Introduce un email válido.');
+    return;
+  }
+  const btn = document.getElementById('btn-solicitar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  ocultarErrLogin(1);
+
+  gas('solicitarCodigo', email, res => {
+    loginEmail = email;
+    btn.disabled = false;
+    btn.textContent = 'Solicitar código de acceso';
+    document.getElementById('login-desc-email').textContent = `Enviado a ${email}`;
+    document.getElementById('login-paso1').style.display = 'none';
+    document.getElementById('login-paso2').style.display = 'block';
+    // Limpiar cajas OTP
+    for (let i = 0; i < 6; i++) {
+      const el = document.getElementById(`otp${i}`);
+      if (el) el.value = '';
+    }
+    document.getElementById('otp0')?.focus();
+    iniciarTimerOtp();
+  }, res => {
+    btn.disabled = false;
+    btn.textContent = 'Solicitar código de acceso';
+    mostrarErrLogin(1, res?.error || 'Error al enviar el código.');
+  });
+}
+
+function verificarCodigo() {
+  const codigo = [0,1,2,3,4,5].map(i => document.getElementById(`otp${i}`)?.value || '').join('');
+  if (codigo.length < 6) { mostrarErrLogin(2, 'Introduce los 6 dígitos del código.'); return; }
+
+  const btn = document.getElementById('btn-verificar');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  ocultarErrLogin(2);
+
+  gas('verificarCodigo', { email: loginEmail, codigo }, res => {
+    clearInterval(otpTimer);
+    // Guardar sesión
+    APP.operador = res.nombre;
+    APP.email    = res.email;
+    APP.rol      = res.rol;
+    sessionStorage.setItem('argos_sesion', JSON.stringify({ nombre: res.nombre, email: res.email, rol: res.rol }));
+    // Actualizar UI
+    document.getElementById('tb-nombre').textContent = res.nombre;
+    if (res.rol === 'Administrador') {
+      document.getElementById('sb-admin-sec').style.display = 'block';
+    }
+    ocultarLoginScreen();
+    completarInit();
+    btn.disabled = false;
+    btn.textContent = 'Acceder a ARGOS';
+  }, res => {
+    btn.disabled = false;
+    btn.textContent = 'Acceder a ARGOS';
+    mostrarErrLogin(2, res?.error || 'Código incorrecto.');
+    // Si el código ha caducado, volver al paso 1
+    if ((res?.error || '').includes('caducado') || (res?.error || '').includes('Solicita')) {
+      setTimeout(() => volverPaso1(), 2000);
+    }
+  });
+}
+
+function volverPaso1() {
+  clearInterval(otpTimer);
+  for (let i = 0; i < 6; i++) {
+    const el = document.getElementById(`otp${i}`);
+    if (el) el.value = '';
+  }
+  document.getElementById('login-paso2').style.display = 'none';
+  document.getElementById('login-paso1').style.display = 'block';
+  document.getElementById('login-email').value = '';
+  ocultarErrLogin(1);
+}
+
+function mostrarErrLogin(paso, msg) {
+  const el = document.getElementById(`login-err${paso}`);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function ocultarErrLogin(paso) {
+  const el = document.getElementById(`login-err${paso}`);
+  if (el) el.style.display = 'none';
+}
+
+function iniciarTimerOtp() {
+  clearInterval(otpTimer);
+  otpSecondsLeft = 600;
+  actualizarTimerDisplay();
+  otpTimer = setInterval(() => {
+    otpSecondsLeft--;
+    actualizarTimerDisplay();
+    if (otpSecondsLeft <= 0) {
+      clearInterval(otpTimer);
+      mostrarErrLogin(2, 'El código ha caducado. Solicita uno nuevo.');
+      document.getElementById('btn-verificar').disabled = true;
+      setTimeout(() => volverPaso1(), 2500);
+    }
+  }, 1000);
+}
+
+function actualizarTimerDisplay() {
+  const m = String(Math.floor(otpSecondsLeft / 60)).padStart(2, '0');
+  const s = String(otpSecondsLeft % 60).padStart(2, '0');
+  const el = document.getElementById('login-timer');
+  if (el) el.textContent = `Código válido ${m}:${s}`;
+}
+
+// Navegación entre cajas OTP
+function otpInput(idx) {
+  const el = document.getElementById(`otp${idx}`);
+  if (!el) return;
+  // Solo permitir dígitos
+  el.value = el.value.replace(/[^0-9]/g, '');
+  if (el.value.length === 1 && idx < 5) {
+    document.getElementById(`otp${idx + 1}`)?.focus();
+  }
+  // Habilitar botón solo cuando los 6 están rellenos
+  const completo = [0,1,2,3,4,5].every(i => (document.getElementById(`otp${i}`)?.value || '') !== '');
+  document.getElementById('btn-verificar').disabled = !completo;
+}
+
+function otpKey(event, idx) {
+  if (event.key === 'Backspace' && !document.getElementById(`otp${idx}`)?.value && idx > 0) {
+    document.getElementById(`otp${idx - 1}`)?.focus();
+  }
+  if (event.key === 'Enter') verificarCodigo();
+}
+
+function cerrarSesion() {
+  sessionStorage.removeItem('argos_sesion');
+  APP.operador = ''; APP.email = ''; APP.rol = '';
+  location.reload();
+}
+
+// ═══ IA PENSANDO — INDICADOR GLOBAL ═════════════════════════
+
+let aiTimer = null;
+let aiSeconds = 0;
+
+function aiThinking(msg) {
+  msg = msg || 'Claude está analizando';
+  document.getElementById('ai-msg-txt').textContent = msg;
+  document.getElementById('ai-thinking').classList.add('show');
+  aiSeconds = 0;
+  clearInterval(aiTimer);
+  aiTimer = setInterval(() => {
+    aiSeconds++;
+    document.getElementById('ai-timer').textContent = aiSeconds + 's';
+  }, 1000);
+  // Scroll al banner para que sea visible
+  document.getElementById('ai-thinking').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function aiDone() {
+  document.getElementById('ai-thinking').classList.remove('show');
+  clearInterval(aiTimer);
+  aiSeconds = 0;
+  document.getElementById('ai-timer').textContent = '';
+}
+
+// Estado de los selectores NCRS (un valor por dimensión, por defecto 1)
+const NCRS_VALS = { alc: 1, ver: 1, vel: 1, mal: 1 };
+
+function selNcrs(dim, val, btn) {
+  NCRS_VALS[dim] = val;
+  // Actualizar apariencia de los botones de esa dimensión
+  document.querySelectorAll(`#sel-${dim} .ncrs-btn-v`).forEach((b, i) => {
+    b.className = 'ncrs-btn-v' + (i < val ? ` activo-${val}` : '');
+  });
+  actualizarNcrs();
+}
+
+function resetNcrs() {
+  ['alc','ver','vel','mal'].forEach(dim => {
+    NCRS_VALS[dim] = 1;
+    document.querySelectorAll(`#sel-${dim} .ncrs-btn-v`).forEach(b => { b.className = 'ncrs-btn-v'; });
+  });
+  actualizarNcrs();
+}
+
+// ═══ MAPA LEAFLET ══════════════════════════════════════════════
+let _mapaDash = null;
+let _mapaMini = null;
+let _mapaMiniMarker = null;
+
+function crearMarcadorSVG(tipo, gravedad) {
+  const cfg   = getTipoConfig(tipo);
+  const color = cfg.color;
+  const sizes = { Extremo: 36, Alto: 32, Medio: 28, Bajo: 26 };
+  const sz    = sizes[gravedad] || 28;
+  const ringColors = { Extremo: '#ef4444', Alto: '#f59e0b', Medio: '#3b82f6', Bajo: '#10b981' };
+  const ring  = ringColors[gravedad] || '#64748b';
+  const svgHtml = `<div class="inc-marker" style="background:${color};width:${sz}px;height:${sz}px;border-color:${ring}">
+    <svg viewBox="0 0 24 24" width="${sz*0.55}" height="${sz*0.55}" style="pointer-events:none">
+      ${cfg.svg}
+    </svg>
+  </div>`;
+  return L.divIcon({ html: svgHtml, className: '', iconSize: [sz, sz], iconAnchor: [sz/2, sz/2], popupAnchor: [0, -sz/2] });
+}
+
+
+function renderizarMarcadores(incs) {
+  if (!_mapaDash || !incs) return;
+  _mapaDash.eachLayer(l => { if (l instanceof L.Marker) _mapaDash.removeLayer(l); });
+  const bounds = [];
+  incs.forEach(inc => {
+    const lat = parseFloat(inc.Latitud), lon = parseFloat(inc.Longitud);
+    if (isNaN(lat) || isNaN(lon)) return;
+    bounds.push([lat, lon]);
+    const marker = L.marker([lat, lon], { icon: crearMarcadorSVG(inc.Tipo, inc.Gravedad) });
+    const estado_color = { Activo:'#10B981', Standby:'#F59E0B', Cerrado:'#9CA3AF' };
+    const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${estado_color[inc.Estado]||'#64748b'};margin-right:5px"></span>`;
+    marker.bindPopup(`<div style="min-width:180px">
+      <div style="font-weight:700;font-size:13px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
+      <div style="font-size:11px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
+      <div style="font-size:11px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
+      <div style="font-size:10px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
+      ${inc.Ubicacion ? '<div style="font-size:11px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
+    </div>`);
+    marker.addTo(_mapaDash);
+  });
+  if (bounds.length === 1) _mapaDash.setView(bounds[0], 12);
+  else if (bounds.length > 1) _mapaDash.fitBounds(bounds, { padding: [30, 30] });
+}
+
+function inicializarMapaDashboard(datosIniciales) {
+  if (_mapaDash) { if (datosIniciales) renderizarMarcadores(datosIniciales); return; }
+  _mapaDash = L.map('mapa-dashboard', { zoomControl: true, scrollWheelZoom: true })
+    .setView([40.4637, -3.7492], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap',
+    maxZoom: 18,
+    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScAAAAAElFTkSuQmCC'
+  }).addTo(_mapaDash);
+  if (datosIniciales) renderizarMarcadores(datosIniciales);
+  else actualizarMapaDashboard();
+}
+
+function actualizarMapaDashboard() {
+  if (!_mapaDash) return;
+  const soloActivos = !document.getElementById('map-show-closed')?.checked;
+  _mapaDash.eachLayer(l => { if (l instanceof L.Marker) _mapaDash.removeLayer(l); });
+  gas('getMapData', soloActivos, res => {
+    const incs = res.data || [];
+    if (!incs.length) return;
+    const bounds = [];
+    incs.forEach(inc => {
+      const lat = parseFloat(inc.Latitud), lon = parseFloat(inc.Longitud);
+      if (isNaN(lat) || isNaN(lon)) return;
+      bounds.push([lat, lon]);
+      const marker = L.marker([lat, lon], { icon: crearMarcadorSVG(inc.Tipo, inc.Gravedad) });
+      const estado_color = { Activo:'#10B981', Standby:'#F59E0B', Cerrado:'#9CA3AF' };
+      const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${estado_color[inc.Estado]||'#64748b'};margin-right:5px"></span>`;
+      marker.bindPopup(`<div style="min-width:180px">
+        <div style="font-weight:700;font-size:13px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
+        <div style="font-size:11px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
+        <div style="font-size:11px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
+        <div style="font-size:10px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
+        ${inc.Ubicacion ? '<div style="font-size:11px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
+      </div>`);
+      marker.addTo(_mapaDash);
+    });
+    if (bounds.length === 1) { _mapaDash.setView(bounds[0], 12); }
+    else if (bounds.length > 1) { _mapaDash.fitBounds(bounds, { padding: [30, 30] }); }
+  });
+}
+
+// Mapa mini en modal de incidente
+function inicializarMapaMini(lat, lon) {
+  if (!document.getElementById('mapa-mini')) return;
+  if (_mapaMini) { _mapaMini.remove(); _mapaMini = null; _mapaMiniMarker = null; }
+  _mapaMini = L.map('mapa-mini', { zoomControl: false, scrollWheelZoom: false })
+    .setView([lat||40.4, lon||-3.7], lat ? 13 : 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OSM', maxZoom: 18,
+    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScAAAAAElFTkSuQmCC'
+  }).addTo(_mapaMini);
+  if (lat && lon) {
+    _mapaMiniMarker = L.marker([lat, lon]).addTo(_mapaMini);
+  }
+  _mapaMini.on('click', e => {
+    const { lat: ly, lng: lx } = e.latlng;
+    actualizarCoordsMini(ly.toFixed(6), lx.toFixed(6));
+  });
+}
+
+function actualizarCoordsMini(lat, lon) {
+  const latEl = document.getElementById('i-lat'), lonEl = document.getElementById('i-lon');
+  if (latEl) latEl.value = lat;
+  if (lonEl) lonEl.value = lon;
+  if (_mapaMini) {
+    if (_mapaMiniMarker) _mapaMiniMarker.setLatLng([lat, lon]);
+    else _mapaMiniMarker = L.marker([lat, lon]).addTo(_mapaMini);
+    _mapaMini.setView([lat, lon], 13);
+  }
+}
+
+async function geocodificar() {
+  const dir = document.getElementById('i-ubi')?.value?.trim();
+  if (!dir) { toast('Introduce una ubicación primero', 'err'); return; }
+  const btn = document.getElementById('btn-geo');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  try {
+    const url  = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(dir) + '&format=json&limit=1&countrycodes=es,fr,pt,ad&accept-language=es';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'ARGOS-VOST/2.0' } });
+    const data = await resp.json();
+    if (data.length > 0) {
+      const lat = parseFloat(data[0].lat).toFixed(6);
+      const lon = parseFloat(data[0].lon).toFixed(6);
+      actualizarCoordsMini(lat, lon);
+      toast('Coordenadas obtenidas: ' + lat + ', ' + lon, 'ok');
+    } else {
+      toast('No se encontró la ubicación. Prueba con otra descripción.', 'info');
+    }
+  } catch(_) { toast('Error de geocodificación. Introduce las coordenadas manualmente.', 'err'); }
+  finally { if (btn) { btn.disabled = false; btn.textContent = '📍 Geocodificar'; } }
+}
+
+
+// ═══ ESTADO GLOBAL ═══════════════════════════════════════════
+const APP = {
+  operador:   '',
+  email:      '',
+  rol:        '',
+  incActivo:  null,   // {id, nombre}
+  incs:       [],
+  acts:       [],
+  notas:      [],
+  narrativas: [],
+  drafts:     { x:'', telegram:'', whatsapp:'', prensa:'' },
+  actSelId:   null,
+  canalDraft: 'x'
+};
+
+const TITULOS = {
+  dashboard:'Dashboard', incidentes:'Incidentes',
+  actualizaciones:'Comunicación pública', notas:'Notas internas',
+  narrativas:'Monitor de narrativas', hipotesis:'Análisis predictivo',
+  lecciones:'Lecciones aprendidas', admin:'Control de acceso'
+};
+
+// ═══ NAV ═════════════════════════════════════════════════════
+function irA(v) {
+  document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(e => e.classList.remove('active'));
+  document.getElementById('view-' + v)?.classList.add('active');
+  document.querySelector(`[data-v="${v}"]`)?.classList.add('active');
+  document.getElementById('tb-title').textContent = TITULOS[v] || v;
+  const needsInc = ['actualizaciones','notas','narrativas','hipotesis','lecciones'];
+  if (needsInc.includes(v)) {
+    if (!APP.incActivo) mostrarSelectorInc(v);
+    else cargarModulo(v);
+  }
+  if (v === 'dashboard')  cargarDashboard();
+  if (v === 'incidentes') cargarIncidentes();
+  if (v === 'admin')      cargarAdmin();
+}
+
+function cargarModulo(v) {
+  if (v === 'actualizaciones') cargarActualizaciones();
+  if (v === 'notas')           cargarNotas();
+  if (v === 'narrativas')      cargarNarrativas();
+  if (v === 'hipotesis')       cargarHipotesis();
+  if (v === 'lecciones')       cargarLecciones();
+}
+
+function mostrarSelectorInc(volver) {
+  const ops = APP.incs.filter(i => i.Estado === 'Activo' || i.Estado === 'Standby')
+    .map(i => `<option value="${i.ID_Incidente}">${i.ID_Incidente} · ${tc(i.Nombre,40)} [${i.Estado}]</option>`)
+    .join('');
+  abrirModal('Seleccionar incidente', `
+    <div class="fg">
+      <label>Incidente</label>
+      <select id="sel-inc-modal">
+        <option value="">— Selecciona un incidente —</option>
+        ${ops}
+        ${APP.incs.filter(i=>i.Estado==='Cerrado').map(i=>`<option value="${i.ID_Incidente}">${i.ID_Incidente} · ${tc(i.Nombre,40)} [Cerrado]</option>`).join('')}
+      </select>
+    </div>
+  `, 'Seleccionar', 'btn-p', () => {
+    const id = document.getElementById('sel-inc-modal').value;
+    if (!id) { toast('Selecciona un incidente', 'err'); return; }
+    const inc = APP.incs.find(i => i.ID_Incidente === id);
+    if (inc) { setIncActivo(inc); cerrarModales(); cargarModulo(volver); }
+  });
+}
+
+function setIncActivo(inc) {
+  APP.incActivo = { id: inc.ID_Incidente, nombre: inc.Nombre };
+  document.getElementById('ib-nombre').textContent = inc.Nombre || '—';
+  document.getElementById('ib-id').textContent = inc.ID_Incidente;
+  document.getElementById('inc-banner').classList.add('show');
+}
+
+function ocultarBanner() {
+  document.getElementById('inc-banner').classList.remove('show');
+  APP.incActivo = null;
+}
+
+// ═══ CLOCK ═══════════════════════════════════════════════════
+function setText(id, val) { const el = document.getElementById(id); if(el) el.textContent = val ?? "0"; }
+
+function tick() {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+// ═══ TOAST ═══════════════════════════════════════════════════
+function toast(msg, tipo='ok') {
+  const c = document.getElementById('toast');
+  const e = document.createElement('div');
+  e.className = `ti ${tipo}`;
+  const ico = tipo==='ok'?'✓':tipo==='err'?'✕':'ℹ';
+  e.innerHTML = `<span style="font-weight:700">${ico}</span><span>${msg}</span>`;
+  c.appendChild(e);
+  setTimeout(() => e.remove(), 4500);
+}
+
+// ═══ CONFIGURACIÓN API ════════════════════════════════════════
+// URL de la GAS Web App — actualiza tras redesplegar en Apps Script
+const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbzGD7uMGhZRW0FmpbxfqLMQxynUIMvOY_EYJGgRmUo18BAlwbWd-1pb9SMYxTwMfm2SlQ/exec';
+
+// ═══ GAS BRIDGE — fetch() en lugar de google.script.run ══════
+// Funciona desde cualquier host externo (GitHub Pages, etc.)
+// Content-Type: text/plain evita el preflight CORS con GAS.
+function gas(fn, arg, ok, err) {
+  fetch(GAS_API_URL, {
+    method:  'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body:    JSON.stringify({ fn, arg: arg !== undefined ? arg : null })
+  })
+  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(res => {
+    if (res && res.ok === false) {
+      toast('Error: ' + (res.error || 'desconocido'), 'err');
+      if (err) err(res);
+    } else { if (ok) ok(res); }
+  })
+  .catch(e => {
+    toast('Sin conexión con ARGOS API: ' + e.message, 'err');
+    if (err) err(e);
+  });
+}
+
+// ═══ HELPERS ═════════════════════════════════════════════════
+function tc(s, n) { return s && s.length > n ? s.slice(0,n)+'…' : (s||'—'); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function bGrav(v) {
+  const cls = {Extremo:'r', Alto:'a', Medio:'b', Bajo:'g'};
+  return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
+}
+function bEst(v) {
+  const cls = {Activo:'g', Standby:'a', Cerrado:'m'};
+  return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
+}
+function bNcrs(n) {
+  const num = Number(n)||0;
+  const cls = num>=4?'r':num>=3?'a':num<=2?'g':'m';
+  return `<span class="bx bx-${cls}">${num}</span>`;
+}
+
+// ═══ DASHBOARD ═══════════════════════════════════════════════
+function cargarDashboard() {
+  // Una sola llamada GAS trae KPIs + datos del mapa
+  gas('getDatosDashboard', undefined, res => {
+    if (!res.ok) return;
+    const r = res.resumen;
+
+    // KPIs
+    const activos  = (r.data?.activos  ?? r.activos  ?? 0);
+    const standby  = (r.data?.standby  ?? r.standby  ?? 0);
+    const cerrados = (r.data?.cerrados  ?? r.cerrados ?? 0);
+    const criticas = (r.data?.criticas  ?? r.criticas ?? 0);
+    const recientes = r.data?.recientes ?? r.recientes ?? [];
+
+    setText('kpi-act',  activos);
+    setText('kpi-std',  standby);
+    setText('kpi-cer',  cerrados);
+    setText('kpi-nar',  criticas);
+
+    // Badge sidebar narrativas
+    const bxNar = document.getElementById('bx-nar');
+    if (bxNar) { bxNar.textContent = criticas; bxNar.classList.toggle('on', criticas > 0); }
+
+    // Incidentes recientes
+    APP.incs = recientes;
+    const t  = document.getElementById('t-recientes');
+    if (t) {
+      t.innerHTML = !recientes.length
+        ? '<tr><td colspan="4"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>'
+        : recientes.slice(0,5).map(i =>
+            `<tr><td class="mono">${esc(i.ID_Incidente)}</td>
+             <td>${esc(tc(i.Nombre,35))}</td>
+             <td>${bGrav(i.Gravedad)}</td>
+             <td>${bEst(i.Estado)}</td></tr>`
+          ).join('');
+    }
+
+    // Mapa: actualizar con los datos ya recibidos (sin llamada extra)
+    setTimeout(() => {
+      if (typeof L !== 'undefined' && document.getElementById('mapa-dashboard')) {
+        if (!_mapaDash) {
+          inicializarMapaDashboard(res.mapa);
+        } else {
+          renderizarMarcadores(res.mapa);
+        }
+      }
+    }, 250);
+  });
+
+  // Alertas externas — llamada separada porque puede tardar (AEMET + CSN)
+  gas('getAlertasExternas', undefined, res => {
+    renderAlertas(res.data || []);
+  });
+}
+
+
+
+function renderAlertas(data) {
+  const c = document.getElementById('ext-alerts');
+  if (!c) return;
+  const res = data;
+  let h = '';
+  if (res.aemet?.length) {
+    h += '<div style="margin-bottom:12px"><div style="font-size:9px;font-weight:700;color:var(--alert);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">⚡ AEMET</div>';
+    h += res.aemet.map(a => {
+      const cls = a.color?.match(/RED|ROJO|4/) ? 'rojo' : 'naranja';
+      return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:12px">${esc(a.evento||'—')}</div>
+        <div style="font-size:11px;color:var(--muted)">📍 ${esc(a.zona)} · ${esc(a.severidad)}</div></div>`;
+    }).join('') + '</div>';
+  } else {
+    h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">AEMET</div><div style="font-size:12px;color:var(--muted)">Sin alertas activas</div></div>';
+  }
+  if (res.csn?.length) {
+    h += '<div><div style="font-size:9px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">☢ CSN</div>';
+    h += res.csn.map(s => `<div class="alert-card csn"><div style="font-weight:600;font-size:12px">${esc(tc(s.titulo,60))}</div>
+      <div style="font-size:11px;color:var(--muted)">${esc(s.instalacion)} · ${esc(s.nivelInes)}</div></div>`).join('') + '</div>';
+  } else {
+    h += '<div><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CSN</div><div style="font-size:12px;color:var(--muted)">Sin sucesos notificados</div></div>';
+  }
+  c.innerHTML = h;
+}
+
+function cargarAlertasExternas() {
+  const c = document.getElementById('ext-alerts');
+  c.innerHTML = '<div style="color:var(--muted);font-size:12px">Consultando...</div>';
+  gas('getAlertasExternas', undefined, res => {
+    let h = '';
+    if (res.aemet?.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:9px;font-weight:700;color:var(--alert);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">⚡ AEMET</div>';
+      h += res.aemet.map(a => {
+        const cls = a.color?.match(/RED|ROJO|4/) ? 'rojo' : 'naranja';
+        return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:12px">${esc(a.evento||'—')}</div>
+          <div style="font-size:11px;color:var(--muted)">📍 ${esc(a.zona)} · ${esc(a.severidad)}</div></div>`;
+      }).join('') + '</div>';
+    } else {
+      h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">AEMET</div><div style="font-size:12px;color:var(--muted)">Sin alertas activas</div></div>';
+    }
+    if (res.csn?.length) {
+      h += '<div><div style="font-size:9px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">☢ CSN</div>';
+      h += res.csn.map(s => `<div class="alert-card csn"><div style="font-weight:600;font-size:12px">${esc(tc(s.titulo,60))}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(s.instalacion)} · ${esc(s.nivelInes)}</div></div>`).join('') + '</div>';
+    } else {
+      h += '<div><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CSN</div><div style="font-size:12px;color:var(--muted)">Sin sucesos notificados</div></div>';
+    }
+    c.innerHTML = h;
+  }, () => { c.innerHTML = '<div style="font-size:12px;color:var(--muted)">No se pudieron cargar las alertas.</div>'; });
+}
+
+// ═══ INCIDENTES ══════════════════════════════════════════════
+function cargarIncidentes() {
+  document.getElementById('t-inc').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr>';
+  gas('getIncidentes', undefined, res => {
+    APP.incs = res.data || [];
+    renderInc(APP.incs);
+    poblarOpsSelects();
+  });
+}
+
+function filtrarInc() {
+  const q = document.getElementById('inc-buscar').value.toLowerCase();
+  const e = document.getElementById('inc-estado').value;
+  renderInc(APP.incs.filter(o =>
+    (!q || [o.Nombre,o.ID_Incidente,o.Tipo,o.Ubicacion].some(x=>(x||'').toLowerCase().includes(q))) &&
+    (!e || o.Estado === e)
+  ));
+}
+
+function renderInc(list) {
+  const t = document.getElementById('t-inc');
+  if (!list.length) {
+    t.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>'; return;
+  }
+  t.innerHTML = [...list].reverse().map(o => `<tr>
+    <td><span class="mono">${o.ID_Incidente||'—'}</span></td>
+    <td><strong>${tc(o.Nombre,38)}</strong></td>
+    <td><span class="bx bx-m">${o.Tipo||'—'}</span></td>
+    <td>${bGrav(o.Gravedad)}</td>
+    <td>${bEst(o.Estado)}</td>
+    <td>${tc(o.Ubicacion,22)}</td>
+    <td class="mono">${o.Timestamp||'—'}</td>
+    <td>
+      <div class="fx g8">
+        <button class="btn btn-gh btn-sm" onclick='seleccionarIncTrabajo(${JSON.stringify(o)})'>Trabajar</button>
+        ${o.Estado!=='Cerrado'?`<button class="btn btn-r btn-sm" onclick="confirmarCierre('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Cerrar</button>`:''}
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function seleccionarIncTrabajo(inc) {
+  setIncActivo(inc);
+  toast(`Incidente activo: ${inc.Nombre}`, 'ok');
+}
+
+function confirmarCierre(id, nombre) {
+  abrirModal('Cerrar incidente', `
+    <p>¿Seguro que quieres cerrar <strong>${nombre}</strong>?</p>
+    <p style="margin-top:8px;font-size:12px;color:var(--muted)">ARGOS enviará notificaciones a Slack y Telegram, y luego Claude generará el informe de lecciones aprendidas (puede tardar hasta 60 segundos).</p>
+  `, 'Cerrar incidente', 'btn-r', () => {
+    cerrarModales();
+    aiThinking('Cerrando incidente y enviando notificaciones...');
+
+    // Paso 1: cerrar el incidente (rápido)
+    gas('cerrarIncidente', id, res => {
+      toast(`Incidente cerrado · ${res.nombre || id}`, 'ok');
+      cargarIncidentes();
+      cargarDashboard();
+
+      // Paso 2: generar lecciones (puede tardar)
+      document.getElementById('ai-msg-txt').textContent =
+        'Claude está generando el informe de lecciones aprendidas — puede tardar hasta 60 segundos';
+
+      gas('generarLeccionesIncidente', id, resLec => {
+        aiDone();
+        toast('Lecciones aprendidas generadas', 'ok');
+        // Llevar al usuario directamente a Lecciones con el incidente seleccionado
+        const inc = APP.incs.find(i => i.ID_Incidente === id);
+        if (inc) setIncActivo(inc);
+        irA('lecciones');
+      }, () => {
+        aiDone();
+        toast('El incidente se cerró correctamente. Las lecciones no se pudieron generar automáticamente.', 'info');
+      });
+
+    }, () => { aiDone(); });
+  });
+}
+
+function sincronizarCoords() {
+  const lat = parseFloat(document.getElementById('i-lat')?.value);
+  const lon = parseFloat(document.getElementById('i-lon')?.value);
+  if (!isNaN(lat) && !isNaN(lon)) actualizarCoordsMini(lat, lon);
+}
+
+function abrirModalNuevoInc() {
+  // Destruir mapa mini previo si existe
+  if (_mapaMini) { try { _mapaMini.remove(); } catch(_){} _mapaMini = null; _mapaMiniMarker = null; }
+  abrirModal('Nuevo incidente', `
+    <div class="fgr">
+      <div class="fg full"><label>Nombre del incidente *</label>
+        <input id="i-nom" type="text" placeholder="Ej. DANA Gredos · Aviso Naranja"></div>
+      <div class="fg full"><label>Tipo de incidente</label>
+        <select id="i-tipo">${tiposSelect('')}</select></div>
+      <div class="fg"><label>Nivel de gravedad</label>
+        <select id="i-grav"><option>Bajo</option><option selected>Medio</option><option>Alto</option><option>Extremo</option></select></div>
+      <div class="fg full">
+        <label>Ubicación</label>
+        <div class="fx g8">
+          <input id="i-ubi" type="text" placeholder="Localidad o dirección" style="flex:1">
+          <button class="btn btn-gh btn-sm" id="btn-geo" type="button" onclick="geocodificar()">📍 Geocodificar</button>
+        </div>
+      </div>
+      <div class="fg">
+        <label>Latitud</label>
+        <input id="i-lat" type="text" placeholder="40.416775" oninput="sincronizarCoords()">
+      </div>
+      <div class="fg">
+        <label>Longitud</label>
+        <input id="i-lon" type="text" placeholder="-3.703790" oninput="sincronizarCoords()">
+      </div>
+      <div class="fg full">
+        <label>Mapa — pincha para colocar el marcador</label>
+        <div id="mapa-mini"></div>
+      </div>
+      <div class="fg full"><label>Situación inicial</label>
+        <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
+    </div>
+  `, 'Crear incidente', 'btn-p', () => {
+    const nombre = document.getElementById('i-nom').value.trim();
+    if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+    gas('crearIncidente', {
+      nombre,
+      tipo:      document.getElementById('i-tipo').value,
+      gravedad:  document.getElementById('i-grav').value,
+      ubicacion: document.getElementById('i-ubi').value,
+      latitud:   document.getElementById('i-lat')?.value || '',
+      longitud:  document.getElementById('i-lon')?.value || '',
+      situacion: document.getElementById('i-sit').value,
+      operador:  APP.operador
+    }, res => {
+      toast(`Incidente ${res.id} creado`, 'ok');
+      cerrarModales();
+      if (_mapaDash) actualizarMapaDashboard();
+      cargarIncidentes(); cargarDashboard();
+    });
+  });
+  // Inicializar mapa mini tras renderizar el DOM del modal
+  setTimeout(() => {
+    if (typeof L !== 'undefined') inicializarMapaMini();
+    document.getElementById('i-nom')?.focus();
+  }, 200);
+}
+
+// ═══ ACTUALIZACIONES ═════════════════════════════════════════
+function cargarActualizaciones() {
+  if (!APP.incActivo) { mostrarPanel('act', false); return; }
+  mostrarPanel('act', true);
+  APP.actSelId = null;
+  resetDraftsPanel();
+  gas('getActualizaciones', APP.incActivo.id, res => {
+    APP.acts = res.data || [];
+    renderActs(APP.acts);
+    renderHistorial(APP.acts);
+  });
+}
+
+function cambiarTabAct(tab) {
+  document.getElementById('tab-nueva').classList.toggle('active', tab === 'nueva');
+  document.getElementById('tab-hist').classList.toggle('active',  tab === 'hist');
+  document.getElementById('act-panel-nueva').style.display = tab === 'nueva' ? 'block' : 'none';
+  document.getElementById('act-panel-hist').style.display  = tab === 'hist'  ? 'block' : 'none';
+  if (tab === 'hist' && APP.incActivo) {
+    // Fetch fresco cada vez que el usuario abre el historial
+    document.getElementById('hist-lista').innerHTML =
+      '<div style="text-align:center;padding:32px"><div class="sp"></div><div style="margin-top:12px;font-size:13px;color:var(--muted)">Cargando publicaciones...</div></div>';
+    if (document.getElementById('hist-vacio'))
+      document.getElementById('hist-vacio').style.display = 'none';
+    gas('getActualizaciones', APP.incActivo.id, res => {
+      APP.acts = res.data || [];
+      renderHistorial(APP.acts);
+    });
+  }
+}
+
+function renderHistorial(acts) {
+  // Comparación robusta: trim + lowercase por si hay variaciones en el Sheet
+  const publicadas = acts.filter(a => (a.Estado || '').trim().toLowerCase() === 'publicado');
+  const vacio = document.getElementById('hist-vacio');
+  const lista = document.getElementById('hist-lista');
+  if (!publicadas.length) {
+    if (vacio) vacio.style.display = 'block';
+    if (lista) lista.innerHTML = '';
+    return;
+  }
+  if (vacio) vacio.style.display = 'none';
+  const canales = [
+    { key: 'Draft_X',        label: '𝕏 Twitter',  cls: 'pub-x'  },
+    { key: 'Draft_Telegram', label: '✈ Telegram',  cls: 'pub-tg' },
+    { key: 'Draft_WhatsApp', label: '💬 WhatsApp',  cls: 'pub-wa' },
+    { key: 'Draft_Prensa',   label: '📰 Nota prensa', cls: 'pub-pr' }
+  ];
+  lista.innerHTML = [...publicadas].reverse().map(a => {
+    const bloques = canales
+      .filter(c => a[c.key] && String(a[c.key]).trim())
+      .map(c => `
+        <div style="margin-top:12px">
+          <span class="pub-canal ${c.cls}">${c.label}</span>
+          <div class="pub-txt">${esc(a[c.key])}</div>
+          <button class="pub-copy" onclick='navigator.clipboard.writeText(${JSON.stringify(String(a[c.key]))}).then(()=>toast("Copiado","ok"))'>
+            Copiar texto
+          </button>
+        </div>`).join('');
+    // Thumbnails de fotos
+    const fotosHtml = [1,2,3,4].map(i => {
+      const th = a['Foto'+i+'_Thumb'];
+      const id = a['Foto'+i+'_ID'];
+      return th && th.trim()
+        ? `<a href="https://drive.google.com/file/d/${id}/view" target="_blank" style="display:block;border-radius:6px;overflow:hidden;flex:1;max-width:120px"><img src="${th}" style="width:100%;height:80px;object-fit:cover" alt="foto ${i}"></a>`
+        : '';
+    }).filter(Boolean).join('');
+
+    return `<div class="pub-card">
+      <div class="pub-header">
+        <span class="bx bx-g">✓ Publicado</span>
+        <span class="pub-ts">${esc(a.Timestamp || '—')}</span>
+        <span style="font-size:12px;color:var(--muted);flex:1;margin-left:8px">${esc(tc(a.INPUT_Hechos, 70))}</span>
+      </div>
+      ${fotosHtml ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${fotosHtml}</div>` : ''}
+      ${bloques ||
+        '<div style="font-size:12px;color:var(--muted);padding:8px 0">Esta publicación fue marcada sin borradores guardados.</div>'}
+    </div>`;
+  }).join('');
+}
+
+function renderActs(acts) {
+  const t = document.getElementById('t-acts');
+  if (!acts.length) {
+    t.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="ei">📡</div><div class="em">Sin actualizaciones</div></div></td></tr>'; return;
+  }
+  t.innerHTML = [...acts].reverse().map(a => `<tr>
+    <td class="mono">${a.Timestamp||'—'}</td>
+    <td>${tc(a.INPUT_Hechos,50)}</td>
+    <td>${bEst(a.Estado)}</td>
+    <td><button class="btn btn-gh btn-sm" onclick="selActualizacion('${a.ID_Actualizacion}')">Ver borradores</button></td>
+  </tr>`).join('');
+}
+
+function crearActualizacion() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  const hechos = document.getElementById('a-hechos').value.trim();
+  if (!hechos) { toast('Los hechos son obligatorios', 'err'); return; }
+  const btn = document.getElementById('btn-crear-act');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> Guardando...';
+  gas('crearActualizacion', {
+    id_incidente: APP.incActivo.id,
+    hechos, objetivo: document.getElementById('a-obj').value,
+    operador: APP.operador
+  }, async res => {
+    await subirFotosSiHay(res.id);
+    toast('Actualización guardada', 'ok');
+    document.getElementById('a-hechos').value = '';
+    document.getElementById('a-obj').value = '';
+    btn.disabled = false; btn.innerHTML = 'Guardar actualización';
+    cargarActualizaciones();
+    setTimeout(() => selActualizacion(res.id), 500);
+  }, () => { btn.disabled=false; btn.innerHTML='Guardar actualización'; });
+}
+
+function selActualizacion(id) {
+  APP.actSelId = id;
+  const act = APP.acts.find(a => a.ID_Actualizacion === id);
+  if (!act) return;
+  mostrarDraftsPanel(act);
+}
+
+function mostrarDraftsPanel(act) {
+  document.getElementById('drafts-estado').style.display = 'none';
+  document.getElementById('drafts-content').style.display = 'block';
+  APP.drafts = {
+    x:        act.Draft_X        || '',
+    telegram: act.Draft_Telegram || '',
+    whatsapp: act.Draft_WhatsApp || '',
+    prensa:   act.Draft_Prensa   || ''
+  };
+  mostrarDraft(APP.canalDraft);
+  const tieneActs = !!act.Draft_X;
+  document.getElementById('btn-prensa').style.display = tieneActs ? 'inline-flex' : 'none';
+}
+
+function resetDraftsPanel() {
+  document.getElementById('drafts-estado').style.display = 'block';
+  document.getElementById('drafts-content').style.display = 'none';
+  document.getElementById('advertencias-act').innerHTML = '';
+}
+
+function mostrarDraft(canal) {
+  APP.canalDraft = canal;
+  const box = document.getElementById('draft-txt');
+  const txt = APP.drafts[canal] || '';
+  if (txt) { box.textContent = txt; box.classList.remove('draft-empty'); }
+  else { box.textContent = 'Sin borrador para este canal.'; box.classList.add('draft-empty'); }
+}
+
+function cambiarDraft(canal, btn) {
+  document.querySelectorAll('.cht').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  mostrarDraft(canal);
+}
+
+function generarDraftsAct() {
+  if (!APP.actSelId) { toast('Selecciona una actualización primero', 'err'); return; }
+  const btn = document.getElementById('btn-gen-draft');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> Generando...';
+  aiThinking('Claude está redactando los borradores');
+  gas('generarDrafts', APP.actSelId, res => {
+    aiDone();
+    const d = res.drafts || {};
+    APP.drafts.x        = d.x?.contenido        || '';
+    APP.drafts.telegram = d.telegram?.contenido  || '';
+    APP.drafts.whatsapp = d.whatsapp?.contenido  || '';
+    mostrarDraft(APP.canalDraft);
+    document.getElementById('btn-prensa').style.display = 'inline-flex';
+    if (res.advertencias?.length) {
+      document.getElementById('advertencias-act').innerHTML =
+        `<div class="warn-box" style="margin-bottom:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        <span>${res.advertencias.join('<br>')}</span></div>`;
+    }
+    toast('Borradores generados. Revisa antes de publicar.', 'ok');
+    btn.disabled = false; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar con IA';
+    recargarListaActs(); // ← Solo refresca la tabla, no toca el panel de borradores
+  }, () => { aiDone(); btn.disabled=false; btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar con IA'; });
+}
+
+function generarPrensaAct() {
+  if (!APP.actSelId) return;
+  const btn = document.getElementById('btn-prensa');
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+  aiThinking('Claude está redactando la nota de prensa');
+  gas('generarNotaPrensa', APP.actSelId, res => {
+    aiDone();
+    APP.drafts.prensa = res.nota?.texto_completo || '';
+    toast('Nota de prensa generada', 'ok');
+    const pBtn = document.querySelectorAll('.cht')[3];
+    if (pBtn) { document.querySelectorAll('.cht').forEach(b=>b.classList.remove('active')); pBtn.classList.add('active'); }
+    APP.canalDraft = 'prensa';
+    mostrarDraft('prensa');
+    btn.disabled = false; btn.textContent = '📰 Nota de prensa';
+    recargarListaActs(); // ← Solo refresca la tabla
+  }, () => { aiDone(); btn.disabled=false; btn.textContent='📰 Generar nota de prensa'; });
+}
+
+function copiarDraft() {
+  const txt = APP.drafts[APP.canalDraft] || '';
+  if (!txt) { toast('Sin contenido para copiar', 'info'); return; }
+  navigator.clipboard.writeText(txt).then(() => toast('Copiado al portapapeles', 'ok'));
+}
+
+function marcarPublicado() {
+  if (!APP.actSelId) return;
+  gas('marcarPublicado', APP.actSelId, () => { toast('Marcado como publicado', 'ok'); recargarListaActs(); });
+}
+
+// Recarga solo la lista de actualizaciones sin resetear el panel de borradores
+function recargarListaActs() {
+  if (!APP.incActivo) return;
+  gas('getActualizaciones', APP.incActivo.id, res => {
+    APP.acts = res.data || [];
+    renderActs(APP.acts);
+    renderHistorial(APP.acts);
+  });
+}
+
+// ═══ NOTAS INTERNAS ══════════════════════════════════════════
+function cargarNotas() {
+  if (!APP.incActivo) { mostrarPanel('notas', false); return; }
+  mostrarPanel('notas', true);
+  gas('getNotas', APP.incActivo.id, res => {
+    APP.notas = res.data || [];
+    renderNotas(APP.notas);
+  });
+}
+
+function renderNotas(notas) {
+  const c = document.getElementById('lista-notas');
+  if (!notas.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">🔒</div><div class="em">Sin notas internas</div></div>'; return;
+  }
+  c.innerHTML = [...notas].reverse().map(n => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div class="fx ai g8" style="margin-bottom:4px">
+        <span class="bx bx-m">${esc(n.Categoria)}</span>
+        <span class="mono">${esc(n.Timestamp)}</span>
+        <span style="font-size:11px;color:var(--muted)">${esc(n.Operador)}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(n.Contenido)}</div>
+    </div>`).join('');
+}
+
+function guardarNota() {
+  if (!APP.incActivo) return;
+  const contenido = document.getElementById('n-cont').value.trim();
+  if (!contenido) { toast('El contenido es obligatorio', 'err'); return; }
+  gas('crearNota', {
+    id_incidente: APP.incActivo.id,
+    operador: APP.operador,
+    contenido,
+    categoria: document.getElementById('n-cat').value
+  }, () => {
+    toast('Nota guardada', 'ok');
+    document.getElementById('n-cont').value = '';
+    cargarNotas();
+  });
+}
+
+// ═══ NARRATIVAS ══════════════════════════════════════════════
+function cargarNarrativas() {
+  if (!APP.incActivo) { mostrarPanel('nar', false); return; }
+  mostrarPanel('nar', true);
+  gas('getNarrativas', APP.incActivo.id, res => {
+    APP.narrativas = res.data || [];
+    renderNarrativas(APP.narrativas);
+  });
+}
+
+function renderNarrativas(nars) {
+  const c = document.getElementById('lista-nar');
+  if (!nars.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">👁</div><div class="em">Sin narrativas detectadas</div></div>'; return;
+  }
+  c.innerHTML = [...nars].reverse().map(n => {
+    const ncrs    = Number(n.NCRS_Total) || 0;
+    const estado  = n.Estado || 'Activa';
+    const cls     = ncrs >= 4 ? 'rojo' : ncrs >= 3 ? 'naranja' : '';
+    const publicado = estado === 'Desmentido publicado';
+    const generado  = estado === 'Desmentido generado';
+
+    // Badge de estado
+    const estBadge = publicado
+      ? `<span class="bx bx-g">✓ Desmentido publicado</span>`
+      : generado
+        ? `<span class="bx bx-a">Desmentido generado — pendiente de publicar</span>`
+        : ncrs >= 4
+          ? `<span class="bx bx-r">Requiere desmentido</span>`
+          : `<span class="bx bx-m">Monitorización</span>`;
+
+    return `<div class="alert-card ${publicado ? '' : cls}" style="margin-bottom:10px;${publicado ? 'opacity:.7' : ''}">
+      <div class="fx ai g8 fw" style="margin-bottom:6px">
+        ${bNcrs(ncrs)}
+        <span class="bx bx-m">${esc(n.Plataforma)}</span>
+        <span class="mono">${esc(n.Timestamp)}</span>
+        <span style="margin-left:auto">${estBadge}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.6;margin-bottom:6px">${esc(n.Descripcion)}</div>
+      <div style="font-size:12px;color:var(--mid);font-weight:600;margin-bottom:8px">${esc(n.Tactica)}</div>
+      ${n.Fuente_Origen ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Fuente: ${esc(n.Fuente_Origen)}</div>` : ''}
+      <div class="fx g8 fw">
+        ${ncrs >= 4 && !publicado ? `<button class="btn btn-r btn-sm" onclick="generarDesmentido('${n.ID_Narrativa}')">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          ${generado ? 'Regenerar desmentido' : 'Generar desmentido con IA'}
+        </button>` : ''}
+        ${generado && !publicado ? `<button class="btn btn-g btn-sm" onclick="marcarDesmentidoPublicado('${n.ID_Narrativa}')">
+          ✓ Marcar desmentido como publicado
+        </button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function actualizarNcrs() {
+  const a   = NCRS_VALS.alc;
+  const v   = NCRS_VALS.ver;
+  const vel = NCRS_VALS.vel;
+  const mal = NCRS_VALS.mal;
+  const ncrs = Math.round((a + v + vel + mal) / 4);
+  const el   = document.getElementById('ncrs-num');
+  const te   = document.getElementById('ncrs-tac');
+  if (el) { el.textContent = ncrs; el.className = `ncrs-num ncrs-${ncrs}`; }
+  const tacticas = {
+    1:'Solo monitorizar — sin acción pública',
+    2:'Solo monitorizar — sin acción pública',
+    3:'Monitorizar + alerta interna al equipo',
+    4:'Publicar desmentido — generar borradores',
+    5:'Desmentido urgente + contactar autoridades'
+  };
+  if (te) { te.textContent = tacticas[ncrs] || ''; te.className = `ncrs-tactica ncrs-${ncrs}`; }
+}
+
+function guardarNarrativa() {
+  if (!APP.incActivo) return;
+  const desc = document.getElementById('nr-desc').value.trim();
+  if (!desc) { toast('La descripción es obligatoria', 'err'); return; }
+  gas('crearNarrativa', {
+    id_incidente:  APP.incActivo.id,
+    operador:      APP.operador,
+    descripcion:   desc,
+    plataforma:    document.getElementById('nr-plat').value,
+    fuente:        document.getElementById('nr-fuente').value,
+    url:           document.getElementById('nr-url').value,
+    alcance:       NCRS_VALS.alc,
+    verosimilitud: NCRS_VALS.ver,
+    velocidad:     NCRS_VALS.vel,
+    malicia:       NCRS_VALS.mal
+  }, res => {
+    toast(`Narrativa registrada. NCRS: ${res.ncrs} · ${res.tactica?.texto||''}`, 'ok');
+    document.getElementById('nr-desc').value = '';
+    document.getElementById('nr-url').value = '';
+    document.getElementById('nr-fuente').value = '';
+    resetNcrs();
+    cargarNarrativas();
+  });
+}
+
+function marcarDesmentidoPublicado(idNarrativa) {
+  gas('marcarDesmentidoPublicado', idNarrativa, () => {
+    toast('Desmentido marcado como publicado', 'ok');
+    cargarNarrativas();
+    cargarDashboard(); // actualiza el badge
+  });
+}
+
+function generarDesmentido(idNarrativa) {
+  abrirModal('Generar desmentido', `
+    <p>Claude generará borradores de corrección (X, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
+    <p style="margin-top:8px;font-size:12px;color:var(--muted)">La corrección se guardará en la narrativa y podrás copiarla para publicar manualmente.</p>
+  `, 'Generar desmentido', 'btn-r', () => {
+    cerrarModales();
+    aiThinking('Claude está generando el desmentido');
+    gas('generarDesmentido', idNarrativa, res => {
+      aiDone();
+      const d = res.drafts || {};
+      abrirModal('Borradores de desmentido', `
+        <div class="ch-tabs">
+          <button class="cht active" onclick="cambiarDesmentido('x',this,${JSON.stringify(d).replace(/"/g,"'")})">𝕏 Twitter</button>
+          <button class="cht" onclick="cambiarDesmentido('telegram',this,${JSON.stringify(d).replace(/"/g,"'")})">✈ Telegram</button>
+          <button class="cht" onclick="cambiarDesmentido('whatsapp',this,${JSON.stringify(d).replace(/"/g,"'")})">💬 WhatsApp</button>
+        </div>
+        <div id="desm-txt" class="draft-box">${esc(d.x?.contenido||'Sin contenido')}</div>
+        <button class="btn btn-gh btn-sm" style="margin-top:10px" onclick="navigator.clipboard.writeText(document.getElementById('desm-txt').textContent)">Copiar</button>
+      `, 'Cerrar', 'btn-gh', cerrarModales);
+    });
+  });
+}
+
+function cambiarDesmentido(canal, btn, drafts) {
+  document.querySelectorAll('.cht').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('desm-txt');
+  if (el) el.textContent = drafts[canal]?.contenido || 'Sin borrador';
+}
+
+// ═══ HIPÓTESIS ════════════════════════════════════════════════
+function cargarHipotesis() {
+  if (!APP.incActivo) { mostrarPanel('hip', false); return; }
+  mostrarPanel('hip', true);
+  gas('getHipotesis', APP.incActivo.id, res => {
+    const data = res.data || [];
+    if (data.length) {
+      try {
+        const last = JSON.parse(data[data.length-1].JSON_Completo || '{}');
+        renderHipotesis(last);
+      } catch(_) {}
+    }
+  });
+}
+
+function generarHipotesis() {
+  if (!APP.incActivo) return;
+  const btn = document.getElementById('btn-gen-hip');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="sp"></div> Analizando...';
+  aiThinking('Claude analiza el incidente y busca precedentes históricos — puede tardar entre 1 y 3 minutos');
+  document.getElementById('hip-resultado').innerHTML = `
+    <div style="text-align:center;padding:48px 20px;color:var(--muted)">
+      <div class="sp" style="width:32px;height:32px;border-width:3px;margin:0 auto 18px;border-top-color:var(--primary)"></div>
+      <div style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:8px">Claude está analizando el incidente</div>
+      <div style="font-size:13px;line-height:1.7;max-width:400px;margin:0 auto">
+        Está revisando los datos del incidente, buscando precedentes históricos reales
+        y generando las 4 hipótesis operativas.<br><br>
+        <strong>Este proceso puede tardar entre 1 y 3 minutos. No cierres la página.</strong>
+      </div>
+    </div>`;
+  gas('generarHipotesis', APP.incActivo.id, res => {
+    aiDone();
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar análisis predictivo';
+    renderHipotesis(res.hipotesis || {});
+    toast('Análisis predictivo completado', 'ok');
+  }, () => {
+    aiDone();
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar análisis predictivo';
+  });
+}
+
+function renderHipotesis(data) {
+  const hips = data.hipotesis || [];
+  if (!hips.length) {
+    document.getElementById('hip-resultado').innerHTML = '<div class="empty"><div class="ei">🔮</div><div class="em">No hay hipótesis generadas todavía.</div></div>';
+    return;
+  }
+  const catCls = { 'Evolución física':'H1', 'Narrativas hostiles':'H2', 'Comportamiento ciudadano':'H3', 'Estrategia informativa':'H4' };
+  let h = '';
+  if (data.resumen_ejecutivo) {
+    h += `<div class="card" style="margin-bottom:16px">
+      <div class="card-title">Resumen ejecutivo</div>
+      <p style="font-size:13.5px;line-height:1.75;color:var(--text)">${esc(data.resumen_ejecutivo)}</p>
+      ${data.alerta_temprana ? `<div class="crit-box" style="margin-top:12px;margin-bottom:0"><strong>⚡ Alerta temprana:</strong> ${esc(data.alerta_temprana)}</div>` : ''}
+    </div>`;
+  }
+  h += '<div class="g2">' + hips.map(hip => {
+    const num     = hip.numero || 1;
+    const catKey  = Object.keys(catCls).find(k => (hip.categoria||'').includes(k)) || '';
+    const cls     = catCls[catKey] || `H${num}`;
+    const prec    = hip.precedente || {};
+    return `<div class="hip-card">
+      <div class="hip-header">
+        <span class="hip-cat hip-${cls}">${esc(hip.categoria||`Hipótesis ${num}`)}</span>
+        <span class="hip-prob prob-${hip.probabilidad||'Media'}">${hip.probabilidad||'—'}</span>
+        <span style="font-weight:700;font-size:14px;margin-left:4px;flex:1">${esc(hip.titulo||'')}</span>
+      </div>
+      <div class="hip-body">
+        <p style="font-size:13px;line-height:1.7;color:var(--text);margin-bottom:10px">${esc(hip.descripcion||'')}</p>
+        ${prec.descripcion ? `<div class="prec-box">
+          <div style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">📚 Precedente histórico</div>
+          <div style="font-size:12px">${esc(prec.descripcion)}</div>
+          ${prec.lugar_fecha ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${esc(prec.lugar_fecha)} · ${esc(prec.fuente||'')}</div>` : ''}
+        </div>` : ''}
+        ${hip.recomendacion_argos ? `<div style="margin-top:10px;padding:9px 12px;background:var(--green-bg);border-radius:6px;font-size:12.5px;color:#065F46"><strong>Recomendación ARGOS:</strong> ${esc(hip.recomendacion_argos)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+  document.getElementById('hip-resultado').innerHTML = h;
+}
+
+// ═══ LECCIONES ═══════════════════════════════════════════════
+// Cache de lecciones para el modal
+let _leccionesCache = [];
+
+function cargarLecciones() {
+  if (!APP.incActivo) { mostrarPanel('lec', false); return; }
+  mostrarPanel('lec', true);
+  document.getElementById('t-lec').innerHTML =
+    '<tr><td colspan="8" style="text-align:center;padding:32px"><div class="sp"></div></td></tr>';
+  gas('getLecciones', APP.incActivo.id, res => {
+    const data = res.data || [];
+    _leccionesCache = data;
+    const t = document.getElementById('t-lec');
+    if (!data.length) {
+      const inc     = APP.incs.find(i => i.ID_Incidente === APP.incActivo.id);
+      const cerrado = inc && inc.Estado === 'Cerrado';
+      t.innerHTML = `<tr><td colspan="8"><div class="empty">
+        <div class="ei">📚</div>
+        <div class="em">Sin lecciones registradas para este incidente.</div>
+        ${cerrado ? `<button class="btn btn-s" style="margin-top:14px" onclick="regenerarLecciones('${APP.incActivo.id}')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Generar informe de lecciones con IA
+        </button>` : ''}
+      </div></td></tr>`;
+      return;
+    }
+    t.innerHTML = data.map((l, idx) => `<tr style="cursor:pointer" onclick="verLeccion(${idx})">
+      <td class="mono">${esc(l.ID_Leccion||'—')}</td>
+      <td><strong>${esc(tc(l.Titulo,42))}</strong></td>
+      <td><span class="bx bx-m">${esc(l.Categoria||'—')}</span></td>
+      <td>${bGrav(l.Prioridad)}</td>
+      <td>${esc(tc(l.Accion_Correctiva,50))}</td>
+      <td>${bEst(l.Estado)}</td>
+      <td><span class="bx ${l.Generada_Por&&l.Generada_Por.startsWith('IA')?'bx-b':'bx-m'}">${esc(l.Generada_Por||'—')}</span></td>
+      <td><button class="btn btn-gh btn-sm" onclick="event.stopPropagation();verLeccion(${idx})">Ver</button></td>
+    </tr>`).join('');
+  });
+}
+
+function verLeccion(idx) {
+  const l = _leccionesCache[idx];
+  if (!l) return;
+
+  const esIA = l.Generada_Por && l.Generada_Por.startsWith('IA');
+  let cuerpo = `
+    <div style="margin-bottom:14px">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Título</div>
+      <div style="font-size:15px;font-weight:700;color:var(--primary)">${esc(l.Titulo||'—')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Categoría</div><span class="bx bx-m">${esc(l.Categoria||'—')}</span></div>
+      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Prioridad</div>${bGrav(l.Prioridad)}</div>
+      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Estado</div>${bEst(l.Estado)}</div>
+      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Generada por</div><span class="mono">${esc(l.Generada_Por||'—')}</span></div>
+    </div>`;
+
+  // Si tiene informe IA completo, mostrarlo formateado
+  if (esIA && l.JSON_Completo && l.JSON_Completo.trim() && l.JSON_Completo !== '') {
+    try {
+      const inf = JSON.parse(l.JSON_Completo);
+      const sec = (titulo, contenido) =>
+        `<div style="margin-bottom:14px;padding:12px 14px;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--secondary)">
+          <div style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${titulo}</div>
+          <div style="font-size:13px;line-height:1.7;color:var(--text)">${contenido}</div>
+        </div>`;
+      const lista = (items) => (items||[]).map(i => `<div style="padding:3px 0;font-size:13px">• ${esc(i)}</div>`).join('');
+
+      if (inf.resumen_ejecutivo)
+        cuerpo += sec('Resumen ejecutivo', esc(inf.resumen_ejecutivo));
+
+      if (inf.gestion_comunicacion) {
+        const gc = inf.gestion_comunicacion;
+        let html = '';
+        if (gc.valoracion) html += `<div style="margin-bottom:8px">${esc(gc.valoracion)}</div>`;
+        if (gc.aspectos_positivos?.length) html += `<div style="color:var(--green);font-weight:600;margin-bottom:3px">✓ Aspectos positivos</div>${lista(gc.aspectos_positivos)}`;
+        if (gc.aspectos_mejorables?.length) html += `<div style="color:var(--alert);font-weight:600;margin:8px 0 3px">⚠ Aspectos mejorables</div>${lista(gc.aspectos_mejorables)}`;
+        if (html) cuerpo += sec('Gestión de comunicación', html);
+      }
+
+      if (inf.gestion_narrativas?.valoracion)
+        cuerpo += sec('Gestión de narrativas', esc(inf.gestion_narrativas.valoracion));
+
+      if (inf.lecciones_aprendidas?.length)
+        cuerpo += sec('Lecciones aprendidas', lista(inf.lecciones_aprendidas));
+
+      if (inf.recomendaciones?.length)
+        cuerpo += sec('Recomendaciones', lista(inf.recomendaciones));
+
+      if (inf.valoracion_general)
+        cuerpo += `<div style="text-align:center;padding:10px;background:var(--primary-dim);border-radius:var(--r);font-weight:700;color:var(--primary)">Valoración general: ${esc(inf.valoracion_general)}</div>`;
+
+    } catch(_) {
+      // Si no parsea, mostrar el texto plano
+      if (l.Descripcion) cuerpo += `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap">${esc(l.Descripcion)}</div>`;
+    }
+  } else {
+    // Lección manual: mostrar descripción y acción correctiva
+    if (l.Descripcion)
+      cuerpo += `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Descripción</div><div style="font-size:13px;line-height:1.7">${esc(l.Descripcion)}</div></div>`;
+    if (l.Accion_Correctiva)
+      cuerpo += `<div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Acción correctiva</div><div style="font-size:13px;line-height:1.7">${esc(l.Accion_Correctiva)}</div></div>`;
+  }
+
+  // Botón de exportar a PDF usando el informe
+  abrirModal(l.Titulo || 'Lección aprendida', cuerpo, 'Cerrar', 'btn-gh', cerrarModales);
+  // Cambiar botón OK para que solo cierre
+  document.getElementById('m-ok').onclick = cerrarModales;
+}
+
+function regenerarLecciones(idIncidente) {
+  aiThinking('Claude está generando el informe de lecciones — puede tardar hasta 60 segundos');
+  gas('generarLeccionesIncidente', idIncidente, () => {
+    aiDone();
+    toast('Lecciones generadas correctamente', 'ok');
+    cargarLecciones();
+  }, () => { aiDone(); });
+}
+
+function abrirModalNuevaLec() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  abrirModal('Nueva lección aprendida', `
+    <div class="fgr">
+      <div class="fg full"><label>Título *</label><input id="l-tit" type="text" placeholder="Qué ocurrió y qué se aprendió..."></div>
+      <div class="fg full"><label>Descripción</label><textarea id="l-desc" rows="3"></textarea></div>
+      <div class="fg"><label>Categoría</label>
+        <select id="l-cat"><option>Comunicación</option><option>Coordinación</option><option>Proceso</option><option>Tecnología</option><option>Recursos</option><option>General</option></select></div>
+      <div class="fg"><label>Prioridad</label>
+        <select id="l-pri"><option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option></select></div>
+      <div class="fg full"><label>Acción correctiva</label>
+        <textarea id="l-acc" rows="2" placeholder="Qué se hará diferente la próxima vez..."></textarea></div>
+    </div>
+  `, 'Guardar lección', 'btn-p', () => {
+    const tit = document.getElementById('l-tit').value.trim();
+    if (!tit) { toast('El título es obligatorio', 'err'); return; }
+    gas('crearLeccion', {
+      id_incidente: APP.incActivo.id,
+      titulo: tit, descripcion: document.getElementById('l-desc').value,
+      categoria: document.getElementById('l-cat').value,
+      prioridad: document.getElementById('l-pri').value,
+      accion_correctiva: document.getElementById('l-acc').value,
+      estado: 'Pendiente', generada_por: 'Manual'
+    }, () => { toast('Lección registrada', 'ok'); cerrarModales(); cargarLecciones(); });
+  });
+}
+
+// ═══ MODAL ═══════════════════════════════════════════════════
+function abrirModal(titulo, contenido, labelOk, clsBtn, onOk) {
+  document.getElementById('m-title').textContent  = titulo;
+  document.getElementById('m-body').innerHTML     = contenido;
+  const btn = document.getElementById('m-ok');
+  btn.textContent = labelOk;
+  btn.className   = `btn ${clsBtn}`;
+  btn.onclick     = onOk;
+  document.getElementById('modal-bd').classList.add('open');
+}
+function cerrarModal(e) { if (e.target.id==='modal-bd') cerrarModales(); }
+function cerrarModales() { document.getElementById('modal-bd').classList.remove('open'); }
+
+// ═══ PANELES CONTEXTUALES ════════════════════════════════════
+function mostrarPanel(prefix, show) {
+  const banners = { act:'act', notas:'notas', nar:'nar', hip:'hip', lec:'lec' };
+  const panels  = { act:'act-panel-nueva', notas:'notas-panel', nar:'nar-panel', hip:'hip-panel', lec:'lec-panel' };
+  const bannerEl = document.getElementById(`${banners[prefix]}-sel-banner`);
+  const panelEl  = document.getElementById(panels[prefix]);
+  if (bannerEl) bannerEl.style.display = show ? 'none' : 'block';
+  if (panelEl)  panelEl.style.display  = show ? 'block' : 'none';
+  // Para actualizaciones, también mostrar/ocultar el panel de historial
+  if (prefix === 'act') {
+    const hist = document.getElementById('act-panel-hist');
+    if (hist && !show) hist.style.display = 'none';
+  }
+}
+
+// ═══ INFORME PDF ══════════════════════════════════════════════
+function abrirInforme() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  toast('Generando informe...', 'info');
+  gas('generarInformeHTML', APP.incActivo.id, res => {
+    if (!res.html) { toast('Error generando informe', 'err'); return; }
+    const w = window.open('', '_blank');
+    w.document.write(res.html);
+    w.document.close();
+  });
+}
+
+// ═══ FOTOS EN ACTUALIZACIONES ════════════════════════════════
+const _fotosData = [null, null, null, null]; // {full_b64, thumb_b64, nombre, mime}
+let _fotoSlotActivo = 0;
+
+function seleccionarFoto(idx) {
+  _fotoSlotActivo = idx;
+  document.getElementById('foto-input').click();
+}
+
+function procesarFotoSeleccionada(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 8 * 1024 * 1024) { toast('Imagen demasiado grande (máx 8 MB)', 'err'); return; }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const fullB64 = e.target.result;
+    // Crear thumbnail (300x200 max)
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale  = Math.min(300 / img.width, 200 / img.height, 1);
+      canvas.width  = Math.round(img.width  * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      const thumbB64 = canvas.toDataURL('image/jpeg', 0.75);
+      _fotosData[_fotoSlotActivo] = { full_b64: fullB64, thumb_b64: thumbB64, nombre: file.name, mime: file.type };
+      // Mostrar thumbnail en el slot
+      const slot = document.getElementById('foto-' + _fotoSlotActivo);
+      if (slot) {
+        slot.innerHTML = `<img src="${thumbB64}" alt="foto ${_fotoSlotActivo+1}">
+          <button class="rm" onclick="event.stopPropagation();quitarFoto(${_fotoSlotActivo})">✕</button>`;
+        slot.onclick = null;
+        slot.classList.remove('foto-add');
+      }
+    };
+    img.src = fullB64;
+  };
+  reader.readAsDataURL(file);
+  event.target.value = ''; // reset para permitir seleccionar el mismo archivo
+}
+
+function quitarFoto(idx) {
+  _fotosData[idx] = null;
+  const slot = document.getElementById('foto-' + idx);
+  if (slot) {
+    slot.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Foto ${idx+1}</span>`;
+    slot.onclick = () => seleccionarFoto(idx);
+    slot.classList.add('foto-add');
+  }
+}
+
+function resetFotos() {
+  [0,1,2,3].forEach(i => { _fotosData[i] = null; const s = document.getElementById('foto-'+i); if(s){ s.innerHTML=`<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>Foto ${i+1}</span>`; s.onclick=()=>seleccionarFoto(i); s.classList.add('foto-add'); }});
+}
+
+async function subirFotosSiHay(idActualizacion) {
+  const fotos = _fotosData.filter(Boolean);
+  if (!fotos.length) return;
+  for (let i = 0; i < _fotosData.length; i++) {
+    const f = _fotosData[i];
+    if (!f) continue;
+    await new Promise(resolve => {
+      gas('subirFoto', {
+        base64_full:    f.full_b64,
+        thumb_base64:   f.thumb_b64,
+        nombre:         f.nombre,
+        tipo_mime:      f.mime,
+        idx:            i + 1,
+        id_actualizacion: idActualizacion
+      }, () => resolve(), () => resolve());
+    });
+  }
+  resetFotos();
+}
+
+
+// ═══ IMPORTAR LECCIONES DESDE ARCHIVO ═══════════════════════
+
+function abrirImportarLecciones() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  document.getElementById('file-lecciones').value = '';
+  document.getElementById('file-lecciones').click();
+}
+
+function procesarArchivoLecciones(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const esPdf  = file.type === 'application/pdf';
+  const maxMB  = esPdf ? 5 : 2;
+  if (file.size > maxMB * 1024 * 1024) {
+    toast(`El archivo es demasiado grande (máx. ${maxMB} MB)`, 'err'); return;
+  }
+
+  toast(`Leyendo «${file.name}»...`, 'info');
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    aiThinking(`Claude está extrayendo las lecciones de «${file.name}» — puede tardar unos segundos`);
+
+    gas('importarLecciones', {
+      id_incidente:   APP.incActivo.id,
+      contenido:      reader.result,
+      tipo:           esPdf ? 'pdf' : 'text',
+      nombre_archivo: file.name,
+      operador:       APP.operador
+    }, res => {
+      aiDone();
+      toast(`${res.total} lección${res.total !== 1 ? 'es' : ''} importada${res.total !== 1 ? 's' : ''} correctamente`, 'ok');
+      cargarLecciones();
+    }, () => { aiDone(); });
+  };
+
+  reader.onerror = () => { toast('Error leyendo el archivo', 'err'); };
+
+  if (esPdf) {
+    reader.readAsDataURL(file);   // base64 para PDF
+  } else {
+    reader.readAsText(file, 'UTF-8'); // texto plano para .md y .txt
+  }
+}
+
+// ═══ PANEL DE ADMINISTRACIÓN ══════════════════════════════════
+function cargarAdmin() {
+  if (APP.rol !== 'Administrador') {
+    toast('Acceso restringido al administrador.', 'err');
+    irA('dashboard'); return;
+  }
+  document.getElementById('t-acceso').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:40px"><div class="sp"></div></td></tr>';
+  gas('getUsuariosAcceso', undefined, res => {
+    const data = res.data || [];
+    const t    = document.getElementById('t-acceso');
+    if (!data.length) {
+      t.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="ei">👥</div><div class="em">Sin usuarios registrados</div></div></td></tr>';
+      return;
+    }
+    t.innerHTML = data.map(u => {
+      const activo = ['sí','si','true','1'].includes((u.Activo||'').toLowerCase());
+      return `<tr>
+        <td class="mono">${esc(u.Email)}</td>
+        <td><strong>${esc(u.Nombre)}</strong></td>
+        <td>${u.Rol==='Administrador'?`<span class="admin-tag">Admin</span>`:`<span class="bx bx-m">Operador</span>`}</td>
+        <td>${activo?`<span class="bx bx-g">Activo</span>`:`<span class="bx bx-m">Inactivo</span>`}</td>
+        <td class="mono">${esc(u.Fecha_Alta||'—')}</td>
+        <td>${esc(u.Añadido_Por||'—')}</td>
+        <td>
+          ${u.Email!==APP.email?`<button class="btn btn-${activo?'r':'g'} btn-sm" onclick="toggleUsuario('${esc(u.Email)}')">
+            ${activo?'Desactivar':'Activar'}
+          </button>`:'<span style="font-size:11px;color:var(--muted)">(tú)</span>'}
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+function abrirModalNuevoUsuario() {
+  if (APP.rol !== 'Administrador') return;
+  abrirModal('Añadir usuario', `
+    <div class="fgr">
+      <div class="fg full"><label>Email *</label>
+        <input id="nu-email" type="email" placeholder="email@ejemplo.com"></div>
+      <div class="fg full"><label>Nombre *</label>
+        <input id="nu-nom" type="text" placeholder="Nombre completo"></div>
+      <div class="fg full"><label>Rol</label>
+        <select id="nu-rol"><option>Operador</option><option>Administrador</option></select></div>
+    </div>
+  `, 'Añadir usuario', 'btn-p', () => {
+    const email  = document.getElementById('nu-email').value.trim().toLowerCase();
+    const nombre = document.getElementById('nu-nom').value.trim();
+    if (!email || !nombre) { toast('Email y nombre son obligatorios.', 'err'); return; }
+    gas('gestionarAcceso', {
+      accion:'crear', email, nombre,
+      rol: document.getElementById('nu-rol').value,
+      añadido_por: APP.operador
+    }, () => { toast('Usuario añadido correctamente.', 'ok'); cerrarModales(); cargarAdmin(); });
+  });
+}
+
+function toggleUsuario(email) {
+  if (APP.rol !== 'Administrador') return;
+  gas('gestionarAcceso', { accion:'toggle', email }, res => {
+    toast(`Usuario ${res.activo==='Sí'?'activado':'desactivado'}.`, 'ok');
+    cargarAdmin();
+  });
+}
+
+// ═══ SELECTOR DE OPERADOR (ya no se usa — reemplazado por login OTP) ══
+
+// ═══ POPULATE SELECTS ════════════════════════════════════════
+function poblarOpsSelects() {
+  // Nada adicional por ahora — se hace on-demand al abrir modales
+}
+
+// ═══ INIT ════════════════════════════════════════════════════
+function init() {
+  tick(); setInterval(tick, 1000);
+  setTimeout(() => document.getElementById('splash').classList.add('gone'), 900);
+
+  // Logo: primero intenta desde caché, si no, descarga de Drive (y cachea)
+  try {
+    const logoCache = sessionStorage.getItem('argos_logo_v2');
+    if (logoCache) {
+      const img = document.getElementById('logo-img');
+      img.src = logoCache; img.style.display = 'block';
+      document.getElementById('logo-svg').style.display = 'none';
+    } else {
+      gas('getLogoBase64', null, r => {
+        if (r.ok) {
+          try { sessionStorage.setItem('argos_logo_v2', r.dataUri); } catch(_) {}
+          const img = document.getElementById('logo-img');
+          img.src = r.dataUri; img.style.display = 'block';
+          document.getElementById('logo-svg').style.display = 'none';
+        }
+      });
+    }
+  } catch(_) {}
+
+  // Botón de informe en topbar
+  const tbRight = document.querySelector('.tb-right');
+  const btnInf  = document.createElement('button');
+  btnInf.className = 'btn btn-gh btn-sm';
+  btnInf.style.cssText = 'background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)';
+  btnInf.innerHTML = '📄 Informe';
+  btnInf.onclick   = abrirInforme;
+  tbRight.prepend(btnInf);
+
+  // Comprobar sesión activa
+  setTimeout(() => {
+    const sesionGuardada = sessionStorage.getItem('argos_sesion');
+    if (sesionGuardada) {
+      try {
+        const s = JSON.parse(sesionGuardada);
+        if (s.nombre && s.email) {
+          APP.operador = s.nombre; APP.email = s.email; APP.rol = s.rol || 'Operador';
+          document.getElementById('tb-nombre').textContent = s.nombre;
+          if (s.rol === 'Administrador') document.getElementById('sb-admin-sec').style.display = 'block';
+          completarInit(); return;
+        }
+      } catch(_) {}
+    }
+    mostrarLoginScreen();
+  }, 950);
+}
+
+function completarInit() {
+  // Solo carga el dashboard al arrancar — los demás módulos se cargan cuando el usuario los visita
+  cargarDashboard();
+  setInterval(() => {
+    if (document.querySelector('#view-dashboard.active')) cargarDashboard();
+  }, 180000);
+}
+
+// Arranque en contexto GAS
+if (typeof google !== 'undefined' && google.script) {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('splash').classList.add('gone');
+    console.warn('ARGOS: fuera del contexto GAS. Modo demostración.');
+  });
+}
+</script>
+</body>
+</html>
