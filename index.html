@@ -1311,16 +1311,22 @@ async function geocodificar() {
   const btn = document.getElementById('btn-geo');
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
   try {
-    const url  = 'https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(dir) + '&format=json&limit=1&countrycodes=es,fr,pt,ad&accept-language=es';
+    const url  = 'https://nominatim.openstreetmap.org/search?q='
+      + encodeURIComponent(dir)
+      + '&format=json&limit=1&countrycodes=es,pt,fr,ad&accept-language=es';
     const resp = await fetch(url, { headers: { 'User-Agent': 'ARGOS-VOST/2.0' } });
     const data = await resp.json();
     if (data.length > 0) {
-      const lat = parseFloat(data[0].lat).toFixed(6);
-      const lon = parseFloat(data[0].lon).toFixed(6);
-      actualizarCoordsMini(lat, lon);
-      toast('Coordenadas obtenidas: ' + lat + ', ' + lon, 'ok');
+      const lat   = parseFloat(data[0].lat).toFixed(6);
+      const lon   = parseFloat(data[0].lon).toFixed(6);
+      const lugar = (data[0].display_name || '').split(',').slice(0,3).join(',');
+      const latEl = document.getElementById('i-lat');
+      const lonEl = document.getElementById('i-lon');
+      if (latEl) latEl.value = lat;
+      if (lonEl) lonEl.value = lon;
+      toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
     } else {
-      toast('No se encontró la ubicación. Prueba con otra descripción.', 'info');
+      toast('No se encontró en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
   } catch(_) { toast('Error de geocodificación. Introduce las coordenadas manualmente.', 'err'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = '📍 Geocodificar'; } }
@@ -1723,13 +1729,21 @@ async function geocodificarEdicion() {
   const dir = document.getElementById('ei-ubi')?.value?.trim();
   if (!dir) { toast('Introduce una ubicación primero', 'err'); return; }
   try {
-    const resp = await fetch('https://nominatim.openstreetmap.org/search?q=' + encodeURIComponent(dir) + '&format=json&limit=1&accept-language=es', { headers:{'User-Agent':'ARGOS-VOST/2.0'} });
+    const url  = 'https://nominatim.openstreetmap.org/search?q='
+      + encodeURIComponent(dir)
+      + '&format=json&limit=1&countrycodes=es,pt,fr,ad&accept-language=es';
+    const resp = await fetch(url, { headers: { 'User-Agent': 'ARGOS-VOST/2.0' } });
     const data = await resp.json();
     if (data.length > 0) {
-      document.getElementById('ei-lat').value = parseFloat(data[0].lat).toFixed(6);
-      document.getElementById('ei-lon').value = parseFloat(data[0].lon).toFixed(6);
-      toast('Coordenadas obtenidas', 'ok');
-    } else { toast('Ubicación no encontrada', 'info'); }
+      const lat   = parseFloat(data[0].lat).toFixed(6);
+      const lon   = parseFloat(data[0].lon).toFixed(6);
+      const lugar = (data[0].display_name || '').split(',').slice(0,3).join(',');
+      document.getElementById('ei-lat').value = lat;
+      document.getElementById('ei-lon').value = lon;
+      toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
+    } else {
+      toast('Ubicación no encontrada en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
+    }
   } catch(_) { toast('Error de geocodificación', 'err'); }
 }
 
