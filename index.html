@@ -219,6 +219,15 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .alert-card.naranja{border-left:3px solid var(--alert);background:var(--alert-bg)}
 .alert-card.csn{border-left:3px solid var(--muted);background:#F9FAFB}
 
+/* ── CONTADOR DE CARACTERES ── */
+.char-counter{font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:5px;
+  display:flex;align-items:center;justify-content:space-between;margin-top:5px;
+  background:var(--bg);border:1px solid var(--border);transition:border-color .2s}
+.char-counter.ok   {border-color:var(--green);color:var(--green)}
+.char-counter.warn {border-color:var(--alert);color:var(--alert)}
+.char-counter.over {border-color:var(--red);color:var(--red);background:var(--red-bg)}
+.char-bar{height:3px;border-radius:2px;margin-top:4px;transition:width .15s,background .15s}
+
 /* ── NCRS VISUAL SELECTOR ── */
 .ncrs-dim{display:flex;flex-direction:column;gap:6px}
 .ncrs-dim-label{font-size:11.5px;font-weight:600;color:var(--mid)}
@@ -324,6 +333,49 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .foto-slot:hover .rm{display:block}
 .foto-add{flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
 .foto-add svg{opacity:.5}
+
+/* ── v3: INTELIGENCIA (Almirantazgo) ── */
+.alm-badge{display:inline-flex;align-items:center;justify-content:center;
+  width:36px;height:36px;border-radius:8px;font-family:var(--mono);font-weight:800;
+  font-size:14px;flex-shrink:0}
+.alm-A{background:#D1FAE5;color:#065F46} .alm-B{background:#ECFDF5;color:#047857}
+.alm-C{background:#FEF3C7;color:#92400E} .alm-D{background:#FEF9C3;color:#713F12}
+.alm-E{background:#FEE2E2;color:#991B1B} .alm-F{background:#F3F4F6;color:#4B5563}
+.alm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0}
+.alm-cell{border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all .12s}
+.alm-cell.sel{border-color:var(--primary);box-shadow:0 0 0 2px rgba(14,165,233,.3)}
+.alm-cell.conf{background:#D1FAE5;color:#065F46}
+.alm-cell.prob{background:#ECFDF5;color:#047857}
+.alm-cell.dudoso{background:#FEF3C7;color:#92400E}
+.alm-cell.improbable{background:#FEE2E2;color:#991B1B}
+.alm-cell.nc{background:#F3F4F6;color:#4B5563}
+.verif-section{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-top:10px;background:var(--bg)}
+.verif-estado{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700}
+.ve-detenido{background:#F3F4F6;color:#4B5563}
+.ve-proceso{background:#FEF3C7;color:#92400E}
+.ve-verificado{background:#D1FAE5;color:#065F46}
+.ve-imposible{background:#FEE2E2;color:#991B1B}
+.dato-card{border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:10px;background:var(--surface);display:flex;gap:12px;align-items:flex-start}
+.dato-body{flex:1;min-width:0}
+.dato-derivado{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:var(--primary)}
+
+/* ── v3: FUENTES OFICIALES ── */
+.fuente-card{border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:8px;background:var(--surface)}
+.fuente-handles{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.handle-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);background:var(--bg);transition:all .12s}
+.handle-pill:hover{background:var(--secondary);color:#fff;border-color:var(--secondary)}
+.hx{background:#000;color:#fff;border-color:#000}
+.hbs{background:#0085FF;color:#fff;border-color:#0085FF}
+.hwa{background:#25D366;color:#fff;border-color:#25D366}
+.hweb{background:var(--primary);color:#fff;border-color:var(--primary)}
+.fuente-vincular{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--sans)}
+.fuente-vinculada{background:var(--green-bg);color:var(--green)}
+.fuente-no-vinculada{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
+
+/* ── v3: BORRADORES EDITABLES ── */
+.draft-editable{width:100%;min-height:120px;border:1.5px solid var(--border);border-radius:var(--r);padding:12px;font-family:var(--sans);font-size:13px;line-height:1.6;resize:vertical;background:var(--bg);color:var(--text);transition:border-color .13s}
+.draft-editable:focus{outline:none;border-color:var(--secondary)}
+.draft-editado-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EDE9FE;color:#5B21B6}
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){#sidebar{width:52px}.sb-txt,.nb .lbl,.nb-bx,.sb-sec{display:none}.sb-brand{justify-content:center;padding:12px 8px}.nb{justify-content:center;padding:9px;margin:2px 6px}.nb svg{width:19px;height:19px}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
@@ -445,6 +497,17 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     <button class="nb" data-v="lecciones" onclick="irA('lecciones')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
       <span class="lbl">Lecciones</span>
+    </button>
+
+    <div class="sb-sec">Inteligencia</div>
+    <button class="nb" data-v="inteligencia" onclick="irA('inteligencia')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+      <span class="lbl">J2 Inteligencia</span>
+      <span class="nb-bx" id="bx-int" style="display:none">!</span>
+    </button>
+    <button class="nb" data-v="fuentes" onclick="irA('fuentes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span class="lbl">Fuentes oficiales</span>
     </button>
 
     <!-- Solo visible para el administrador -->
@@ -635,14 +698,28 @@ input[type=range]{flex:1;accent-color:var(--primary)}
               <div id="draft-pub-banner" style="display:none;margin-bottom:12px" class="info-box" style="background:var(--green-bg);border-color:rgba(16,185,129,.3);color:var(--green)"></div>
               <div class="ch-tabs">
                 <button class="cht active" onclick="cambiarDraft('x',this)">𝕏 Twitter</button>
+                <button class="cht" onclick="cambiarDraft('bluesky',this)">🦋 Bluesky</button>
                 <button class="cht" onclick="cambiarDraft('telegram',this)">✈ Telegram</button>
                 <button class="cht" onclick="cambiarDraft('whatsapp',this)">💬 WhatsApp</button>
+                <button class="cht" onclick="cambiarDraft('facebook',this)">📘 Facebook</button>
                 <button class="cht" onclick="cambiarDraft('prensa',this)">📰 Prensa</button>
               </div>
               <div id="draft-txt" class="draft-box draft-empty">Sin borrador generado.</div>
+              <div id="char-counter-wrap" style="display:none">
+                <div class="char-counter ok" id="char-counter-bar">
+                  <span id="char-counter-txt">0 / 0 caracteres</span>
+                  <span id="char-counter-rest">0 restantes</span>
+                </div>
+              </div>
+              <div id="draft-edit-badge" class="draft-editado-badge" style="display:none;margin-top:6px">
+                ✏ Editado por el operador
+              </div>
               <div class="fx g8 mt16 je fw">
                 <button class="btn btn-gh btn-sm" id="btn-copiar" onclick="copiarDraft()">Copiar</button>
-                <button class="btn btn-gh btn-sm" id="btn-prensa" onclick="generarPrensaAct()" style="display:none">📰 Generar nota de prensa</button>
+                <button class="btn btn-gh btn-sm" id="btn-editar-draft" onclick="activarEdicionDraft()">✏ Editar</button>
+                <button class="btn btn-g btn-sm" id="btn-guardar-draft" style="display:none" onclick="guardarEdicionDraft()">Guardar edición</button>
+                <button class="btn btn-gh btn-sm" id="btn-cancelar-draft" style="display:none" onclick="cancelarEdicionDraft()">Cancelar</button>
+                <button class="btn btn-gh btn-sm" id="btn-prensa" onclick="generarPrensaAct()" style="display:none">📰 Nota de prensa</button>
                 <button class="btn btn-s btn-sm" id="btn-gen-draft" onclick="generarDraftsAct()">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                   Generar con IA
@@ -855,6 +932,86 @@ input[type=range]{flex:1;accent-color:var(--primary)}
         <thead><tr><th>Email</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Alta</th><th>Añadido por</th><th>Acciones</th></tr></thead>
         <tbody id="t-acceso"><tr><td colspan="7" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
       </table></div>
+    </div>
+  </section>
+
+  <!-- ═══ J2 INTELIGENCIA ═══ -->
+  <section class="view" id="view-inteligencia">
+    <div class="sh">
+      <div>
+        <div class="sh-title">J2 Inteligencia</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">Sistema del Almirantazgo — clasificación y verificación de datos de monitorización</div>
+      </div>
+      <button class="btn btn-p" onclick="abrirModalNuevoDato()">+ Registrar dato</button>
+    </div>
+
+    <div id="int-sel-banner" class="info-box">Selecciona un incidente para ver y registrar datos de monitorización.</div>
+    <div id="int-panel" style="display:none">
+
+      <!-- Leyenda del Almirantazgo -->
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:8px">Tabla de clasificación — Sistema del Almirantazgo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Fiabilidad de la fuente</div>
+            ${['A','B','C','D','E','F'].map((l,i)=>`<div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-${l}" style="width:24px;height:24px;font-size:11px">${l}</span><span style="font-size:11px">${['Completamente fiable','Generalmente fiable','Bastante fiable','No siempre fiable','No fiable','Fiabilidad no valorable'][i]}</span></div>`).join('')}
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Credibilidad del dato</div>
+            ${[1,2,3,4,5,6].map((n,i)=>`<div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-${['A','A','C','E','E','F'][i]}" style="width:24px;height:24px;font-size:11px">${n}</span><span style="font-size:11px">${['Confirmado por otras fuentes','Probablemente cierto','Posiblemente cierto','Dudoso','Improbable','Credibilidad no valorable'][i]}</span></div>`).join('')}
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--muted);padding:6px 10px;background:var(--bg);border-radius:var(--r)">
+          <b>A1 = máxima confianza</b> — no requiere verificación adicional. Cualquier otra combinación inicia el proceso de verificación.
+        </div>
+      </div>
+
+      <!-- Lista de datos -->
+      <div class="card">
+        <div class="card-title">Datos registrados</div>
+        <div id="lista-int"><div class="empty"><div class="ei">🔍</div><div class="em">Sin datos registrados para este incidente</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ FUENTES OFICIALES ═══ -->
+  <section class="view" id="view-fuentes">
+    <div class="sh">
+      <div class="sh-title">Fuentes oficiales</div>
+      <button class="btn btn-p" onclick="abrirModalNuevaFuente()">+ Añadir fuente</button>
+    </div>
+    <div class="mod-tabs">
+      <button class="mod-tab active" id="tab-dir" onclick="cambiarTabFuentes('dir')">📋 Directorio completo</button>
+      <button class="mod-tab" id="tab-inc-fte" onclick="cambiarTabFuentes('inc')">🔗 Fuentes del incidente activo</button>
+    </div>
+    <!-- Filtros directorio -->
+    <div id="fte-panel-dir">
+      <div class="fx ai g8 fw" style="margin-bottom:12px">
+        <input id="fte-buscar" type="text" placeholder="Buscar organismo, @handle, web..." style="flex:1" oninput="filtrarFuentes()">
+        <select id="fte-cat" onchange="filtrarFuentes()">
+          <option value="">Todas las categorías</option>
+          <option>Emergencias</option><option>Meteorología</option><option>Tráfico</option>
+          <option>Nuclear</option><option>Sanitario</option><option>Seguridad</option>
+          <option>Incendios</option><option>Rescate marítimo</option><option>Medio ambiente</option>
+          <option>Humanitario</option><option>Geología</option><option>General</option>
+        </select>
+        <select id="fte-ccaa" onchange="filtrarFuentes()">
+          <option value="">Todas las CCAA</option>
+          <option>Nacional</option><option>Andalucía</option><option>Aragón</option>
+          <option>Asturias</option><option>Baleares</option><option>Canarias</option>
+          <option>Cantabria</option><option>Castilla-La Mancha</option><option>Castilla y León</option>
+          <option>Cataluña</option><option>Extremadura</option><option>Galicia</option>
+          <option>La Rioja</option><option>Madrid</option><option>Murcia</option>
+          <option>Navarra</option><option>País Vasco</option><option>Comunitat Valenciana</option>
+          <option>Ceuta</option><option>Melilla</option>
+        </select>
+      </div>
+      <div id="lista-fuentes-dir"><div class="empty"><div class="ei">👥</div><div class="em">Cargando directorio...</div></div></div>
+    </div>
+    <!-- Fuentes del incidente -->
+    <div id="fte-panel-inc" style="display:none">
+      <div id="int-fte-banner" class="info-box" style="margin-bottom:12px">Selecciona un incidente para ver sus fuentes vinculadas.</div>
+      <div id="lista-fuentes-inc"></div>
     </div>
   </section>
 
@@ -1343,7 +1500,7 @@ const APP = {
   acts:       [],
   notas:      [],
   narrativas: [],
-  drafts:     { x:'', telegram:'', whatsapp:'', prensa:'' },
+  drafts:     { x:'', bluesky:'', telegram:'', whatsapp:'', facebook:'', prensa:'' },
   actSelId:   null,
   canalDraft: 'x'
 };
@@ -1352,7 +1509,8 @@ const TITULOS = {
   dashboard:'Dashboard', incidentes:'Incidentes',
   actualizaciones:'Comunicación pública', notas:'Notas internas',
   narrativas:'Monitor de narrativas', hipotesis:'Análisis predictivo',
-  lecciones:'Lecciones aprendidas', admin:'Control de acceso'
+  lecciones:'Lecciones aprendidas', admin:'Control de acceso',
+  inteligencia:'J2 Inteligencia', fuentes:'Fuentes oficiales'
 };
 
 // ═══ NAV ═════════════════════════════════════════════════════
@@ -1367,9 +1525,11 @@ function irA(v) {
     if (!APP.incActivo) mostrarSelectorInc(v);
     else cargarModulo(v);
   }
-  if (v === 'dashboard')  cargarDashboard();
-  if (v === 'incidentes') cargarIncidentes();
-  if (v === 'admin')      cargarAdmin();
+  if (v === 'dashboard')    cargarDashboard();
+  if (v === 'incidentes')  cargarIncidentes();
+  if (v === 'admin')       cargarAdmin();
+  if (v === 'inteligencia') cargarInteligencia();
+  if (v === 'fuentes')     cargarFuentes();
 }
 
 function cargarModulo(v) {
@@ -1700,6 +1860,13 @@ function verEditarInc(o) {
       </div>
       <div class="fg full"><label>Situación actual</label>
         <textarea id="ei-sit" rows="3" ${cerrado?'disabled':''}>${esc(o.Situacion||'')}</textarea></div>
+      <div class="fg full">
+        <label>Hashtags del incidente</label>
+        <input id="ei-hashtags" type="text" value="${esc(o.Hashtags||'')}"
+          placeholder="#VOSTSpain #TipoIncidente #Lugar"
+          style="font-family:var(--mono);font-size:13px" ${cerrado?'disabled':''}>
+        ${!cerrado?'<div style="font-size:10px;color:var(--muted);margin-top:3px">Se incluirán automáticamente en todos los borradores</div>':''}
+      </div>
     </div>
     ${cerrado?'<div class="info-box" style="margin-top:8px">Este incidente está cerrado. Los datos son de solo lectura.</div>':''}
   `, cerrado ? 'Cerrar' : 'Guardar cambios', cerrado ? 'btn-gh' : 'btn-p', () => {
@@ -1715,7 +1882,8 @@ function verEditarInc(o) {
       ubicacion: document.getElementById('ei-ubi').value,
       latitud:   document.getElementById('ei-lat').value,
       longitud:  document.getElementById('ei-lon').value,
-      situacion: document.getElementById('ei-sit').value
+      situacion: document.getElementById('ei-sit').value,
+      hashtags:  document.getElementById('ei-hashtags')?.value || ''
     }, () => {
       toast('Incidente actualizado', 'ok');
       cerrarModales();
@@ -1818,6 +1986,12 @@ function abrirModalNuevoInc() {
       </div>
       <div class="fg full"><label>Situación inicial</label>
         <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
+      <div class="fg full">
+        <label>Hashtags del incidente</label>
+        <input id="i-hashtags" type="text" placeholder="Ej: #VOSTSpain #IncendioForestal #SierraCulebra"
+          style="font-family:var(--mono);font-size:13px">
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">Se incluirán automáticamente en todos los borradores de comunicación</div>
+      </div>
     </div>
   `, 'Crear incidente', 'btn-p', () => {
     const nombre = document.getElementById('i-nom').value.trim();
@@ -1829,6 +2003,7 @@ function abrirModalNuevoInc() {
       ubicacion: document.getElementById('i-ubi').value,
       latitud:   document.getElementById('i-lat')?.value || '',
       longitud:  document.getElementById('i-lon')?.value || '',
+      hashtags:  document.getElementById('i-hashtags')?.value || '',
       situacion: document.getElementById('i-sit').value,
       operador:  APP.operador
     }, res => {
@@ -1889,8 +2064,10 @@ function renderHistorial(acts) {
   if (vacio) vacio.style.display = 'none';
   const canales = [
     { key: 'Draft_X',        label: '𝕏 Twitter',  cls: 'pub-x'  },
+    { key: 'Draft_Bluesky',  label: '🦋 Bluesky',  cls: 'pub-tg' },
     { key: 'Draft_Telegram', label: '✈ Telegram',  cls: 'pub-tg' },
     { key: 'Draft_WhatsApp', label: '💬 WhatsApp',  cls: 'pub-wa' },
+    { key: 'Draft_Facebook', label: '📘 Facebook',  cls: 'pub-pr' },
     { key: 'Draft_Prensa',   label: '📰 Nota prensa', cls: 'pub-pr' }
   ];
   lista.innerHTML = [...publicadas].reverse().map(a => {
@@ -1990,9 +2167,15 @@ function resetDraftsPanel() {
 function mostrarDraft(canal) {
   APP.canalDraft = canal;
   const box = document.getElementById('draft-txt');
+  const ta  = document.getElementById('draft-ta'); // si está en modo edición, volver a read
+  if (ta) cancelarEdicionDraft();
   const txt = APP.drafts[canal] || '';
   if (txt) { box.textContent = txt; box.classList.remove('draft-empty'); }
   else { box.textContent = 'Sin borrador para este canal.'; box.classList.add('draft-empty'); }
+  // Contador y badge
+  actualizarContador(txt);
+  const badge = document.getElementById('draft-edit-badge');
+  if (badge) badge.style.display = 'none';
 }
 
 function cambiarDraft(canal, btn) {
@@ -2010,8 +2193,10 @@ function generarDraftsAct() {
     aiDone();
     const d = res.drafts || {};
     APP.drafts.x        = d.x?.contenido        || '';
-    APP.drafts.telegram = d.telegram?.contenido  || '';
-    APP.drafts.whatsapp = d.whatsapp?.contenido  || '';
+    APP.drafts.bluesky  = d.bluesky?.contenido  || '';
+    APP.drafts.telegram = d.telegram?.contenido || '';
+    APP.drafts.whatsapp = d.whatsapp?.contenido || '';
+    APP.drafts.facebook = d.facebook?.contenido || '';
     mostrarDraft(APP.canalDraft);
     document.getElementById('btn-prensa').style.display = 'inline-flex';
     if (res.advertencias?.length) {
@@ -2486,8 +2671,8 @@ function cerrarModales() { document.getElementById('modal-bd').classList.remove(
 
 // ═══ PANELES CONTEXTUALES ════════════════════════════════════
 function mostrarPanel(prefix, show) {
-  const banners = { act:'act', notas:'notas', nar:'nar', hip:'hip', lec:'lec' };
-  const panels  = { act:'act-panel-nueva', notas:'notas-panel', nar:'nar-panel', hip:'hip-panel', lec:'lec-panel' };
+  const banners = { act:'act', notas:'notas', nar:'nar', hip:'hip', lec:'lec', int:'int' };
+  const panels  = { act:'act-panel-nueva', notas:'notas-panel', nar:'nar-panel', hip:'hip-panel', lec:'lec-panel', int:'int-panel' };
   const bannerEl = document.getElementById(`${banners[prefix]}-sel-banner`);
   const panelEl  = document.getElementById(panels[prefix]);
   if (bannerEl) bannerEl.style.display = show ? 'none' : 'block';
@@ -2764,6 +2949,458 @@ function completarInit() {
   setInterval(() => {
     if (document.querySelector('#view-dashboard.active')) cargarDashboard();
   }, 180000);
+}
+
+
+
+
+// ═══ LÍMITES DE CARACTERES CON ARCHIVO ADJUNTO ════════════════
+// Fuentes verificadas (2026):
+// X: imágenes/vídeos NO consumen chars → límite real 280 (URLs = 23c)
+// Telegram caption con media: 1.024 chars (free) / 2.048 (Premium)
+// WhatsApp caption foto/vídeo: 1.024 chars
+// Nota de prensa: sin límite de plataforma, 5.000 como guía práctica
+const LIMITES_CANALES = {
+  x:        { max: 240,  label: 'X / Twitter',    nota: 'Imágenes no consumen caracteres. URLs = 23 chars. Rango operativo: 220-240.' },
+  bluesky:  { max: 300,  label: 'Bluesky',         nota: 'Sin menciones @. Misma estructura que X.' },
+  telegram: { max: 1024, label: 'Telegram',         nota: 'Límite de caption con archivo adjunto (usuarios gratuitos).' },
+  whatsapp: { max: 1024, label: 'WhatsApp',         nota: 'Límite de caption de foto o vídeo.' },
+  facebook: { max: 2000, label: 'Facebook',         nota: 'Sin límite técnico estricto. 80-300 palabras recomendado. Hashtags al final.' },
+  prensa:   { max: 5000, label: 'Nota de prensa',   nota: 'Sin límite de plataforma. 5.000 como guía de extensión.' }
+};
+
+function actualizarContador(texto) {
+  const lim    = LIMITES_CANALES[APP.canalDraft];
+  const wrap   = document.getElementById('char-counter-wrap');
+  const barEl  = document.getElementById('char-counter-bar');
+  const txtEl  = document.getElementById('char-counter-txt');
+  const restEl = document.getElementById('char-counter-rest');
+  if (!lim || !wrap) return;
+
+  const chars  = (texto || '').length;
+  const resto  = lim.max - chars;
+  const pct    = chars / lim.max;
+  const cls    = pct > 1 ? 'over' : pct > 0.85 ? 'warn' : 'ok';
+
+  wrap.style.display = 'block';
+  barEl.className    = 'char-counter ' + cls;
+  txtEl.textContent  = chars.toLocaleString('es-ES') + ' / ' + lim.max.toLocaleString('es-ES') + ' caracteres';
+  restEl.textContent = resto >= 0
+    ? resto + ' restantes'
+    : '⚠ ' + Math.abs(resto) + ' de más';
+}
+
+// ═══ v3: MÓDULO J2 INTELIGENCIA ══════════════════════════════
+let _almFuente = 'F', _almDato = '6';
+const ALM_FUENTE_LABELS = {
+  A:'Completamente fiable', B:'Generalmente fiable', C:'Bastante fiable',
+  D:'No siempre fiable', E:'No fiable', F:'No valorable'
+};
+const ALM_DATO_LABELS = {
+  '1':'Confirmado', '2':'Probablemente cierto', '3':'Posiblemente cierto',
+  '4':'Dudoso', '5':'Improbable', '6':'No valorable'
+};
+
+function cargarInteligencia() {
+  if (!APP.incActivo) { mostrarPanel('int', false); return; }
+  mostrarPanel('int', true);
+  gas('getInteligencia', APP.incActivo.id, res => renderInteligencia(res.data || []));
+}
+
+function renderInteligencia(datos) {
+  const c = document.getElementById('lista-int');
+  if (!datos.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">🔍</div><div class="em">Sin datos registrados. Pulsa «+ Registrar dato» para añadir.</div></div>';
+    return;
+  }
+  c.innerHTML = [...datos].reverse().map(d => {
+    const cal   = d.Cal_Combinada || (d.Cal_Fuente + d.Cal_Dato);
+    const esA1  = cal === 'A1';
+    const estCls = {
+      'Detenido':'ve-detenido','En proceso':'ve-proceso',
+      'Verificado':'ve-verificado','Imposible':'ve-imposible'
+    }[d.Verificacion_Estado] || 've-detenido';
+
+    const derivadoBadge = d.Derivado_A
+      ? `<span class="dato-derivado">→ ${esc(d.Derivado_A)}</span>` : '';
+
+    const botonesDerivacion = (!d.Derivado_A && d.Verificacion_Estado === 'Verificado')
+      ? `<div class="fx g8 fw" style="margin-top:8px">
+          ${d.Verificacion_Resultado === 'Correcto'
+            ? `<button class="btn btn-g btn-sm" onclick="derivarDatoA('com','${d.ID_Dato}')">→ Enviar a Comunicación</button>` : ''}
+          ${d.Verificacion_Resultado === 'Falso' || !d.Verificacion_Resultado || d.Verificacion_Resultado === 'Pendiente'
+            ? `<button class="btn btn-r btn-sm" onclick="derivarDatoA('nar','${d.ID_Dato}')">→ Enviar a Narrativas</button>` : ''}
+        </div>` : '';
+
+    return `<div class="dato-card">
+      <div class="alm-badge alm-${d.Cal_Fuente||'F'}">${cal}</div>
+      <div class="dato-body">
+        <div class="fx ai g8 fw" style="margin-bottom:6px">
+          <span style="font-weight:600;font-size:13px;flex:1">${esc(tc(d.Contenido, 80))}</span>
+          <span class="verif-estado ${estCls}">${esc(d.Verificacion_Estado||'Detenido')}</span>
+          ${derivadoBadge}
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
+          Fuente: ${esc(d.Fuente_Descripcion||'—')} ·
+          ${esc(ALM_FUENTE_LABELS[d.Cal_Fuente]||'')} / ${esc(ALM_DATO_LABELS[d.Cal_Dato]||'')}
+          · ${esc(d.Operador||'—')} · ${esc(d.Timestamp||'—')}
+        </div>
+        ${d.Verificacion_Estado !== 'Verificado' && d.Verificacion_Estado !== 'Imposible' && !esA1
+          ? `<button class="btn btn-gh btn-sm" onclick="abrirVerificacion('${d.ID_Dato}','${esc(d.Verificacion_Estado||'Detenido')}','${esc(d.Verificacion_Donde||'')}','${esc(d.Verificacion_Quien||'')}','${esc(d.Verificacion_Resultado||'')}')">
+              Gestionar verificación
+            </button>` : ''}
+        ${botonesDerivacion}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirModalNuevoDato() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  _almFuente = 'F'; _almDato = '6';
+
+  const fuenteOps = ['A','B','C','D','E','F'].map(l =>
+    `<button class="alm-cell ${['conf','conf','prob','dudoso','improbable','nc'][['A','B','C','D','E','F'].indexOf(l)]}"
+      id="almF-${l}" onclick="selAlm('fuente','${l}')">${l}</button>`).join('');
+  const datoOps = ['1','2','3','4','5','6'].map(n =>
+    `<button class="alm-cell ${['conf','prob','dudoso','dudoso','improbable','nc'][parseInt(n)-1]}"
+      id="almD-${n}" onclick="selAlm('dato','${n}')">${n}</button>`).join('');
+
+  abrirModal('Registrar dato de monitorización', `
+    <div class="fgr">
+      <div class="fg full"><label>Contenido del dato *</label>
+        <textarea id="nd-contenido" rows="3" placeholder="Describe el dato o información detectada..."></textarea></div>
+      <div class="fg full"><label>Fuente / Origen</label>
+        <input id="nd-fuente" type="text" placeholder="Ej: Cuenta X @usuario, Telegram canal oficial, Testigo directo..."></div>
+      <div class="fg full">
+        <label>Fiabilidad de la fuente (A = más fiable → F = no valorable)</label>
+        <div class="alm-grid" style="grid-template-columns:repeat(6,1fr)">${fuenteOps}</div>
+        <div id="alm-f-desc" style="font-size:11px;color:var(--muted);margin-top:3px">Selecciona la fiabilidad</div>
+      </div>
+      <div class="fg full">
+        <label>Credibilidad del dato (1 = confirmado → 6 = no valorable)</label>
+        <div class="alm-grid" style="grid-template-columns:repeat(6,1fr)">${datoOps}</div>
+        <div id="alm-d-desc" style="font-size:11px;color:var(--muted);margin-top:3px">Selecciona la credibilidad</div>
+      </div>
+      <div id="aviso-a1" style="display:none" class="info-box" style="background:var(--green-bg);color:var(--green)">
+        ✓ Clasificación A1 — máxima confianza. No requiere verificación adicional.
+      </div>
+    </div>
+  `, 'Registrar dato', 'btn-p', () => {
+    const contenido = document.getElementById('nd-contenido').value.trim();
+    if (!contenido) { toast('El contenido es obligatorio', 'err'); return; }
+    gas('crearDato', {
+      id_incidente: APP.incActivo.id,
+      operador:     APP.operador,
+      contenido,
+      fuente:       document.getElementById('nd-fuente').value,
+      cal_fuente:   _almFuente,
+      cal_dato:     _almDato
+    }, res => {
+      toast(`Dato registrado — Clasificación ${res.cal}${res.es_a1 ? ' (A1 — sin verificación requerida)' : ''}`, 'ok');
+      cerrarModales();
+      cargarInteligencia();
+    });
+  });
+}
+
+function selAlm(tipo, val) {
+  if (tipo === 'fuente') {
+    _almFuente = val;
+    ['A','B','C','D','E','F'].forEach(l => {
+      document.getElementById('almF-'+l)?.classList.toggle('sel', l === val);
+    });
+    const desc = document.getElementById('alm-f-desc');
+    if (desc) desc.textContent = val + ' — ' + (ALM_FUENTE_LABELS[val] || '');
+  } else {
+    _almDato = val;
+    ['1','2','3','4','5','6'].forEach(n => {
+      document.getElementById('almD-'+n)?.classList.toggle('sel', n === val);
+    });
+    const desc = document.getElementById('alm-d-desc');
+    if (desc) desc.textContent = val + ' — ' + (ALM_DATO_LABELS[val] || '');
+  }
+  const aviso = document.getElementById('aviso-a1');
+  if (aviso) aviso.style.display = (_almFuente === 'A' && _almDato === '1') ? 'block' : 'none';
+}
+
+function abrirVerificacion(idDato, estadoActual, donde, quien, resultado) {
+  abrirModal('Gestionar verificación', `
+    <div class="fgr">
+      <div class="fg full"><label>Estado de la verificación</label>
+        <select id="vf-estado">
+          ${['Detenido','En proceso','Verificado','Imposible'].map(e =>
+            `<option${e===estadoActual?' selected':''}>${e}</option>`).join('')}
+        </select></div>
+      <div class="fg full"><label>¿Dónde se preguntó? (organismo / institución)</label>
+        <input id="vf-donde" type="text" value="${esc(donde)}" placeholder="Ej: 112 País Vasco, AEMET, Guardia Civil..."></div>
+      <div class="fg full"><label>¿Quién preguntó?</label>
+        <input id="vf-quien" type="text" value="${esc(quien)}" placeholder="Nombre del operador que realizó la verificación"></div>
+      <div class="fg full"><label>Resultado</label>
+        <select id="vf-resultado">
+          ${['Pendiente','Correcto','Falso'].map(r =>
+            `<option${r===resultado?' selected':''}>${r}</option>`).join('')}
+        </select></div>
+    </div>
+  `, 'Guardar verificación', 'btn-p', () => {
+    gas('actualizarVerificacion', {
+      id_dato:    idDato,
+      estado:     document.getElementById('vf-estado').value,
+      donde:      document.getElementById('vf-donde').value,
+      quien:      document.getElementById('vf-quien').value,
+      resultado:  document.getElementById('vf-resultado').value
+    }, () => { toast('Verificación actualizada', 'ok'); cerrarModales(); cargarInteligencia(); });
+  });
+}
+
+function derivarDatoA(dest, idDato) {
+  const fn = dest === 'com' ? 'derivarAComunicacion' : 'derivarANarrativa';
+  gas(fn, idDato, res => {
+    if (dest === 'com') {
+      toast('Dato enviado a Comunicación pública', 'ok');
+      // Llevar al usuario al módulo de comunicación
+      if (APP.incActivo) setIncActivo(APP.incs.find(i=>i.ID_Incidente===APP.incActivo.id)||APP.incActivo);
+      irA('actualizaciones');
+    } else {
+      toast('Dato enviado a Narrativas como bulo', 'ok');
+      irA('narrativas');
+    }
+    cargarInteligencia();
+  });
+}
+
+// ═══ v3: MÓDULO FUENTES OFICIALES ════════════════════════════
+let _todasFuentes = [];
+let _tabFuentes   = 'dir';
+
+function cargarFuentes() {
+  cambiarTabFuentes(_tabFuentes);
+}
+
+function cambiarTabFuentes(tab) {
+  _tabFuentes = tab;
+  document.getElementById('tab-dir').classList.toggle('active',    tab === 'dir');
+  document.getElementById('tab-inc-fte').classList.toggle('active', tab === 'inc');
+  document.getElementById('fte-panel-dir').style.display = tab === 'dir' ? 'block' : 'none';
+  document.getElementById('fte-panel-inc').style.display = tab === 'inc' ? 'block' : 'none';
+
+  if (tab === 'dir') {
+    if (!_todasFuentes.length) {
+      gas('getFuentesOficiales', null, res => {
+        _todasFuentes = res.data || [];
+        renderFuentesDir(_todasFuentes);
+      });
+    } else {
+      renderFuentesDir(_todasFuentes);
+    }
+  } else {
+    if (!APP.incActivo) { document.getElementById('int-fte-banner').style.display='block'; return; }
+    document.getElementById('int-fte-banner').style.display='none';
+    gas('getFuentesIncidente', APP.incActivo.id, res => renderFuentesInc(res.data||[]));
+  }
+}
+
+function filtrarFuentes() {
+  const q   = document.getElementById('fte-buscar').value.toLowerCase();
+  const cat = document.getElementById('fte-cat').value;
+  const ccaa= document.getElementById('fte-ccaa').value;
+  const filtradas = _todasFuentes.filter(f =>
+    (!cat  || f.Categoria === cat) &&
+    (!ccaa || f.Ambito === ccaa || f.CCAA === ccaa || (ccaa==='Nacional' && f.Ambito==='Nacional')) &&
+    (!q    || [f.Organismo,f.X_Handle,f.Bluesky_Handle,f.Web_Oficial,f.Notas]
+               .some(v=>(v||'').toLowerCase().includes(q)))
+  );
+  renderFuentesDir(filtradas);
+}
+
+function renderFuentesDir(fuentes) {
+  const c = document.getElementById('lista-fuentes-dir');
+  if (!fuentes.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">👥</div><div class="em">Sin resultados para los filtros aplicados</div></div>';
+    return;
+  }
+  const incIds = APP.incActivo
+    ? (APP.incs.find(i=>i.ID_Incidente===APP.incActivo.id)?.Fuentes_IDs||'').split(',').map(s=>s.trim())
+    : [];
+
+  c.innerHTML = fuentes.map(f => {
+    const vinculada = incIds.includes(f.ID_Fuente);
+    const handles = [
+      f.X_Handle       ? `<span class="handle-pill hx" onclick="copiarHandle('${esc(f.X_Handle)}')">𝕏 ${esc(f.X_Handle)}</span>` : '',
+      f.Bluesky_Handle ? `<span class="handle-pill hbs" onclick="copiarHandle('${esc(f.Bluesky_Handle)}')">🦋 ${esc(f.Bluesky_Handle)}</span>` : '',
+      f.WhatsApp_Canal ? `<span class="handle-pill hwa" onclick="copiarHandle('${esc(f.WhatsApp_Canal)}')">💬 Canal WA</span>` : '',
+      f.Web_Oficial    ? `<a href="https://${esc(f.Web_Oficial)}" target="_blank" class="handle-pill hweb">🌐 ${esc(f.Web_Oficial)}</a>` : '',
+    ].filter(Boolean).join('');
+
+    return `<div class="fuente-card">
+      <div class="fx ai g8 fw" style="margin-bottom:4px">
+        <span style="font-weight:700;font-size:13px;flex:1">${esc(f.Organismo)}</span>
+        <span class="bx bx-m">${esc(f.Categoria)}</span>
+        <span style="font-size:11px;color:var(--muted)">${esc(f.CCAA||f.Ambito||'Nacional')}</span>
+        ${APP.incActivo ? `<button class="fuente-vincular ${vinculada?'fuente-vinculada':'fuente-no-vinculada'}"
+          onclick="toggleVincularFuente('${f.ID_Fuente}',${vinculada})">
+          ${vinculada ? '✓ Vinculada' : '+ Vincular'}
+        </button>` : ''}
+      </div>
+      ${f.Notas ? `<div style="font-size:11px;color:var(--muted);margin-bottom:4px">${esc(f.Notas)}</div>` : ''}
+      <div class="fuente-handles">${handles || '<span style="font-size:11px;color:var(--muted)">Sin perfiles registrados</span>'}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderFuentesInc(fuentes) {
+  const c = document.getElementById('lista-fuentes-inc');
+  if (!fuentes.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">🔗</div><div class="em">Sin fuentes vinculadas a este incidente. Ve al Directorio y pulsa «+ Vincular».</div></div>';
+    return;
+  }
+  c.innerHTML = fuentes.map(f => {
+    const handles = [
+      f.X_Handle       ? `<span class="handle-pill hx" onclick="copiarHandle('${esc(f.X_Handle)}')">𝕏 ${esc(f.X_Handle)}</span>` : '',
+      f.Bluesky_Handle ? `<span class="handle-pill hbs" onclick="copiarHandle('${esc(f.Bluesky_Handle)}')">🦋 ${esc(f.Bluesky_Handle)}</span>` : '',
+      f.WhatsApp_Canal ? `<span class="handle-pill hwa">💬 Canal WA</span>` : '',
+      f.Web_Oficial    ? `<a href="https://${esc(f.Web_Oficial)}" target="_blank" class="handle-pill hweb">🌐 ${esc(f.Web_Oficial)}</a>` : '',
+    ].filter(Boolean).join('');
+    return `<div class="fuente-card">
+      <div class="fx ai g8 fw" style="margin-bottom:4px">
+        <span style="font-weight:700;font-size:13px;flex:1">${esc(f.Organismo)}</span>
+        <span class="bx bx-m">${esc(f.Categoria)}</span>
+        <button class="fuente-vincular fuente-vinculada" onclick="toggleVincularFuente('${f.ID_Fuente}',true)">✓ Vinculada</button>
+      </div>
+      <div class="fuente-handles">${handles}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleVincularFuente(idFuente, vinculada) {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  gas('vincularFuente', {
+    id_incidente: APP.incActivo.id,
+    id_fuente:    idFuente,
+    accion:       vinculada ? 'desvincular' : 'vincular'
+  }, () => {
+    toast(vinculada ? 'Fuente desvinculada' : 'Fuente vinculada al incidente', 'ok');
+    // Recargar datos del incidente para actualizar Fuentes_IDs en APP.incs
+    gas('getIncidentes', undefined, r => { APP.incs = r.data || []; });
+    if (_tabFuentes === 'dir') filtrarFuentes();
+    else cambiarTabFuentes('inc');
+  });
+}
+
+function copiarHandle(texto) {
+  navigator.clipboard.writeText(texto).then(() => toast('Copiado: ' + texto, 'ok'));
+}
+
+function abrirModalNuevaFuente() {
+  abrirModal('Añadir fuente oficial', `
+    <div class="fgr">
+      <div class="fg full"><label>Organismo *</label>
+        <input id="nf-org" type="text" placeholder="Ej: 112 País Vasco — SOS Deiak"></div>
+      <div class="fg"><label>Ámbito</label>
+        <select id="nf-amb"><option>Nacional</option><option>Autonómico</option><option>Provincial</option><option>Local</option></select></div>
+      <div class="fg"><label>Comunidad Autónoma</label>
+        <input id="nf-ccaa" type="text" placeholder="País Vasco"></div>
+      <div class="fg full"><label>Categoría</label>
+        <select id="nf-cat">
+          <option>Emergencias</option><option>Meteorología</option><option>Tráfico</option>
+          <option>Nuclear</option><option>Sanitario</option><option>Seguridad</option>
+          <option>Incendios</option><option>Rescate marítimo</option>
+          <option>Medio ambiente</option><option>Humanitario</option><option>Geología</option><option>General</option>
+        </select></div>
+      <div class="fg full"><label>Perfil en X (Twitter)</label>
+        <input id="nf-x" type="text" placeholder="@SOS_deiak"></div>
+      <div class="fg full"><label>Perfil en Bluesky</label>
+        <input id="nf-bs" type="text" placeholder="@organismo.bsky.social"></div>
+      <div class="fg full"><label>Canal de WhatsApp (enlace)</label>
+        <input id="nf-wa" type="text" placeholder="https://whatsapp.com/channel/..."></div>
+      <div class="fg full"><label>Web oficial</label>
+        <input id="nf-web" type="text" placeholder="sos-deiak.eus"></div>
+      <div class="fg full"><label>Notas</label>
+        <input id="nf-notas" type="text" placeholder="Información adicional útil..."></div>
+    </div>
+  `, 'Añadir fuente', 'btn-p', () => {
+    const org = document.getElementById('nf-org').value.trim();
+    if (!org) { toast('El nombre del organismo es obligatorio', 'err'); return; }
+    gas('crearFuente', {
+      organismo:      org,
+      ambito:         document.getElementById('nf-amb').value,
+      ccaa:           document.getElementById('nf-ccaa').value,
+      categoria:      document.getElementById('nf-cat').value,
+      x_handle:       document.getElementById('nf-x').value,
+      bluesky_handle: document.getElementById('nf-bs').value,
+      whatsapp_canal: document.getElementById('nf-wa').value,
+      web_oficial:    document.getElementById('nf-web').value,
+      notas:          document.getElementById('nf-notas').value
+    }, () => {
+      toast('Fuente añadida al directorio', 'ok');
+      cerrarModales();
+      _todasFuentes = []; // forzar recarga
+      cambiarTabFuentes('dir');
+    });
+  });
+}
+
+// ═══ v3: HASHTAGS EN EL INCIDENTE ════════════════════════════
+// (campo añadido al modal de nuevo incidente y al de edición)
+
+// ═══ v3: BORRADORES EDITABLES ════════════════════════════════
+function activarEdicionDraft() {
+  const txt = document.getElementById('draft-txt');
+  if (!txt) return;
+  const contenido = txt.textContent || txt.value || '';
+  // Reemplazar el div por un textarea editable
+  const ta = document.createElement('textarea');
+  ta.id        = 'draft-ta';
+  ta.className = 'draft-editable';
+  ta.value     = contenido;
+  // Contador en tiempo real mientras se edita
+  ta.oninput = () => actualizarContador(ta.value);
+  txt.replaceWith(ta);
+  ta.focus();
+  // Actualizar contador con el texto inicial
+  actualizarContador(contenido);
+  // Cambiar botones
+  document.getElementById('btn-editar-draft')?.style.setProperty('display','none');
+  const btnGuardar  = document.getElementById('btn-guardar-draft');
+  const btnCancelar = document.getElementById('btn-cancelar-draft');
+  if (btnGuardar)  btnGuardar.style.display  = 'inline-flex';
+  if (btnCancelar) btnCancelar.style.display = 'inline-flex';
+}
+
+function cancelarEdicionDraft() {
+  const ta = document.getElementById('draft-ta');
+  if (!ta) return;
+  const div = document.createElement('div');
+  div.id        = 'draft-txt';
+  div.className = 'draft-box';
+  div.textContent = ta.value;
+  ta.replaceWith(div);
+  document.getElementById('btn-editar-draft')?.style.removeProperty('display');
+  document.getElementById('btn-guardar-draft')?.style.setProperty('display','none');
+  document.getElementById('btn-cancelar-draft')?.style.setProperty('display','none');
+}
+
+function guardarEdicionDraft() {
+  if (!APP.actSelId) return;
+  const ta = document.getElementById('draft-ta');
+  if (!ta) return;
+  const texto = ta.value.trim();
+  gas('guardarEdicionDraft', {
+    id_actualizacion: APP.actSelId,
+    canal:            APP.canalDraft,
+    texto_final:      texto
+  }, () => {
+    toast('Edición guardada — versión final del operador', 'ok');
+    // Actualizar APP.drafts con la versión editada
+    APP.drafts[APP.canalDraft] = texto;
+    cancelarEdicionDraft();
+    // Restaurar el contenido editado en el div
+    const div = document.getElementById('draft-txt');
+    if (div) div.textContent = texto;
+    // Añadir badge de editado
+    const badge = document.getElementById('draft-edit-badge');
+    if (badge) { badge.style.display='inline-flex'; }
+  });
 }
 
 // Arranque — funciona desde cualquier host (GitHub Pages, GAS, local...)
