@@ -3420,6 +3420,112 @@ function guardarEdicionDraft() {
 
 // Arranque — funciona desde cualquier host (GitHub Pages, GAS, local...)
 document.addEventListener('DOMContentLoaded', init);
+
+  // ─── BÚSQUEDAS X ───────────────────────────────────────────────
+function generarBusquedasX() {
+  if (!incidenteActivo) return mostrarToast('Selecciona un incidente primero.', 'warn');
+  const btn = document.getElementById('btn-busquedasx');
+  const panel = document.getElementById('panel-busquedasx');
+  btn.disabled = true;
+  btn.textContent = 'Generando...';
+  panel.innerHTML = '<div style="text-align:center;padding:24px"><div class="sp"></div><div style="margin-top:12px;font-size:13px;color:var(--muted)">Claude está generando las fórmulas de búsqueda...</div></div>';
+
+  gas('generarBusquedasX', { id_incidente: incidenteActivo }, res => {
+    btn.disabled = false;
+    btn.textContent = 'Generar búsquedas';
+    if (!res.ok || !res.data) {
+      panel.innerHTML = '<div style="color:var(--alert);font-size:13px;padding:12px">Error generando búsquedas. Inténtalo de nuevo.</div>';
+      return;
+    }
+    const d = res.data;
+    let h = '';
+
+    // Palabras clave
+    if (d.palabras_clave?.length) {
+      h += '<div style="margin-bottom:16px">';
+      h += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Palabras clave</div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      d.palabras_clave.forEach(p => {
+        h += `<span style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;font-family:var(--mono)">${esc(p)}</span>`;
+      });
+      h += '</div></div>';
+    }
+
+    // Bloques de búsqueda
+    d.busquedas?.forEach(b => {
+      const colores = {
+        'Detección temprana': 'var(--ok)',
+        'Narrativas virales': 'var(--warn)',
+        'Detección de bulos': 'var(--alert)'
+      };
+      const color = colores[b.bloque] || 'var(--accent)';
+      h += `<div style="margin-bottom:16px;border:1px solid var(--border);border-radius:var(--r);overflow:hidden">`;
+      h += `<div style="padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px">`;
+      h += `<span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>`;
+      h += `<span style="font-weight:600;font-size:13px">${esc(b.bloque)}</span>`;
+      h += `<span style="font-size:11px;color:var(--muted)">${esc(b.descripcion)}</span>`;
+      h += `</div>`;
+      b.formulas?.forEach(f => {
+        h += `<div style="padding:10px 14px;border-bottom:1px solid var(--border)">`;
+        h += `<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:4px">${esc(f.etiqueta)}</div>`;
+        h += `<div style="display:flex;align-items:center;gap:8px">`;
+        h += `<code style="flex:1;background:var(--bg);padding:6px 10px;border-radius:4px;font-size:11px;font-family:var(--mono);word-break:break-all;line-height:1.5">${esc(f.formula)}</code>`;
+        h += `<button onclick="copiarBusqueda(this, '${f.formula.replace(/'/g, "\\'")}')" style="flex-shrink:0;padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;font-size:11px">Copiar</button>`;
+        h += `<a href="https://x.com/search?q=${encodeURIComponent(f.formula)}&src=typed_query&f=live" target="_blank" style="flex-shrink:0;padding:4px 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);cursor:pointer;font-size:11px;text-decoration:none;color:inherit">Buscar ↗</a>`;
+        h += `</div></div>`;
+      });
+      h += `</div>`;
+    });
+
+    // Hashtags
+    if (d.hashtags_seguimiento?.length) {
+      h += '<div style="margin-bottom:12px">';
+      h += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Hashtags de seguimiento</div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      d.hashtags_seguimiento.forEach(tag => {
+        h += `<a href="https://x.com/search?q=${encodeURIComponent(tag)}" target="_blank" style="background:var(--accent-muted,#1d4ed820);color:var(--accent);border-radius:20px;padding:3px 10px;font-size:12px;font-family:var(--mono);text-decoration:none">${esc(tag)}</a>`;
+      });
+      h += '</div></div>';
+    }
+
+    // Cuentas referencia
+    if (d.cuentas_referencia?.length) {
+      h += '<div style="margin-bottom:12px">';
+      h += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Cuentas de referencia</div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      d.cuentas_referencia.forEach(c => {
+        h += `<a href="https://x.com/${c.replace('@','')}" target="_blank" style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;font-family:var(--mono);text-decoration:none;color:inherit">${esc(c)}</a>`;
+      });
+      h += '</div></div>';
+    }
+
+    // Alertas Google
+    if (d.alertas_google?.length) {
+      h += '<div style="margin-bottom:4px">';
+      h += '<div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Alertas Google recomendadas</div>';
+      h += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+      d.alertas_google.forEach(a => {
+        h += `<a href="https://www.google.com/alerts#${encodeURIComponent(a)}" target="_blank" style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:3px 10px;font-size:12px;text-decoration:none;color:inherit">${esc(a)} ↗</a>`;
+      });
+      h += '</div></div>';
+    }
+
+    panel.innerHTML = h;
+  }, () => {
+    btn.disabled = false;
+    btn.textContent = 'Generar búsquedas';
+    panel.innerHTML = '<div style="color:var(--alert);font-size:13px;padding:12px">Error de conexión. Inténtalo de nuevo.</div>';
+  });
+}
+
+function copiarBusqueda(btn, formula) {
+  navigator.clipboard.writeText(formula).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+  
 </script>
 </body>
 </html>
