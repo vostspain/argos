@@ -3429,7 +3429,7 @@ if (!incActivo) return mostrarToast('Selecciona un incidente primero.', 'warn');
   btn.textContent = 'Generando...';
   panel.innerHTML = '<div style="text-align:center;padding:24px"><div class="sp"></div><div style="margin-top:12px;font-size:13px;color:var(--muted)">Claude está generando las fórmulas de búsqueda...</div></div>';
 
-  gas('generarBusquedasX', { id_incidente: incidenteActivo }, res => {
+  gas('generarBusquedasX', { id_incidente: incActivo }, res => {
     btn.disabled = false;
     btn.textContent = 'Generar búsquedas';
     if (!res.ok || !res.data) {
