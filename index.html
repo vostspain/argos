@@ -3423,13 +3423,14 @@ document.addEventListener('DOMContentLoaded', init);
 
   // ─── BÚSQUEDAS X ───────────────────────────────────────────────
 function generarBusquedasX() {
-if (!incActivo) return mostrarToast('Selecciona un incidente primero.', 'warn');  const btn = document.getElementById('btn-busquedasx');
+  if (!APP.incActivo) return toast('Selecciona un incidente primero.', 'warn');
+  const btn = document.getElementById('btn-busquedasx');
   const panel = document.getElementById('panel-busquedasx');
   btn.disabled = true;
   btn.textContent = 'Generando...';
   panel.innerHTML = '<div style="text-align:center;padding:24px"><div class="sp"></div><div style="margin-top:12px;font-size:13px;color:var(--muted)">Claude está generando las fórmulas de búsqueda...</div></div>';
 
-  gas('generarBusquedasX', { id_incidente: incActivo }, res => {
+  gas('generarBusquedasX', { id_incidente: APP.incActivo.id }, res => {
     btn.disabled = false;
     btn.textContent = 'Generar búsquedas';
     if (!res.ok || !res.data) {
