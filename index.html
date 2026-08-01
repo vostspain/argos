@@ -3423,8 +3423,7 @@ document.addEventListener('DOMContentLoaded', init);
 
   // ─── BÚSQUEDAS X ───────────────────────────────────────────────
 function generarBusquedasX() {
-  if (!incidenteActivo) return mostrarToast('Selecciona un incidente primero.', 'warn');
-  const btn = document.getElementById('btn-busquedasx');
+if (!incActivo) return mostrarToast('Selecciona un incidente primero.', 'warn');  const btn = document.getElementById('btn-busquedasx');
   const panel = document.getElementById('panel-busquedasx');
   btn.disabled = true;
   btn.textContent = 'Generando...';
