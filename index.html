@@ -1497,6 +1497,25 @@ async function geocodificar() {
       if (latEl) latEl.value = lat;
       if (lonEl) lonEl.value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
+      // Mostrar mapa mini de confirmación
+      const mapaDiv = document.getElementById('mapa-mini');
+      if (mapaDiv) {
+        mapaDiv.style.display = 'block';
+        setTimeout(() => {
+          if (!window._mapaMiniInst) {
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: false, scrollWheelZoom: false })
+              .setView([parseFloat(lat), parseFloat(lon)], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(window._mapaMiniInst);
+            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+          } else {
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            window._mapaMiniInst.invalidateSize();
+          }
+        }, 100);
+      }
     } else {
       toast('No se encontró en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
@@ -1924,6 +1943,25 @@ async function geocodificarEdicion() {
       document.getElementById('ei-lat').value = lat;
       document.getElementById('ei-lon').value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
+      // Mostrar mapa mini de confirmación
+      const mapaDiv = document.getElementById('mapa-mini');
+      if (mapaDiv) {
+        mapaDiv.style.display = 'block';
+        setTimeout(() => {
+          if (!window._mapaMiniInst) {
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: false, scrollWheelZoom: false })
+              .setView([parseFloat(lat), parseFloat(lon)], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(window._mapaMiniInst);
+            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+          } else {
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            window._mapaMiniInst.invalidateSize();
+          }
+        }, 100);
+      }
     } else {
       toast('Ubicación no encontrada en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
@@ -2011,6 +2049,8 @@ function abrirModalNuevoInc() {
   `, 'Crear incidente', 'btn-p', () => {
     const nombre = document.getElementById('i-nom').value.trim();
     if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+    const btnGuardar = document.querySelector('.modal-footer .btn-p');
+    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Creando incidente...'; }
     gas('crearIncidente', {
       nombre,
       tipo:      document.getElementById('i-tipo').value,
@@ -2022,10 +2062,15 @@ function abrirModalNuevoInc() {
       situacion: document.getElementById('i-sit').value,
       operador:  APP.operador
     }, res => {
+      if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Crear incidente'; }
       toast(`Incidente ${res.id} creado`, 'ok');
+      window._mapaMiniInst = null;
       cerrarModales();
       if (_mapaDash) actualizarMapaDashboard();
       cargarIncidentes(); cargarDashboard();
+    }, () => {
+      if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Crear incidente'; }
+      toast('Error al crear el incidente. Inténtalo de nuevo.', 'err');
     });
   });
   // Inicializar mapa mini tras renderizar el DOM del modal
