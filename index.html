@@ -1421,38 +1421,81 @@ function renderizarMarcadores(incs) {
   else if (bounds.length > 1) _mapaDash.fitBounds(bounds, { padding: [30, 30] });
 }
 
-function inicializarMapaDashboard(datosIniciales) {
-  if (_mapaDash) { if (datosIniciales) renderizarMarcadores(datosIniciales); return; }
-  _mapaDash = L.map('mapa-dashboard', { zoomControl: true, scrollWheelZoom: true })
-    .setView([40.4637, -3.7492], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap',
-    maxZoom: 18,
-    errorTileUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScAAAAAElFTkSuQmCC'
-  }).addTo(_mapaDash);
-  if (datosIniciales) renderizarMarcadores(datosIniciales);
-  else actualizarMapaDashboard();
+.setContent(`
+        <div style="font-family:sans-serif;min-width:200px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:6px">📍 Nueva ubicación</div>
+          <div style="font-size:11px;color:#64748b;font-family:monospace;margin-bottom:10px">${lat}, ${lon}</div>
+          <div id="popup-ubi-label" style="font-size:11px;color:#64748b;margin-bottom:8px">Obteniendo dirección...</div>
+          <button id="btn-crear-desde-mapa"
+            style="width:100%;padding:7px 12px;background:#0F3460;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
+            + Crear incidente aquí
+          </button>
+        </div>
+      `)
 
   // Clic en el mapa para crear incidente
   _mapaDash.on('click', function(e) {
     const lat = e.latlng.lat.toFixed(6);
     const lon = e.latlng.lng.toFixed(6);
 
-    // Popup con botón de crear incidente
-    const popup = L.popup()
+    L.popup()
       .setLatLng(e.latlng)
-      .setContent(`
-        <div style="font-family:var(--sans,sans-serif);min-width:200px">
-          <div style="font-weight:700;font-size:13px;margin-bottom:6px">📍 Nueva ubicación</div>
-          <div style="font-size:11px;color:#64748b;font-family:monospace;margin-bottom:10px">${lat}, ${lon}</div>
-          <div id="popup-ubi-label" style="font-size:11px;color:#64748b;margin-bottom:8px">Obteniendo dirección...</div>
-          <button onclick="crearDesdeMapaDash(${lat}, ${lon})" 
-            style="width:100%;padding:7px 12px;background:#0F3460;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">
-            + Crear incidente aquí
-          </button>
-        </div>
-      `)
+      .setContent(
+        '<div style="font-family:sans-serif;min-width:200px">' +
+        '<div style="font-weight:700;font-size:13px;margin-bottom:6px">📍 Nueva ubicación</div>' +
+        '<div style="font-size:11px;color:#64748b;font-family:monospace;margin-bottom:10px">' + lat + ', ' + lon + '</div>' +
+        '<div id="popup-ubi-label" style="font-size:11px;color:#64748b;margin-bottom:8px">Obteniendo dirección...</div>' +
+        '<button id="btn-crear-desde-mapa" style="width:100%;padding:7px 12px;background:#0F3460;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">' +
+        '+ Crear incidente aquí</button></div>'
+      )
       .openOn(_mapaDash);
+
+    setTimeout(function() {
+      var btn = document.getElementById('btn-crear-desde-mapa');
+      if (btn) btn.addEventListener('click', function() {
+        var label = document.getElementById('popup-ubi-label');
+        var ubi = label && label.dataset && label.dataset.dir ? label.dataset.dir : '';
+        crearDesdeMapaDash(lat, lon, ubi);
+      });
+    }, 100);
+
+
+  setTimeout(() => {
+    mostrarNuevoIncidente();
+    setTimeout(() => {
+      const latEl = document.getElementById('i-lat');
+      const lonEl = document.getElementById('i-lon');
+      const ubiEl = document.getElementById('i-ubi');
+      if (latEl) latEl.value = lat;
+      if (lonEl) lonEl.value = lon;
+      if (ubiEl) ubiEl.value = ubi || (lat + ', ' + lon);
+
+      // Mostrar mapa mini con la ubicación
+      const mapaDiv = document.getElementById('mapa-mini');
+      if (mapaDiv) {
+        mapaDiv.style.display = 'block';
+        setTimeout(() => {
+          if (!window._mapaMiniInst) {
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true, dragging: true })
+              .setView([parseFloat(lat), parseFloat(lon)], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(window._mapaMiniInst);
+            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+          } else {
+            window._mapaMiniInst.invalidateSize();
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            if (window._mapaMiniMarker) {
+              window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            } else {
+              window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+            }
+          }
+        }, 200);
+      }
+    }, 300);
+  }, 100);
+}
 
     // Geocodificación inversa para obtener la dirección
     fetch('https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lon + '&format=json&accept-language=es', {
@@ -1472,6 +1515,43 @@ function inicializarMapaDashboard(datosIniciales) {
       if (label) label.textContent = '';
     });
   });
+}
+
+function crearDesdeMapaDash(lat, lon, ubi) {
+  _mapaDash.closePopup();
+  setTimeout(function() {
+    mostrarNuevoIncidente();
+    setTimeout(function() {
+      var latEl = document.getElementById('i-lat');
+      var lonEl = document.getElementById('i-lon');
+      var ubiEl = document.getElementById('i-ubi');
+      if (latEl) latEl.value = lat;
+      if (lonEl) lonEl.value = lon;
+      if (ubiEl) ubiEl.value = ubi || (lat + ', ' + lon);
+      var mapaDiv = document.getElementById('mapa-mini');
+      if (mapaDiv) {
+        mapaDiv.style.display = 'block';
+        setTimeout(function() {
+          if (!window._mapaMiniInst) {
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true, dragging: true })
+              .setView([parseFloat(lat), parseFloat(lon)], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '\u00a9 OpenStreetMap'
+            }).addTo(window._mapaMiniInst);
+            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+          } else {
+            window._mapaMiniInst.invalidateSize();
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            if (window._mapaMiniMarker) {
+              window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            } else {
+              window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+            }
+          }
+        }, 200);
+      }
+    }, 300);
+  }, 100);
 }
 
 function actualizarMapaDashboard() {
