@@ -316,7 +316,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── MAPA LEAFLET ── */
 #mapa-dashboard{height:340px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
-#mapa-mini{height:140px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
+#mapa-mini{height:220px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
 .leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
 .inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
@@ -1502,7 +1502,7 @@ async function geocodificar() {
         mapaDiv.style.display = 'block';
         setTimeout(() => {
           if (!window._mapaMiniInst) {
-            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: false, scrollWheelZoom: false })
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true, dragging: true })
               .setView([parseFloat(lat), parseFloat(lon)], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               attribution: '© OpenStreetMap'
