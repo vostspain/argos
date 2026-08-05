@@ -316,7 +316,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── MAPA LEAFLET ── */
 #mapa-dashboard{height:340px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
-#mapa-mini{height:140px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
+#mapa-mini{height:220px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
 .leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
 .inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
@@ -1366,18 +1366,34 @@ let _mapaMini = null;
 let _mapaMiniMarker = null;
 
 function crearMarcadorSVG(tipo, gravedad) {
-  const cfg   = getTipoConfig(tipo);
-  const color = cfg.color;
-  const sizes = { 'Nivel 3 — Extrema': 36, 'Nivel 2 — Alta': 32, 'Nivel 1 — Moderada': 28, 'Nivel 0 — Baja': 26 };
-  const sz    = sizes[gravedad] || 28;
+  const TIPO_EMOJI = {
+    'Persona desaparecida': '🔍', 'Búsqueda o rescate en montaña': '🏔️',
+    'Rescate acuático': '🌊', 'Incidente en medio acuático': '🌊',
+    'Incendio urbano': '🔥', 'Incendio industrial': '🏭', 'Incendio forestal': '🌲',
+    'TPC': '🚛', 'TPF': '🚛', 'Industria SEVESO': '⚠️',
+    'Ferrocarril': '🚆', 'Aviación': '✈️', 'Rescate urbano': '🏗️',
+    'Nuclear': '☢️', 'Gas': '💨', 'Contaminación ambiental': '🌿',
+    'Meteorología adversa': '⛈️', 'METEO': '⛈️', 'Abastecimiento': '🏪',
+    'Desprendimientos': '🪨', 'Deslizamientos': '🪨',
+    'Evacuación': '🚶', 'Albergue': '🏠', 'Presas': '🌊',
+    'Accidentes de tráfico': '🚗', 'Incidente Múltiples Víctimas': '🚑', 'IMV': '🚑',
+    'Incidentes Extraordinarios Violentos': '🚨', 'IEV': '🚨',
+    'BREC': '🏚️', 'Incidentes Conductas Autolíticas': '💜', 'ICA': '💜',
+    'Accidentes laborales': '🦺', 'DRP': '🛡️', 'Incidente cibernético': '💻',
+    'QUIM': '☣️', 'SISM': '🌍', 'INUN': '💧', 'INCP': '🔥',
+  };
+  const sizes = { 'Nivel 3 — Extrema': 38, 'Nivel 2 — Alta': 34, 'Nivel 1 — Moderada': 30, 'Nivel 0 — Baja': 28 };
+  const sz    = sizes[gravedad] || 30;
   const ringColors = { 'Nivel 3 — Extrema': '#ef4444', 'Nivel 2 — Alta': '#f59e0b', 'Nivel 1 — Moderada': '#3b82f6', 'Nivel 0 — Baja': '#10b981' };
   const ring  = ringColors[gravedad] || '#64748b';
-  const svgHtml = `<div class="inc-marker" style="background:${color};width:${sz}px;height:${sz}px;border-color:${ring}">
-    <svg viewBox="0 0 24 24" width="${sz*0.55}" height="${sz*0.55}" style="pointer-events:none">
-      ${cfg.svg}
-    </svg>
-  </div>`;
-  return L.divIcon({ html: svgHtml, className: '', iconSize: [sz, sz], iconAnchor: [sz/2, sz/2], popupAnchor: [0, -sz/2] });
+  let emoji = '📍';
+  if (tipo) {
+    for (const [key, val] of Object.entries(TIPO_EMOJI)) {
+      if (tipo.includes(key)) { emoji = val; break; }
+    }
+  }
+  const iconHtml = `<div style="width:${sz}px;height:${sz}px;border-radius:50%;background:white;border:3px solid ${ring};display:flex;align-items:center;justify-content:center;font-size:${sz*0.5}px;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer;line-height:1">${emoji}</div>`;
+  return L.divIcon({ html: iconHtml, className: '', iconSize: [sz, sz], iconAnchor: [sz/2, sz/2], popupAnchor: [0, -sz/2] });
 }
 
 
@@ -1497,6 +1513,28 @@ async function geocodificar() {
       if (latEl) latEl.value = lat;
       if (lonEl) lonEl.value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
+      const mapaDiv = document.getElementById('mapa-mini');
+      if (mapaDiv) {
+        mapaDiv.style.display = 'block';
+        setTimeout(() => {
+          if (!window._mapaMiniInst) {
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true, dragging: true })
+              .setView([parseFloat(lat), parseFloat(lon)], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(window._mapaMiniInst);
+            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+          } else {
+            window._mapaMiniInst.invalidateSize();
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            if (window._mapaMiniMarker) {
+              window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            } else {
+              window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+            }
+          }
+        }, 200);
+      }
     } else {
       toast('No se encontró en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
@@ -1924,6 +1962,28 @@ async function geocodificarEdicion() {
       document.getElementById('ei-lat').value = lat;
       document.getElementById('ei-lon').value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
+      const mapaDiv = document.getElementById('mapa-mini');
+      if (mapaDiv) {
+        mapaDiv.style.display = 'block';
+        setTimeout(() => {
+          if (!window._mapaMiniInst) {
+            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true, dragging: true })
+              .setView([parseFloat(lat), parseFloat(lon)], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '© OpenStreetMap'
+            }).addTo(window._mapaMiniInst);
+            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+          } else {
+            window._mapaMiniInst.invalidateSize();
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            if (window._mapaMiniMarker) {
+              window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            } else {
+              window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+            }
+          }
+        }, 200);
+      }
     } else {
       toast('Ubicación no encontrada en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
@@ -2023,6 +2083,7 @@ function abrirModalNuevoInc() {
       operador:  APP.operador
     }, res => {
       toast(`Incidente ${res.id} creado`, 'ok');
+      window._mapaMiniInst = null; window._mapaMiniMarker = null;
       cerrarModales();
       if (_mapaDash) actualizarMapaDashboard();
       cargarIncidentes(); cargarDashboard();
