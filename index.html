@@ -1497,7 +1497,6 @@ async function geocodificar() {
       if (latEl) latEl.value = lat;
       if (lonEl) lonEl.value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
-      // Mostrar mapa mini de confirmación
       const mapaDiv = document.getElementById('mapa-mini');
       if (mapaDiv) {
         mapaDiv.style.display = 'block';
@@ -1510,11 +1509,15 @@ async function geocodificar() {
             }).addTo(window._mapaMiniInst);
             window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
           } else {
-            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
-            window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
             window._mapaMiniInst.invalidateSize();
+            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
+            if (window._mapaMiniMarker) {
+              window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
+            } else {
+              window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
+            }
           }
-        }, 100);
+        }, 200);
       }
     } else {
       toast('No se encontró en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
