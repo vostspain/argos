@@ -316,7 +316,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── MAPA LEAFLET ── */
 #mapa-dashboard{height:340px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
-#mapa-mini{height:220px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
+#mapa-mini{height:140px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
 .leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
 .inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
@@ -1368,9 +1368,9 @@ let _mapaMiniMarker = null;
 function crearMarcadorSVG(tipo, gravedad) {
   const cfg   = getTipoConfig(tipo);
   const color = cfg.color;
-  const sizes = { Extremo: 36, Alto: 32, Medio: 28, Bajo: 26 };
+  const sizes = { 'Nivel 3 — Extrema': 36, 'Nivel 2 — Alta': 32, 'Nivel 1 — Moderada': 28, 'Nivel 0 — Baja': 26 };
   const sz    = sizes[gravedad] || 28;
-  const ringColors = { Extremo: '#ef4444', Alto: '#f59e0b', Medio: '#3b82f6', Bajo: '#10b981' };
+  const ringColors = { 'Nivel 3 — Extrema': '#ef4444', 'Nivel 2 — Alta': '#f59e0b', 'Nivel 1 — Moderada': '#3b82f6', 'Nivel 0 — Baja': '#10b981' };
   const ring  = ringColors[gravedad] || '#64748b';
   const svgHtml = `<div class="inc-marker" style="background:${color};width:${sz}px;height:${sz}px;border-color:${ring}">
     <svg viewBox="0 0 24 24" width="${sz*0.55}" height="${sz*0.55}" style="pointer-events:none">
@@ -1497,28 +1497,6 @@ async function geocodificar() {
       if (latEl) latEl.value = lat;
       if (lonEl) lonEl.value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
-      const mapaDiv = document.getElementById('mapa-mini');
-      if (mapaDiv) {
-        mapaDiv.style.display = 'block';
-        setTimeout(() => {
-          if (!window._mapaMiniInst) {
-            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true, dragging: true })
-              .setView([parseFloat(lat), parseFloat(lon)], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '© OpenStreetMap'
-            }).addTo(window._mapaMiniInst);
-            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
-          } else {
-            window._mapaMiniInst.invalidateSize();
-            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
-            if (window._mapaMiniMarker) {
-              window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
-            } else {
-              window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
-            }
-          }
-        }, 200);
-      }
     } else {
       toast('No se encontró en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
@@ -1661,7 +1639,7 @@ function tc(s, n) { return s && s.length > n ? s.slice(0,n)+'…' : (s||'—'); 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function bGrav(v) {
-  const cls = {Extremo:'r', Alto:'a', Medio:'b', Bajo:'g'};
+  const cls = {'Nivel 3 — Extrema':'r', 'Nivel 2 — Alta':'a', 'Nivel 1 — Moderada':'b', 'Nivel 0 — Baja':'g'};
   return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
 }
 function bEst(v) {
@@ -1878,7 +1856,7 @@ function verEditarInc(o) {
         <select id="ei-tipo" ${cerrado?'disabled':''}>${tiposSelect(o.Tipo||'')}</select></div>
       <div class="fg"><label>Gravedad</label>
         <select id="ei-grav" ${cerrado?'disabled':''}>
-          ${['Bajo','Medio','Alto','Extremo'].map(g=>`<option${g===o.Gravedad?' selected':''}>${g}</option>`).join('')}
+          ${['Nivel 0 — Baja','Nivel 1 — Moderada','Nivel 2 — Alta','Nivel 3 — Extrema'].map(g=>`<option${g===o.Gravedad?' selected':''}>${g}</option>`).join('')}
         </select></div>
       <div class="fg"><label>Estado</label>
         <select id="ei-est" ${cerrado?'disabled':''}>
@@ -1946,25 +1924,6 @@ async function geocodificarEdicion() {
       document.getElementById('ei-lat').value = lat;
       document.getElementById('ei-lon').value = lon;
       toast('📍 ' + lat + ', ' + lon + ' — ' + lugar, 'ok');
-      // Mostrar mapa mini de confirmación
-      const mapaDiv = document.getElementById('mapa-mini');
-      if (mapaDiv) {
-        mapaDiv.style.display = 'block';
-        setTimeout(() => {
-          if (!window._mapaMiniInst) {
-            window._mapaMiniInst = L.map('mapa-mini', { zoomControl: false, scrollWheelZoom: false })
-              .setView([parseFloat(lat), parseFloat(lon)], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-              attribution: '© OpenStreetMap'
-            }).addTo(window._mapaMiniInst);
-            window._mapaMiniMarker = L.marker([parseFloat(lat), parseFloat(lon)]).addTo(window._mapaMiniInst);
-          } else {
-            window._mapaMiniInst.setView([parseFloat(lat), parseFloat(lon)], 13);
-            window._mapaMiniMarker.setLatLng([parseFloat(lat), parseFloat(lon)]);
-            window._mapaMiniInst.invalidateSize();
-          }
-        }, 100);
-      }
     } else {
       toast('Ubicación no encontrada en España/Portugal/Francia. Introduce las coordenadas manualmente.', 'info');
     }
@@ -2027,7 +1986,7 @@ function abrirModalNuevoInc() {
       <div class="fg full"><label>Tipo de incidente</label>
         <select id="i-tipo">${tiposSelect('')}</select></div>
       <div class="fg"><label>Nivel de gravedad</label>
-        <select id="i-grav"><option>Bajo</option><option selected>Medio</option><option>Alto</option><option>Extremo</option></select></div>
+        <select id="i-grav"><option>Nivel 0 — Baja</option><option selected>Nivel 1 — Moderada</option><option>Nivel 2 — Alta</option><option>Nivel 3 — Extrema</option></select></div>
       <div class="fg full">
         <label>Ubicación</label>
         <div class="fx g8">
@@ -2052,8 +2011,6 @@ function abrirModalNuevoInc() {
   `, 'Crear incidente', 'btn-p', () => {
     const nombre = document.getElementById('i-nom').value.trim();
     if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
-    const btnGuardar = document.querySelector('.modal-footer .btn-p');
-    if (btnGuardar) { btnGuardar.disabled = true; btnGuardar.textContent = '⏳ Creando incidente...'; }
     gas('crearIncidente', {
       nombre,
       tipo:      document.getElementById('i-tipo').value,
@@ -2065,15 +2022,10 @@ function abrirModalNuevoInc() {
       situacion: document.getElementById('i-sit').value,
       operador:  APP.operador
     }, res => {
-      if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Crear incidente'; }
       toast(`Incidente ${res.id} creado`, 'ok');
-      window._mapaMiniInst = null;
       cerrarModales();
       if (_mapaDash) actualizarMapaDashboard();
       cargarIncidentes(); cargarDashboard();
-    }, () => {
-      if (btnGuardar) { btnGuardar.disabled = false; btnGuardar.textContent = 'Crear incidente'; }
-      toast('Error al crear el incidente. Inténtalo de nuevo.', 'err');
     });
   });
   // Inicializar mapa mini tras renderizar el DOM del modal
