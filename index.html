@@ -939,14 +939,27 @@ function toast(msg, tipo='ok') {
 }
 
 // ═══ GAS BRIDGE ══════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPLn3hETppfNlOsHWucnSxcWl-nClhsr8tfIUlIWqh4XKmZZq8g_2IzUNYM-pgx-jG/exec';
+
 function gas(fn, arg, ok, err) {
-  let r = google.script.run
-    .withFailureHandler(e => { toast('Error: ' + e.message, 'err'); if(err) err(e); })
-    .withSuccessHandler(res => {
-      if (res && res.ok === false) { toast('Error: ' + (res.error || 'desconocido'), 'err'); if(err) err(res); }
-      else { if(ok) ok(res); }
-    });
-  arg !== undefined ? r[fn](arg) : r[fn]();
+  fetch(GAS_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ fn, arg })
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res && res.ok === false) {
+      toast('Error: ' + (res.error || 'desconocido'), 'err');
+      if (err) err(res);
+    } else {
+      if (ok) ok(res);
+    }
+  })
+  .catch(e => {
+    toast('Error de conexión con ARGOS.', 'err');
+    if (err) err(e);
+  });
 }
 
 // ═══ HELPERS ═════════════════════════════════════════════════
@@ -1688,13 +1701,7 @@ function completarInit() {
 }
 
 // Arranque en contexto GAS
-if (typeof google !== 'undefined' && google.script) {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('splash').classList.add('gone');
-    console.warn('ARGOS: fuera del contexto GAS. Modo demostración.');
-  });
+document.addEventListener('DOMContentLoaded', init);
 }
 </script>
 </body>
