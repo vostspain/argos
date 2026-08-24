@@ -1,1453 +1,1701 @@
-// ============================================================
-// ARGOS v2 — Backend Principal (Codigo.gs)
-// Comunicación e Inteligencia en Emergencias · VOST Spain
-// ============================================================
-// DESPLIEGUE:
-//  1. Pega este código en Apps Script (Extensiones → Apps Script)
-//  2. Crea un archivo HTML llamado exactamente "Index"
-//     y pega el contenido de ARGOS_Index.html
-//  3. Implementar → Nueva implementación → Aplicación web
-//     Ejecutar como: Yo | Acceso: Cualquier usuario de la organización
-//  4. Configura Script Properties (⚙ → Propiedades del script):
-//     ANTHROPIC_API_KEY, AEMET_API_KEY,
-//     SLACK_BOT_TOKEN, SLACK_ALERTS_CHANNEL (C09TDT1FV5Y),
-//     TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
-//  5. Ejecuta instalarTodosTriggers() para activar automatizaciones
-// ============================================================
-
-const SHEET_ID = '13fqGM29Z6CHDXHS45_l_khaKWm4Y2I9Qb2bGf81O9No';
-const LOGO_DRIVE_ID = '1L4Tod7dETAuvwx0jYI02DZApLgYOmYB_'; // ⚠ Actualizar con el ID del logo ARGOS v2
-const SLACK_ADMIN   = 'U0894LJLAKY'; // Jokin — se añade automáticamente a canales de incidente
-
-const HOJAS = {
-  INCIDENTES:      'INCIDENTES',
-  ACTUALIZACIONES: 'ACTUALIZACIONES',
-  NOTAS_INTERNAS:  'NOTAS_INTERNAS',
-  NARRATIVAS:      'NARRATIVAS',
-  HIPOTESIS:       'HIPOTESIS',
-  LECCIONES:       'LECCIONES',
-  OPERADORES:      'OPERADORES',
-  ACCESO:          'ACCESO'         // Usuarios con acceso autorizado (solo admin gestiona)
-};
-
-// ============================================================
-// PROMPTS DE SISTEMA — CLAUDE
-// ============================================================
-
-const PROMPT_ACTUALIZACIONES = `
-Eres el módulo de comunicación estratégica (J5) de ARGOS, operado por VOST Spain.
-Tu salida: SIEMPRE un objeto JSON válido. Sin texto previo, posterior ni bloques Markdown.
-
-VOZ: autoridad tranquila, voz activa, estilo directo, sereno y factual.
-TUTEO PROHIBIDO: usa infinitivos y construcciones impersonales.
-NÚMERO DE EMERGENCIAS: siempre 1-1-2 con guiones.
-TÉRMINOS PROHIBIDOS: "crucial", "vital", "fundamental", "devastador" (salvo calificación oficial),
-"fake news", "Es importante", "Es necesario".
-
-HASHTAGS: siempre al INICIO del mensaje, seguidos de UNA LÍNEA EN BLANCO, luego el texto.
-#VOSTSpain fijo + máximo 1 hashtag temático. Máximo 2 hashtags totales.
-
-EMOJIS: solo señalización visual. Repertorio: 🔴 🟠 🟡 🔵 ⚠️ 📍 ✅ 🧵 ℹ️
-Máximo 2 en X y Bluesky. Máximo 3 en Telegram y WhatsApp.
-
-ATRIBUCIÓN: toda afirmación va atribuida a fuente oficial concreta. Nunca inventar atribución.
-
-CANALES:
-- X: 220-240 caracteres total. Hashtags inicio + línea en blanco + texto.
-- TELEGRAM: máx 1.024 chars. Negrita **texto**. Firma "— VOST Spain" en línea separada al final.
-- WHATSAPP: 70-80 palabras. Negrita *texto*. Firma "— VOST Spain" en línea separada al final.
-
-JSON DE SALIDA OBLIGATORIO:
-{
-  "canales": {
-    "x":        { "contenido": "string", "caracteres": 0, "nota": "string" },
-    "telegram": { "contenido": "string", "caracteres": 0, "nota": "string" },
-    "whatsapp": { "contenido": "string", "caracteres": 0, "nota": "string" }
-  },
-  "advertencias": ["string — datos pendientes o limitaciones para el operador"]
-}
-`;
-
-const PROMPT_NOTA_PRENSA = `
-Eres el módulo de notas de prensa de ARGOS, operado por VOST Spain.
-Redacta notas de prensa institucionales. Registro formal, estructura periodística clásica.
-Lead que responde a qué/quién/cuándo/dónde/por qué. Voz activa. Nunca especulativo.
-Tu salida: SIEMPRE un objeto JSON válido. Sin texto previo, posterior ni bloques Markdown.
-
-JSON DE SALIDA:
-{
-  "titular": "string — en MAYÚSCULAS",
-  "subtitular": "string",
-  "lugar_fecha": "string — Ciudad, DD de mes de YYYY",
-  "lead": "string",
-  "cuerpo": "string",
-  "sobre_vost": "VOST Spain es una organización de operaciones virtuales especializada en la gestión del entorno informativo durante emergencias.",
-  "cierre": "string",
-  "contacto": "comunicacion@vostspain.org",
-  "texto_completo": "string — nota lista para copiar con TITULAR EN MAYÚSCULAS, luego subtitular, lugar_fecha, lead, cuerpo, sobre_vost, contacto",
-  "advertencias": ["string"]
-}
-`;
-
-const PROMPT_LECCIONES = `
-Eres el módulo de análisis post-incidente de ARGOS, operado por VOST Spain.
-Genera informes de lecciones aprendidas al cierre de incidentes. Sé específico y accionable.
-Tu salida: SIEMPRE un objeto JSON válido. Sin texto previo, posterior ni bloques Markdown.
-
-{
-  "resumen_ejecutivo": "string — 3-4 frases que resumen el incidente y su gestión",
-  "cronologia": "string — secuencia de hechos clave en orden cronológico",
-  "gestion_comunicacion": {
-    "valoracion": "string",
-    "aspectos_positivos": ["string"],
-    "aspectos_mejorables": ["string"]
-  },
-  "gestion_narrativas": {
-    "total": 0,
-    "efectividad": "Alta | Media | Baja | No aplicable",
-    "narrativas_criticas": ["string"]
-  },
-  "lecciones_aprendidas": ["string — concretas y accionables"],
-  "recomendaciones": ["string — mejoras específicas para próximos incidentes similares"],
-  "valoracion_general": "Muy positiva | Positiva | Mejorable | Deficiente"
-}
-`;
-
-const PROMPT_HIPOTESIS = `
-Eres el módulo de análisis predictivo de ARGOS, operado por VOST Spain.
-Usas tu conocimiento actualizado y búsqueda en internet para generar hipótesis operativas.
-Tu salida: SIEMPRE un objeto JSON válido. Sin texto previo, posterior ni bloques Markdown.
-
-Genera exactamente 4 hipótesis para el incidente:
-H1 — Evolución física probable del incidente
-H2 — Narrativas hostiles y desinformación previsible
-H3 — Comportamiento esperado de la ciudadanía en redes
-H4 — Estrategia informativa recomendada para VOST Spain
-
-Para cada hipótesis incluye un precedente histórico documentado y real.
-
-{
-  "id_incidente": "string",
-  "resumen_ejecutivo": "string — análisis en 3-4 frases",
-  "hipotesis": [
-    {
-      "numero": 1,
-      "categoria": "Evolución física | Narrativas hostiles | Comportamiento ciudadano | Estrategia informativa",
-      "titulo": "string",
-      "probabilidad": "Alta | Media | Baja",
-      "descripcion": "string — descripción detallada y accionable",
-      "precedente": {
-        "descripcion": "string — caso real documentado",
-        "lugar_fecha": "string",
-        "fuente": "string — medio o informe que lo documentó"
-      },
-      "indicadores": ["string — señales que confirmarían esta hipótesis"],
-      "recomendacion_argos": "string — qué debe hacer VOST Spain si se activa"
-    }
-  ],
-  "alerta_temprana": "string — la acción más urgente que VOST Spain debe tomar ahora"
-}
-`;
-
-// ============================================================
-// PUNTO DE ENTRADA WEB
-// ============================================================
-
-function doGet() {
-  return HtmlService.createTemplateFromFile('Index')
-    .evaluate()
-    .setTitle('ARGOS · VOST Spain')
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
-    .addMetaTag('viewport', 'width=device-width, initial-scale=1.0');
-}
-
-function doPost(e) {
-  try {
-    if (e.postData && e.postData.contents && e.postData.contents.startsWith('payload=')) {
-      const respInmediata = ContentService
-        .createTextOutput(JSON.stringify({ text: '⏳ Procesando...' }))
-        .setMimeType(ContentService.MimeType.JSON);
-      try {
-        const payload  = JSON.parse(decodeURIComponent(e.postData.contents.replace('payload=', '')));
-        const actionId = payload.actions && payload.actions[0] ? payload.actions[0].action_id : null;
-        const value    = payload.actions && payload.actions[0] ? payload.actions[0].value    : null;
-        if (actionId === 'crear_incidente_alerta' && value) {
-          _crearIncidenteDesdeAlertaSlack(JSON.parse(value));
-        }
-      } catch(errSlack) {
-        console.error('Error Slack payload: ' + errSlack.message);
-      }
-      return respInmediata;
-    }
-    return ContentService.createTextOutput(JSON.stringify({ status: 'ok' }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch(err) {
-    return ContentService.createTextOutput(JSON.stringify({ status: 'error', mensaje: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-}
-
-// ============================================================
-// UTILIDADES
-// ============================================================
-
-function _ss()            { return SpreadsheetApp.openById(SHEET_ID); }
-function _hoja(nombre)    { return _ss().getSheetByName(nombre); }
-function _ahora()         { return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm:ss'); }
-
-function _generarId(pre) {
-  const ts   = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMddHHmmss');
-  const rand = Math.floor(Math.random() * 900 + 100);
-  return `${pre}-${new Date().getFullYear()}-${ts}-${rand}`;
-}
-
-function _mapa(sheet) {
-  const cabs = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
-  const m    = {};
-  cabs.forEach((h, i) => { if (h) m[String(h).trim()] = i; });
-  return m;
-}
-
-function _hojaAObjetos(sheet) {
-  if (!sheet) return [];
-  const datos = sheet.getDataRange().getValues();
-  if (datos.length < 2) return [];
-  const cabs = datos[0].map(h => String(h).trim());
-  return datos.slice(1)
-    .filter(f => f[0] !== '' && f[0] !== null && f[0] !== undefined)
-    .map(f => {
-      const obj = {};
-      cabs.forEach((c, i) => {
-        const v = f[i];
-        obj[c] = v instanceof Date
-          ? Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy HH:mm')
-          : (v === null || v === undefined ? '' : String(v));
-      });
-      return obj;
-    });
-}
-
-function _setCelda(sheet, idCampo, idValor, campo, valor) {
-  const datos = sheet.getDataRange().getValues();
-  const cabs  = datos[0].map(h => String(h).trim());
-  const idCol = cabs.indexOf(idCampo);
-  const col   = cabs.indexOf(campo);
-  if (col === -1) return false;
-  for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][idCol]) === String(idValor)) {
-      sheet.getRange(i + 1, col + 1).setValue(valor);
-      return true;
-    }
-  }
-  return false;
-}
-
-function _buscarFila(sheet, idCampo, idValor) {
-  const datos = sheet.getDataRange().getValues();
-  const cabs  = datos[0].map(h => String(h).trim());
-  const idCol = cabs.indexOf(idCampo);
-  if (idCol === -1) return null;
-  for (let i = 1; i < datos.length; i++) {
-    if (String(datos[i][idCol]) === String(idValor)) {
-      const obj = {};
-      cabs.forEach((c, j) => { obj[c] = datos[i][j]; });
-      return { obj, fila: i + 1, cabs, mapa: Object.fromEntries(cabs.map((c,j)=>[c,j])) };
-    }
-  }
-  return null;
-}
-
-function _appendRow(sheet, m, datos) {
-  const fila = new Array(Math.max(...Object.values(m)) + 1).fill('');
-  Object.entries(datos).forEach(([k, v]) => { if (m[k] !== undefined) fila[m[k]] = v; });
-  sheet.appendRow(fila);
-}
-
-// ============================================================
-// DASHBOARD
-// ============================================================
-
-function getResumenDashboard() {
-  try {
-    const inc = _hojaAObjetos(_hoja(HOJAS.INCIDENTES));
-    const nar = _hojaAObjetos(_hoja(HOJAS.NARRATIVAS));
-    return {
-      ok:         true,
-      activos:    inc.filter(r => r.Estado === 'Activo').length,
-      standby:    inc.filter(r => r.Estado === 'Standby').length,
-      cerrados:   inc.filter(r => r.Estado === 'Cerrado').length,
-      criticas:   nar.filter(r => Number(r.NCRS_Total) >= 4).length,
-      recientes:  [...inc].reverse().slice(0, 5)
-    };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// INCIDENTES
-// ============================================================
-
-function getIncidentes() {
-  try {
-    return { ok: true, data: _hojaAObjetos(_hoja(HOJAS.INCIDENTES)) };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function crearIncidente(datos) {
-  try {
-    const sheet = _hoja(HOJAS.INCIDENTES);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.INCIDENTES}' no encontrada.` };
-    const m  = _mapa(sheet);
-    const id = _generarId('INC');
-    _appendRow(sheet, m, {
-      ID_Incidente:  id,
-      Timestamp:     _ahora(),
-      Nombre:        datos.nombre    || '',
-      Tipo:          datos.tipo      || '',
-      Gravedad:      datos.gravedad  || 'Medio',
-      Estado:        'Activo',
-      Ubicacion:     datos.ubicacion || '',
-      Situacion:     datos.situacion || '',
-      Operador_Alta: datos.operador  || '',
-      Canal_Slack:   '',
-      Fecha_Cierre:  ''
-    });
-    try { _crearYNotificarCanalSlack(id, datos.nombre || id); } catch(_) {}
-    return { ok: true, id };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function cerrarIncidente(id) {
-  try {
-    const sheet = _hoja(HOJAS.INCIDENTES);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.INCIDENTES}' no encontrada.` };
-    _setCelda(sheet, 'ID_Incidente', id, 'Estado',       'Cerrado');
-    _setCelda(sheet, 'ID_Incidente', id, 'Fecha_Cierre', _ahora());
-    _generarLeccionAutomatica(id);
-    return { ok: true };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function actualizarSituacion(datos) {
-  try {
-    const sheet = _hoja(HOJAS.INCIDENTES);
-    _setCelda(sheet, 'ID_Incidente', datos.id, 'Situacion', datos.situacion || '');
-    return { ok: true };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// ACTUALIZACIONES PÚBLICAS
-// ============================================================
-
-function getActualizaciones(idIncidente) {
-  try {
-    const todos = _hojaAObjetos(_hoja(HOJAS.ACTUALIZACIONES));
-    return { ok: true, data: idIncidente ? todos.filter(r => r.ID_Incidente === idIncidente) : todos };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function crearActualizacion(datos) {
-  try {
-    const sheet = _hoja(HOJAS.ACTUALIZACIONES);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.ACTUALIZACIONES}' no encontrada.` };
-    const m  = _mapa(sheet);
-    const id = _generarId('ACT');
-    _appendRow(sheet, m, {
-      ID_Actualizacion: id,
-      ID_Incidente:     datos.id_incidente || '',
-      Timestamp:        _ahora(),
-      Operador:         datos.operador     || '',
-      INPUT_Hechos:     datos.hechos       || '',
-      INPUT_Objetivo:   datos.objetivo     || '',
-      Draft_X:          '',
-      Draft_Telegram:   '',
-      Draft_WhatsApp:   '',
-      Draft_Prensa:     '',
-      Advertencias:     '',
-      Estado:           'Borrador'
-    });
-    return { ok: true, id };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function generarDrafts(idActualizacion) {
-  try {
-    const sheet = _hoja(HOJAS.ACTUALIZACIONES);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.ACTUALIZACIONES}' no encontrada.` };
-    const res = _buscarFila(sheet, 'ID_Actualizacion', idActualizacion);
-    if (!res) return { ok: false, error: 'Actualización no encontrada: ' + idActualizacion };
-    const { obj, fila, mapa } = res;
-
-    const incSheet = _hoja(HOJAS.INCIDENTES);
-    const incRes   = _buscarFila(incSheet, 'ID_Incidente', obj.ID_Incidente || '');
-    const inc      = incRes ? incRes.obj : {};
-
-    const prompt = `
-INCIDENTE: ${inc.Nombre || obj.ID_Incidente}
-Tipo: ${inc.Tipo||''} | Gravedad: ${inc.Gravedad||''} | Ubicación: ${inc.Ubicacion||''}
-Situación: ${inc.Situacion||''}
-
-HECHOS VERIFICADOS A COMUNICAR:
-"${obj.INPUT_Hechos||''}"
-
-OBJETIVO DE COMUNICACIÓN:
-"${obj.INPUT_Objetivo||''}"
-
-Genera el paquete de comunicación multicanal. Devuelve exclusivamente el JSON.
-`;
-    const respuesta = _llamarClaude(PROMPT_ACTUALIZACIONES, prompt);
-    const salida    = _parsearJSON(respuesta);
-    const canales   = salida.canales || {};
-
-    const s = (col, val) => {
-      if (mapa[col] !== undefined && val) sheet.getRange(fila, mapa[col] + 1).setValue(val);
-    };
-    s('Draft_X',        canales.x?.contenido        || '');
-    s('Draft_Telegram', canales.telegram?.contenido || '');
-    s('Draft_WhatsApp', canales.whatsapp?.contenido || '');
-    s('Advertencias',   (salida.advertencias || []).join(' | '));
-
-    return { ok: true, drafts: canales, advertencias: salida.advertencias || [] };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function generarNotaPrensa(idActualizacion) {
-  try {
-    const sheet = _hoja(HOJAS.ACTUALIZACIONES);
-    const res   = _buscarFila(sheet, 'ID_Actualizacion', idActualizacion);
-    if (!res) return { ok: false, error: 'Actualización no encontrada.' };
-    const { obj, fila, mapa } = res;
-
-    const incSheet = _hoja(HOJAS.INCIDENTES);
-    const incRes   = _buscarFila(incSheet, 'ID_Incidente', obj.ID_Incidente || '');
-    const inc      = incRes ? incRes.obj : {};
-
-    const prompt = `
-Incidente: ${inc.Nombre||''} | Tipo: ${inc.Tipo||''} | Gravedad: ${inc.Gravedad||''}
-Ubicación: ${inc.Ubicacion||''} | Situación: ${inc.Situacion||''}
-Hechos: "${obj.INPUT_Hechos||''}"
-Objetivo: "${obj.INPUT_Objetivo||''}"
-Genera la nota de prensa institucional. Devuelve exclusivamente el JSON.
-`;
-    const respuesta = _llamarClaude(PROMPT_NOTA_PRENSA, prompt);
-    const salida    = _parsearJSON(respuesta);
-    if (mapa['Draft_Prensa'] !== undefined) {
-      sheet.getRange(fila, mapa['Draft_Prensa'] + 1).setValue(salida.texto_completo || '');
-    }
-    return { ok: true, nota: salida };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function marcarPublicado(idActualizacion) {
-  try {
-    const sheet = _hoja(HOJAS.ACTUALIZACIONES);
-    _setCelda(sheet, 'ID_Actualizacion', idActualizacion, 'Estado', 'Publicado');
-    return { ok: true };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// NOTAS INTERNAS
-// ============================================================
-
-function getNotas(idIncidente) {
-  try {
-    const todos = _hojaAObjetos(_hoja(HOJAS.NOTAS_INTERNAS));
-    return { ok: true, data: idIncidente ? todos.filter(r => r.ID_Incidente === idIncidente) : todos };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function crearNota(datos) {
-  try {
-    const sheet = _hoja(HOJAS.NOTAS_INTERNAS);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.NOTAS_INTERNAS}' no encontrada.` };
-    const m  = _mapa(sheet);
-    const id = _generarId('NI');
-    _appendRow(sheet, m, {
-      ID_Nota:      id,
-      ID_Incidente: datos.id_incidente || '',
-      Timestamp:    _ahora(),
-      Operador:     datos.operador     || '',
-      Contenido:    datos.contenido    || '',
-      Categoria:    datos.categoria    || 'General'
-    });
-    return { ok: true, id };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// NARRATIVAS — MONITOR CIB + NCRS
-// ============================================================
-
-function getNarrativas(idIncidente) {
-  try {
-    const todos = _hojaAObjetos(_hoja(HOJAS.NARRATIVAS));
-    return { ok: true, data: idIncidente ? todos.filter(r => r.ID_Incidente === idIncidente) : todos };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function crearNarrativa(datos) {
-  try {
-    const sheet = _hoja(HOJAS.NARRATIVAS);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.NARRATIVAS}' no encontrada.` };
-    const m  = _mapa(sheet);
-    const id = _generarId('NAR');
-
-    const a  = Number(datos.alcance)       || 1;
-    const v  = Number(datos.verosimilitud) || 1;
-    const vel= Number(datos.velocidad)     || 1;
-    const mal= Number(datos.malicia)       || 1;
-    const ncrs    = Math.ceil((a + v + vel + mal) / 4);
-    const tactica = _calcularTactica(ncrs);
-
-    _appendRow(sheet, m, {
-      ID_Narrativa:      id,
-      ID_Incidente:      datos.id_incidente  || '',
-      Timestamp:         _ahora(),
-      Operador:          datos.operador      || '',
-      Descripcion:       datos.descripcion   || '',
-      Fuente_Origen:     datos.fuente        || '',
-      Plataforma:        datos.plataforma    || '',
-      URL_Contenido:     datos.url           || '',
-      DIM_Alcance:       a,
-      DIM_Verosimilitud: v,
-      DIM_Velocidad:     vel,
-      DIM_Malicia:       mal,
-      NCRS_Total:        ncrs,
-      Tactica:           tactica.texto,
-      Draft_X:           '',
-      Draft_Telegram:    '',
-      Draft_WhatsApp:    '',
-      Estado:            'Activa'
-    });
-
-    if (ncrs >= 3) {
-      try { _alertarNarrativaSlack(datos.id_incidente, id, datos.descripcion, ncrs, tactica); } catch(_) {}
-    }
-
-    return { ok: true, id, ncrs, tactica };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function _calcularTactica(ncrs) {
-  if (ncrs <= 2) return { nivel: ncrs, texto: 'Solo monitorizar', color: 'verde' };
-  if (ncrs === 3) return { nivel: 3,   texto: 'Monitorizar + alerta interna al equipo', color: 'naranja' };
-  if (ncrs === 4) return { nivel: 4,   texto: 'Publicar desmentido — generar borradores', color: 'rojo' };
-  return           { nivel: 5,         texto: 'Desmentido urgente + contactar autoridades', color: 'critico' };
-}
-
-function generarDesmentido(idNarrativa) {
-  try {
-    const sheet = _hoja(HOJAS.NARRATIVAS);
-    const res   = _buscarFila(sheet, 'ID_Narrativa', idNarrativa);
-    if (!res) return { ok: false, error: 'Narrativa no encontrada.' };
-    const { obj, fila, mapa } = res;
-
-    const prompt = `
-NARRATIVA FALSA/DESINFORMACIÓN DETECTADA (NCRS: ${obj.NCRS_Total}):
-"${obj.Descripcion||''}"
-Fuente de origen: ${obj.Fuente_Origen||'No especificada'}
-Plataforma: ${obj.Plataforma||'No especificada'}
-Incidente relacionado: ${obj.ID_Incidente||''}
-
-Genera borradores de DESMENTIDO o CORRECCIÓN para los tres canales.
-Usa técnica de pre-impugnación: ancla la realidad primero.
-NO repitas el bulo literalmente. Estructura: [Ancla de realidad] → [Corrección con fuente] → [Derivación]
-Devuelve exclusivamente el JSON del system prompt.
-`;
-    const respuesta = _llamarClaude(PROMPT_ACTUALIZACIONES, prompt);
-    const salida    = _parsearJSON(respuesta);
-    const canales   = salida.canales || {};
-
-    const s = (col, val) => {
-      if (mapa[col] !== undefined && val) sheet.getRange(fila, mapa[col] + 1).setValue(val);
-    };
-    s('Draft_X',        canales.x?.contenido        || '');
-    s('Draft_Telegram', canales.telegram?.contenido || '');
-    s('Draft_WhatsApp', canales.whatsapp?.contenido || '');
-
-    return { ok: true, drafts: canales };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// HIPÓTESIS — ANÁLISIS PREDICTIVO
-// ============================================================
-
-function getHipotesis(idIncidente) {
-  try {
-    const todos = _hojaAObjetos(_hoja(HOJAS.HIPOTESIS));
-    return { ok: true, data: idIncidente ? todos.filter(r => r.ID_Incidente === idIncidente) : todos };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function generarHipotesis(idIncidente) {
-  try {
-    const incSheet = _hoja(HOJAS.INCIDENTES);
-    const incRes   = _buscarFila(incSheet, 'ID_Incidente', idIncidente);
-    if (!incRes) return { ok: false, error: 'Incidente no encontrado: ' + idIncidente };
-    const inc = incRes.obj;
-
-    const lecciones = _hojaAObjetos(_hoja(HOJAS.LECCIONES))
-      .filter(r => r.Generada_Por === 'IA' || r.Estado === 'Cerrada')
-      .slice(-5)
-      .map(r => `• ${r.Titulo}: ${r.Descripcion || ''}`)
-      .join('\n');
-
-    const prompt = `
-INCIDENTE ACTIVO:
-ID: ${inc.ID_Incidente}
-Nombre: ${inc.Nombre||''}
-Tipo: ${inc.Tipo||''}
-Gravedad: ${inc.Gravedad||''}
-Ubicación: ${inc.Ubicacion||''}
-Situación actual: ${inc.Situacion||''}
-
-CONTEXTO DE INCIDENTES ANTERIORES EN VOST SPAIN:
-${lecciones || 'Sin lecciones previas registradas.'}
-
-Busca incidentes similares ocurridos en España y el mundo (con fecha y fuente real).
-Genera las 4 hipótesis con precedentes históricos documentados.
-Devuelve exclusivamente el JSON del system prompt.
-`;
-    const respuesta = _llamarClaudeConBusqueda(PROMPT_HIPOTESIS, prompt);
-    const salida    = _parsearJSON(respuesta);
-
-    const hipSheet = _hoja(HOJAS.HIPOTESIS);
-    if (hipSheet) {
-      const m  = _mapa(hipSheet);
-      const id = _generarId('HIP');
-      _appendRow(hipSheet, m, {
-        ID_Hipotesis:    id,
-        ID_Incidente:    idIncidente,
-        Timestamp:       _ahora(),
-        Resumen:         salida.resumen_ejecutivo || '',
-        Alerta_Temprana: salida.alerta_temprana   || '',
-        JSON_Completo:   JSON.stringify(salida)
-      });
-    }
-
-    return { ok: true, hipotesis: salida };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// LECCIONES APRENDIDAS
-// ============================================================
-
-function getLecciones(idIncidente) {
-  try {
-    const todos = _hojaAObjetos(_hoja(HOJAS.LECCIONES));
-    return { ok: true, data: idIncidente ? todos.filter(r => r.ID_Incidente === idIncidente) : todos };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function crearLeccion(datos) {
-  try {
-    const sheet = _hoja(HOJAS.LECCIONES);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.LECCIONES}' no encontrada.` };
-    const m  = _mapa(sheet);
-    const id = datos.id || _generarId('LEC');
-    const res = _buscarFila(sheet, 'ID_Leccion', id);
-    if (res) {
-      const { fila } = res;
-      [['Titulo', datos.titulo], ['Descripcion', datos.descripcion],
-       ['Categoria', datos.categoria], ['Prioridad', datos.prioridad],
-       ['Accion_Correctiva', datos.accion_correctiva], ['Estado', datos.estado]]
-        .forEach(([col, val]) => {
-          if (m[col] !== undefined && val !== undefined)
-            sheet.getRange(fila, m[col] + 1).setValue(val);
-        });
-    } else {
-      _appendRow(sheet, m, {
-        ID_Leccion:        id,
-        ID_Incidente:      datos.id_incidente      || '',
-        Timestamp:         _ahora(),
-        Titulo:            datos.titulo             || '',
-        Descripcion:       datos.descripcion        || '',
-        Categoria:         datos.categoria          || 'General',
-        Prioridad:         datos.prioridad          || 'Media',
-        Accion_Correctiva: datos.accion_correctiva  || '',
-        Estado:            datos.estado             || 'Pendiente',
-        Generada_Por:      datos.generada_por       || 'Manual',
-        JSON_Completo:     ''
-      });
-    }
-    return { ok: true, id };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function _generarLeccionAutomatica(idIncidente) {
-  try {
-    const incRes = _buscarFila(_hoja(HOJAS.INCIDENTES), 'ID_Incidente', idIncidente);
-    if (!incRes) return;
-    const inc  = incRes.obj;
-    const acts = _hojaAObjetos(_hoja(HOJAS.ACTUALIZACIONES)).filter(r => r.ID_Incidente === idIncidente);
-    const nars = _hojaAObjetos(_hoja(HOJAS.NARRATIVAS)).filter(r => r.ID_Incidente === idIncidente);
-
-    const prompt = `
-INCIDENTE CERRADO:
-Nombre: ${inc.Nombre||idIncidente}
-Tipo: ${inc.Tipo||''} | Gravedad: ${inc.Gravedad||''}
-Apertura: ${inc.Timestamp||''} | Cierre: ${inc.Fecha_Cierre||''}
-Actualizaciones publicadas: ${acts.length}
-Narrativas gestionadas: ${nars.length} (críticas NCRS≥4: ${nars.filter(r=>Number(r.NCRS_Total)>=4).length})
-
-Genera el informe de lecciones aprendidas. Sé específico y accionable.
-Devuelve exclusivamente el JSON del system prompt.
-`;
-    const respuesta = _llamarClaude(PROMPT_LECCIONES, prompt);
-    const informe   = _parsearJSON(respuesta);
-
-    const sheet = _hoja(HOJAS.LECCIONES);
-    if (!sheet) return;
-    const m  = _mapa(sheet);
-    const id = _generarId('LEC');
-    _appendRow(sheet, m, {
-      ID_Leccion:        id,
-      ID_Incidente:      idIncidente,
-      Timestamp:         _ahora(),
-      Titulo:            `Lecciones aprendidas — ${inc.Nombre||idIncidente}`,
-      Descripcion:       informe.resumen_ejecutivo || '',
-      Categoria:         'Post-incidente IA',
-      Prioridad:         'Alta',
-      Accion_Correctiva: (informe.recomendaciones||[]).join(' | '),
-      Estado:            'Pendiente',
-      Generada_Por:      'IA',
-      JSON_Completo:     JSON.stringify(informe)
-    });
-  } catch(err) {
-    console.error('Error generando lección automática: ' + err.message);
-  }
-}
-
-// ============================================================
-// OPERADORES
-// ============================================================
-
-function getOperadores() {
-  try {
-    return { ok: true, data: _hojaAObjetos(_hoja(HOJAS.OPERADORES)) };
-  } catch(_) { return { ok: true, data: [] }; }
-}
-
-// ============================================================
-// AUTENTICACIÓN — OTP POR EMAIL
-// ============================================================
-// Flujo:
-//  1. solicitarCodigo(email)  → verifica que el email está en ACCESO y activo,
-//     genera OTP de 6 dígitos, lo guarda en Script Properties (10 min de validez),
-//     envía el correo.
-//  2. verificarCodigo({email, codigo}) → valida el OTP y devuelve nombre y rol.
-//     Elimina el OTP tras el primer uso correcto.
-//
-// La hoja ACCESO tiene las columnas:
-//   Email | Nombre | Rol | Activo | Fecha_Alta | Añadido_Por
-// Solo el administrador puede añadir o modificar filas.
-// ============================================================
-
-function solicitarCodigo(email) {
-  try {
-    email = (email || '').trim().toLowerCase();
-    if (!email || !email.includes('@')) return { ok: false, error: 'Email no válido.' };
-
-    // Buscar en la hoja ACCESO
-    const sheet = _hoja(HOJAS.ACCESO);
-    if (!sheet) return { ok: false, error: 'Hoja ACCESO no encontrada. Contacta con el administrador.' };
-
-    const res = _buscarFila(sheet, 'Email', email);
-    if (!res) return { ok: false, error: 'Este email no tiene acceso a ARGOS. Contacta con el administrador.' };
-
-    const { obj } = res;
-    const activo = (obj.Activo || '').trim().toLowerCase();
-    if (activo !== 'sí' && activo !== 'si' && activo !== 'true' && activo !== '1') {
-      return { ok: false, error: 'Esta cuenta está desactivada. Contacta con el administrador.' };
-    }
-
-    // Generar OTP de 6 dígitos
-    const codigo  = String(Math.floor(100000 + Math.random() * 900000));
-    const expiry  = new Date().getTime() + 10 * 60 * 1000; // 10 minutos
-    const nombre  = obj.Nombre || email;
-    const key     = 'OTP_' + Utilities.base64Encode(email);
-
-    PropertiesService.getScriptProperties().setProperty(key, JSON.stringify({
-      codigo, expiry, nombre, rol: obj.Rol || 'Operador', intentos: 0
-    }));
-
-    // Enviar email con el código
-    const asunto = `[ARGOS · VOST Spain] Tu código de acceso: ${codigo}`;
-    const cuerpo = `Hola ${nombre},\n\n` +
-      `Tu código de acceso a ARGOS es:\n\n    ${codigo}\n\n` +
-      `Válido durante 10 minutos.\n\n` +
-      `Si no has solicitado este código, ignora este mensaje.\n\n` +
-      `— ARGOS · VOST Spain`;
-
-    GmailApp.sendEmail(email, asunto, cuerpo);
-
-    return { ok: true, nombre, mensaje: `Código enviado a ${email}` };
-  } catch(err) {
-    return { ok: false, error: 'Error interno: ' + err.message };
-  }
-}
-
-function verificarCodigo(datos) {
-  try {
-    const email  = (datos.email  || '').trim().toLowerCase();
-    const codigo = (datos.codigo || '').trim();
-    if (!email || !codigo) return { ok: false, error: 'Datos incompletos.' };
-
-    const key     = 'OTP_' + Utilities.base64Encode(email);
-    const props   = PropertiesService.getScriptProperties();
-    const raw     = props.getProperty(key);
-
-    if (!raw) return { ok: false, error: 'No hay código activo para este email. Solicita uno nuevo.' };
-
-    const otp = JSON.parse(raw);
-
-    // Comprobar expiración
-    if (new Date().getTime() > otp.expiry) {
-      props.deleteProperty(key);
-      return { ok: false, error: 'El código ha caducado. Solicita uno nuevo.' };
-    }
-
-    // Limitar intentos (máximo 3)
-    otp.intentos = (otp.intentos || 0) + 1;
-    if (otp.intentos > 3) {
-      props.deleteProperty(key);
-      return { ok: false, error: 'Demasiados intentos fallidos. Solicita un nuevo código.' };
-    }
-
-    // Verificar código
-    if (otp.codigo !== codigo) {
-      props.setProperty(key, JSON.stringify(otp)); // guardar intento actualizado
-      return { ok: false, error: `Código incorrecto. ${3 - otp.intentos + 1} intentos restantes.` };
-    }
-
-    // Código correcto: eliminar OTP y devolver datos de sesión
-    props.deleteProperty(key);
-    return { ok: true, nombre: otp.nombre, rol: otp.rol, email };
-
-  } catch(err) {
-    return { ok: false, error: 'Error interno: ' + err.message };
-  }
-}
-
-// ── GESTIÓN DE ACCESO (solo administrador) ──────────────────
-
-function getUsuariosAcceso() {
-  try {
-    const sheet = _hoja(HOJAS.ACCESO);
-    if (!sheet) return { ok: true, data: [] };
-    return { ok: true, data: _hojaAObjetos(sheet) };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-function gestionarAcceso(datos) {
-  // datos.accion: 'crear' | 'toggle'
-  try {
-    const sheet = _hoja(HOJAS.ACCESO);
-    if (!sheet) return { ok: false, error: `Hoja '${HOJAS.ACCESO}' no encontrada.` };
-    const m = _mapa(sheet);
-
-    if (datos.accion === 'crear') {
-      const email  = (datos.email  || '').trim().toLowerCase();
-      const nombre = (datos.nombre || '').trim();
-      if (!email || !nombre) return { ok: false, error: 'Email y nombre son obligatorios.' };
-      // Verificar que no exista ya
-      const existente = _buscarFila(sheet, 'Email', email);
-      if (existente) return { ok: false, error: 'Este email ya está registrado.' };
-      _appendRow(sheet, m, {
-        Email:       email,
-        Nombre:      nombre,
-        Rol:         datos.rol         || 'Operador',
-        Activo:      'Sí',
-        Fecha_Alta:  _ahora(),
-        Añadido_Por: datos.añadido_por || 'Admin'
-      });
-      return { ok: true };
-    }
-
-    if (datos.accion === 'toggle') {
-      const res = _buscarFila(sheet, 'Email', datos.email);
-      if (!res) return { ok: false, error: 'Usuario no encontrado.' };
-      const nuevoEstado = (res.obj.Activo || '').toLowerCase() === 'sí' ? 'No' : 'Sí';
-      sheet.getRange(res.fila, res.mapa['Activo'] + 1).setValue(nuevoEstado);
-      return { ok: true, activo: nuevoEstado };
-    }
-
-    return { ok: false, error: 'Acción no reconocida.' };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ── FUNCIÓN DE UTILIDAD: INICIALIZAR HOJA ACCESO ────────────
-// Ejecuta esto una vez manualmente para crear la hoja con las cabeceras correctas
-// y añadir al administrador como primer usuario.
-function inicializarHojaAcceso() {
-  const ss    = _ss();
-  let sheet   = ss.getSheetByName(HOJAS.ACCESO);
-  if (!sheet) sheet = ss.insertSheet(HOJAS.ACCESO);
-  // Cabeceras
-  sheet.getRange(1, 1, 1, 6).setValues([['Email','Nombre','Rol','Activo','Fecha_Alta','Añadido_Por']]);
-  // Administrador por defecto
-  sheet.appendRow(['jzubieta@vostspain.org', 'Jokin', 'Administrador', 'Sí', _ahora(), 'Sistema']);
-  console.log('✅ Hoja ACCESO inicializada. Administrador: jzubieta@vostspain.org');
-}
-
-// ============================================================
-// ALERTAS EXTERNAS — AEMET + CSN
-// ============================================================
-
-function getAlertasExternas() {
-  const resultado = { ok: true, aemet: [], csn: [] };
-  try {
-    const apiKey = PropertiesService.getScriptProperties().getProperty('AEMET_API_KEY');
-    if (apiKey) {
-      const meta = JSON.parse(UrlFetchApp.fetch(
-        `https://opendata.aemet.es/opendata/api/avisos_cap/ultimoelaborado/area/esp?api_key=${apiKey}`,
-        { muteHttpExceptions: true }
-      ).getContentText());
-      if (meta.datos) {
-        const contenido = UrlFetchApp.fetch(meta.datos, { muteHttpExceptions: true })
-          .getBlob().getDataAsString('UTF-8');
-        resultado.aemet = _extraerAvisosGraves(contenido).slice(0, 6);
-      }
-    }
-  } catch(_) {}
-  try {
-    const resp = UrlFetchApp.fetch(
-      'https://www.csn.es/sucesos-notificados/-/asset_publisher/AhgtIexAjt0q/rss',
-      { muteHttpExceptions: true }
-    );
-    resultado.csn = _extraerSucesosCsn(resp.getContentText()).slice(0, 4);
-  } catch(_) {}
-  return resultado;
-}
-
-function procesarAvisosAemet() {
-  console.log("Consultando avisos AEMET...");
-  try {
-    const avisos = _extraerAvisosAemet();
-    if (!avisos || avisos.length === 0) {
-      console.log("Sin avisos graves activos.");
-      return;
-    }
-
-    console.log("Avisos graves detectados: " + avisos.length);
-
-    const props      = PropertiesService.getScriptProperties();
-    const procesados = JSON.parse(props.getProperty('AEMET_PROCESADOS') || '[]');
-    const esRojo     = a => ['RED','ROJO','EXTREME','4'].some(c => (a.color||'').includes(c));
-
-    // Solo procesar ROJOS nuevos para notificación inmediata
-    const rojosNuevos = avisos.filter(a => esRojo(a) && !procesados.includes(a.id));
-
-    if (rojosNuevos.length > 0) {
-      console.log("Avisos ROJOS nuevos: " + rojosNuevos.length);
-      _enviarAvisosAemet(rojosNuevos);
-      rojosNuevos.forEach(a => procesados.push(a.id));
-      props.setProperty('AEMET_PROCESADOS', JSON.stringify(procesados.slice(-200)));
-    } else {
-      console.log("Sin avisos ROJOS nuevos.");
-    }
-
-    // Marcar naranjas como procesados sin notificar
-    avisos.filter(a => !esRojo(a) && !procesados.includes(a.id))
-      .forEach(a => procesados.push(a.id));
-    props.setProperty('AEMET_PROCESADOS', JSON.stringify(procesados.slice(-200)));
-
-  } catch(err) {
-    console.error("Error en procesarAvisosAemet: " + err.message);
-  }
-}
-
-function resumenDiarioAemet() {
-  console.log("Enviando resumen diario AEMET...");
-  try {
-    const avisos = _extraerAvisosAemet();
-    if (!avisos || avisos.length === 0) {
-      console.log("Sin avisos activos para el resumen.");
-      return;
-    }
-    _enviarAvisosAemet(avisos);
-    console.log("✅ Resumen diario AEMET enviado: " + avisos.length + " avisos.");
-  } catch(err) {
-    console.error("Error en resumen diario AEMET: " + err.message);
-  }
-}
-
-function instalarTriggersAemet() {
-  // Eliminar triggers anteriores de AEMET
-  ScriptApp.getProjectTriggers()
-    .filter(t => ['procesarAvisosAemet','resumenDiarioAemet'].includes(t.getHandlerFunction()))
-    .forEach(t => ScriptApp.deleteTrigger(t));
-
-  // Trigger cada 30 minutos para detectar ROJOS nuevos
-  ScriptApp.newTrigger('procesarAvisosAemet')
-    .timeBased()
-    .everyMinutes(30)
-    .create();
-
-  // Resumen a las 08:00
-  ScriptApp.newTrigger('resumenDiarioAemet')
-    .timeBased()
-    .atHour(8)
-    .everyDays(1)
-    .create();
-
-  // Resumen a las 14:00
-  ScriptApp.newTrigger('resumenDiarioAemet')
-    .timeBased()
-    .atHour(14)
-    .everyDays(1)
-    .create();
-
-  // Resumen a las 21:00
-  ScriptApp.newTrigger('resumenDiarioAemet')
-    .timeBased()
-    .atHour(21)
-    .everyDays(1)
-    .create();
-
-  console.log("✅ Triggers AEMET instalados: ROJOS en tiempo real + resumen 08h/14h/21h.");
-}
-
-function _extraerAvisosGraves(contenido) {
-  const avisos = [];
-  try {
-    let resto = contenido.substring(Math.max(0, contenido.indexOf('<?xml')));
-    const xmls = [];
-    while (true) {
-      const ini = resto.indexOf('<?xml');
-      if (ini === -1) break;
-      const sig = resto.indexOf('<?xml', ini + 1);
-      const frag = sig === -1 ? resto.substring(ini) : resto.substring(ini, sig);
-      const fin  = frag.lastIndexOf('</alert>');
-      if (fin !== -1) xmls.push(frag.substring(0, fin + 8));
-      if (sig === -1) break;
-      resto = resto.substring(sig);
-    }
-    xmls.forEach(xml => {
-      try {
-        const doc  = XmlService.parse(xml);
-        const root = doc.getRootElement();
-        const ns   = XmlService.getNamespace('urn:oasis:names:tc:emergency:cap:1.2');
-        root.getChildren('info', ns).forEach(info => {
-          let color = '', tipo = '';
-          info.getChildren('parameter', ns).forEach(p => {
-            const n = (p.getChildText('valueName', ns) || '').toLowerCase();
-            const v = p.getChildText('value', ns) || '';
-            if (n.includes('color') || n.includes('nivel')) color = v.toUpperCase();
-            if (n.includes('fenomeno') || n.includes('event')) tipo = v;
-          });
-          if (!['RED','ROJO','EXTREME','4','ORANGE','NARANJA','3'].some(c => color.includes(c))) return;
-          const area = info.getChild('area', ns);
-          avisos.push({
-            id:          root.getChildText('identifier',  ns) || '',
-            evento:      info.getChildText('event',       ns) || tipo,
-            headline:    info.getChildText('headline',    ns) || '',
-            descripcion: info.getChildText('description', ns) || '',
-            severidad:   info.getChildText('severity',    ns) || '',
-            zona:        area ? (area.getChildText('areaDesc', ns) || 'España') : 'España',
-            inicio:      info.getChildText('onset',       ns) || '',
-            fin:         info.getChildText('expires',     ns) || '',
-            color
-          });
-        });
-      } catch(_) {}
-    });
-  } catch(err) { console.error('_extraerAvisosGraves: ' + err.message); }
-  return avisos;
-}
-
-function _enviarAvisosAemet(avisos) {
-  const canal   = PropertiesService.getScriptProperties().getProperty('SLACK_ALERTS_CHANNEL') || '';
-  const esRojo  = a => ['RED','ROJO','EXTREME','4'].some(c => a.color.includes(c));
-  const nivel   = avisos.some(esRojo) ? 'ROJO' : 'NARANJA';
-  const emoji   = avisos.some(esRojo) ? '🔴'   : '🟠';
-  const resumen = `${emoji} *AVISOS AEMET — ${nivel} (${avisos.length})*`;
-  const bloques = [{ type: 'section', text: { type: 'mrkdwn', text: resumen } }, { type: 'divider' }];
-
-  avisos.forEach(a => {
-    const value = JSON.stringify({
-      tipo:'aemet', evento:a.evento, zona:a.zona,
-      descripcion:a.descripcion, color:a.color
-    });
-    bloques.push({
-      type: 'section',
-      text: { type: 'mrkdwn',
-        text: `${esRojo(a)?'🔴':'🟠'} *${a.headline||a.evento}*\n📍 ${a.zona}\n${(a.descripcion||'').slice(0,120)}` }
-    });
-    bloques.push({
-      type: 'actions',
-      elements: [{
-        type: 'button', style: esRojo(a) ? 'danger' : 'primary',
-        text: { type: 'plain_text', text: '🚨 Crear incidente en ARGOS' },
-        action_id: 'crear_incidente_alerta', value
-      }]
-    });
-  });
-  enviarSlack(canal, resumen, bloques);
-  enviarTelegram(`${emoji} <b>AVISO AEMET — ${nivel}</b>\n${avisos.map(a=>`• ${a.evento} — ${a.zona}`).join('\n')}`);
-}
-
-function procesarSucesosCsn() {
-  try {
-    const resp    = UrlFetchApp.fetch(
-      'https://www.csn.es/sucesos-notificados/-/asset_publisher/AhgtIexAjt0q/rss',
-      { muteHttpExceptions: true }
-    );
-    const sucesos  = _extraerSucesosCsn(resp.getContentText());
-    if (!sucesos.length) return;
-    const props      = PropertiesService.getScriptProperties();
-    const procesados = JSON.parse(props.getProperty('CSN_PROCESADOS') || '[]');
-    const nuevos     = sucesos.filter(s => !procesados.includes(s.id));
-    if (!nuevos.length) return;
-    const canal = PropertiesService.getScriptProperties().getProperty('SLACK_ALERTS_CHANNEL') || '';
-    nuevos.forEach(s => {
-      const value   = JSON.stringify({ tipo:'csn', titulo:s.titulo, instalacion:s.instalacion, nivel:s.nivelInes });
-      const bloques = [
-        { type: 'section', text: { type: 'mrkdwn',
-          text: `☢️ *SUCESO CSN — ${s.nivelInes}*\n*${s.titulo}*\nInstalación: ${s.instalacion}\n${s.descripcion.slice(0,200)}` }},
-        { type: 'actions', elements: [{
-          type: 'button', style: 'danger',
-          text: { type: 'plain_text', text: '🚨 Crear incidente en ARGOS' },
-          action_id: 'crear_incidente_alerta', value
-        }]}
-      ];
-      enviarSlack(canal, `☢️ Suceso CSN — ${s.nivelInes}`, bloques);
-      enviarTelegram(`☢️ <b>SUCESO CSN — ${s.nivelInes}</b>\n<b>Instalación:</b> ${s.instalacion}\n${s.descripcion.slice(0,200)}`);
-      procesados.push(s.id);
-    });
-    props.setProperty('CSN_PROCESADOS', JSON.stringify(procesados.slice(-200)));
-  } catch(err) { console.error('procesarSucesosCsn: ' + err.message); }
-}
-
-function _extraerSucesosCsn(xml) {
-  const sucesos = [];
-  try {
-    const doc  = XmlService.parse(xml);
-    const root = doc.getRootElement();
-    const ns   = XmlService.getNamespace('http://www.w3.org/2005/Atom');
-    root.getChildren('entry', ns).forEach(e => {
-      const titulo   = e.getChildText('title', ns) || '';
-      const link     = e.getChild('link', ns);
-      const id       = e.getChildText('id', ns) || (link ? link.getAttribute('href').getValue() : '');
-      const desc     = (e.getChildText('summary', ns) || e.getChildText('content', ns) || '')
-        .replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      const matchInes= titulo.match(/INES\s+(\d+)/i);
-      const instals  = ['Almaraz','Cofrentes','Ascó','Vandellós','Trillo','Garoña','Zorita','El Cabril'];
-      let instalacion= 'Instalación no identificada';
-      instals.forEach(i => { if (titulo.includes(i)) instalacion = i; });
-      sucesos.push({ id, titulo, descripcion: desc, instalacion,
-        nivelInes: matchInes ? 'INES ' + matchInes[1] : 'No especificado',
-        fecha: e.getChildText('updated', ns) || '' });
-    });
-  } catch(err) { console.error('_extraerSucesosCsn: ' + err.message); }
-  return sucesos;
-}
-
-function _crearIncidenteDesdeAlertaSlack(alertData) {
-  const esRojo  = (alertData.color||'').match(/RED|ROJO|EXTREME|4/i);
-  const nombre  = alertData.tipo === 'csn'
-    ? `☢️ CSN — ${alertData.nivel||''} — ${alertData.instalacion||''}`
-    : `${esRojo?'🔴':'🟠'} AEMET ${esRojo?'ROJO':'NARANJA'} — ${alertData.evento||''} — ${alertData.zona||''}`;
-  crearIncidente({
-    nombre,
-    tipo:      alertData.tipo === 'csn' ? 'Nuclear/Radiológico' : 'Meteorológico',
-    gravedad:  alertData.tipo === 'csn' ? 'Extremo' : (esRojo ? 'Extremo' : 'Alto'),
-    ubicacion: alertData.zona || alertData.instalacion || '',
-    situacion: alertData.descripcion || alertData.titulo || '',
-    operador:  'SISTEMA_AUTO'
-  });
-}
-
-// ============================================================
-// SLACK
-// ============================================================
-
-function enviarSlack(canal, mensaje, bloques) {
-  const token = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
-  if (!token) { console.warn('SLACK_BOT_TOKEN no configurado.'); return; }
-  const payload = { channel: canal, text: mensaje };
-  if (bloques) payload.blocks = bloques;
-  const resp = UrlFetchApp.fetch('https://slack.com/api/chat.postMessage', {
-    method: 'post', contentType: 'application/json; charset=utf-8',
-    headers: { Authorization: 'Bearer ' + token },
-    payload: JSON.stringify(payload), muteHttpExceptions: true
-  });
-  const json = JSON.parse(resp.getContentText());
-  if (!json.ok) console.error('Slack error: ' + json.error);
-}
-
-function _crearCanalSlack(nombreCanal) {
-  const token = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
-  if (!token) return null;
-  const resp  = UrlFetchApp.fetch('https://slack.com/api/conversations.create', {
-    method: 'post', contentType: 'application/json; charset=utf-8',
-    headers: { Authorization: 'Bearer ' + token },
-    payload: JSON.stringify({ name: nombreCanal, is_private: true }), muteHttpExceptions: true
-  });
-  const json = JSON.parse(resp.getContentText());
-  if (json.ok) return json.channel.id;
-  if (json.error === 'name_taken') {
-    const lista = UrlFetchApp.fetch(
-      'https://slack.com/api/conversations.list?limit=200&types=private_channel',
-      { headers: { Authorization: 'Bearer ' + token }, muteHttpExceptions: true }
-    );
-    const c = (JSON.parse(lista.getContentText()).channels || []).find(x => x.name === nombreCanal);
-    return c ? c.id : null;
-  }
-  console.error('Error creando canal Slack: ' + json.error);
-  return null;
-}
-
-function _unirseSlack(canalId) {
-  const token = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
-  if (!token || !canalId) return;
-  UrlFetchApp.fetch('https://slack.com/api/conversations.join', {
-    method: 'post', contentType: 'application/json; charset=utf-8',
-    headers: { Authorization: 'Bearer ' + token },
-    payload: JSON.stringify({ channel: canalId }), muteHttpExceptions: true
-  });
-}
-
-function _invitarSlack(canalId, userId) {
-  const token = PropertiesService.getScriptProperties().getProperty('SLACK_BOT_TOKEN');
-  if (!token || !canalId || !userId) return;
-  UrlFetchApp.fetch('https://slack.com/api/conversations.invite', {
-    method: 'post', contentType: 'application/json; charset=utf-8',
-    headers: { Authorization: 'Bearer ' + token },
-    payload: JSON.stringify({ channel: canalId, users: userId }), muteHttpExceptions: true
-  });
-}
-
-function _crearYNotificarCanalSlack(idIncidente, nombre) {
-  const nomCanal = ('inc-' + idIncidente).toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 80);
-  const canalId  = _crearCanalSlack(nomCanal);
-  if (!canalId) return;
-  _unirseSlack(canalId);
-  _invitarSlack(canalId, SLACK_ADMIN);
-  _setCelda(_hoja(HOJAS.INCIDENTES), 'ID_Incidente', idIncidente, 'Canal_Slack', nomCanal);
-  enviarSlack(nomCanal,
-    `🚨 *Incidente activado — ${idIncidente}*\n*${nombre}*\n\nCanal creado por ARGOS. ` +
-    `Accede al sistema para gestionar la comunicación.\n\n_VOST Spain · ARGOS_`
-  );
-}
-
-function _alertarNarrativaSlack(idIncidente, idNarrativa, descripcion, ncrs, tactica) {
-  const canal = PropertiesService.getScriptProperties().getProperty('SLACK_ALERTS_CHANNEL') || '';
-  const emoji = ncrs >= 5 ? '🔴' : ncrs >= 4 ? '🟠' : '🟡';
-  enviarSlack(canal,
-    `${emoji} *NARRATIVA DETECTADA — NCRS ${ncrs}*\n*Incidente:* ${idIncidente}\n` +
-    `*Táctica:* ${tactica.texto}\n*Descripción:* ${(descripcion||'').slice(0,180)}`
-  );
-}
-
-// ============================================================
-// CLAUDE API
-// ============================================================
-
-function _obtenerApiKey() {
-  const key = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY');
-  if (!key) throw new Error('ANTHROPIC_API_KEY no configurada en Script Properties.');
-  return key;
-}
-
-function _llamarClaude(systemPrompt, userPrompt) {
-  const apiKey  = _obtenerApiKey();
-  const payload = {
-    model:      'claude-sonnet-4-6',
-    max_tokens: 8000,
-    messages:   [{ role: 'user', content: userPrompt }]
-  };
-  if (systemPrompt && systemPrompt.trim()) payload.system = systemPrompt;
-  const resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-    method: 'post', contentType: 'application/json',
-    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-    payload: JSON.stringify(payload), muteHttpExceptions: true
-  });
-  if (resp.getResponseCode() !== 200) {
-    throw new Error(`Claude API ${resp.getResponseCode()}: ${resp.getContentText().slice(0, 300)}`);
-  }
-  const json = JSON.parse(resp.getContentText());
-  return (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-}
-
-function _llamarClaudeConBusqueda(systemPrompt, userPrompt) {
-  try {
-    const apiKey  = _obtenerApiKey();
-    const payload = {
-      model:      'claude-sonnet-4-6',
-      max_tokens: 10000,
-      tools:      [{ type: 'web_search_20250305', name: 'web_search' }],
-      messages:   [{ role: 'user', content: userPrompt }]
-    };
-    if (systemPrompt && systemPrompt.trim()) payload.system = systemPrompt;
-    const resp = UrlFetchApp.fetch('https://api.anthropic.com/v1/messages', {
-      method: 'post', contentType: 'application/json',
-      headers: {
-        'x-api-key':         apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta':    'web-search-2025-03-05'
-      },
-      payload: JSON.stringify(payload), muteHttpExceptions: true
-    });
-    if (resp.getResponseCode() !== 200) throw new Error('Web search no disponible');
-    const json  = JSON.parse(resp.getContentText());
-    const texto = (json.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n').trim();
-    if (texto) return texto;
-    throw new Error('Sin texto en respuesta web search');
-  } catch(_) {
-    return _llamarClaude(systemPrompt, userPrompt);
-  }
-}
-
-function _parsearJSON(texto) {
-  try {
-    return JSON.parse(texto.replace(/```json\n?|```\n?/g, '').trim());
-  } catch(err) {
-    throw new Error('Respuesta no es JSON válido: ' + texto.slice(0, 200));
-  }
-}
-
-// ============================================================
-// TELEGRAM
-// ============================================================
-
-function enviarTelegram(mensaje) {
-  const props  = PropertiesService.getScriptProperties().getProperties();
-  const token  = props['TELEGRAM_BOT_TOKEN'];
-  const chatId = props['TELEGRAM_CHAT_ID'];
-  if (!token || !chatId) return;
-  UrlFetchApp.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: 'post', contentType: 'application/json',
-    payload: JSON.stringify({ chat_id: chatId, text: mensaje, parse_mode: 'HTML' }),
-    muteHttpExceptions: true
-  });
-}
-
-// ============================================================
-// LOGO
-// ============================================================
-
-function getLogoBase64() {
-  try {
-    const blob   = DriveApp.getFileById(LOGO_DRIVE_ID).getBlob();
-    const base64 = Utilities.base64Encode(blob.getBytes());
-    return { ok: true, dataUri: `data:${blob.getContentType()};base64,${base64}` };
-  } catch(err) { return { ok: false, error: err.message }; }
-}
-
-// ============================================================
-// INFORME HTML (se abre en nueva pestaña → el usuario imprime como PDF)
-// ============================================================
-
-function generarInformeHTML(idIncidente) {
-  try {
-    const incRes = _buscarFila(_hoja(HOJAS.INCIDENTES), 'ID_Incidente', idIncidente);
-    if (!incRes) return { ok: false, error: 'Incidente no encontrado.' };
-    const inc  = incRes.obj;
-    const acts = _hojaAObjetos(_hoja(HOJAS.ACTUALIZACIONES)).filter(r => r.ID_Incidente === idIncidente);
-    const nots = _hojaAObjetos(_hoja(HOJAS.NOTAS_INTERNAS)).filter(r => r.ID_Incidente === idIncidente);
-    const nars = _hojaAObjetos(_hoja(HOJAS.NARRATIVAS)).filter(r => r.ID_Incidente === idIncidente);
-    const lecs = _hojaAObjetos(_hoja(HOJAS.LECCIONES)).filter(r => r.ID_Incidente === idIncidente);
-    const logoSrc = (() => { try { return getLogoBase64().dataUri || ''; } catch(_){ return ''; } })();
-    const esc  = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const ahora = _ahora();
-
-    const sec = (t, c) => `<div style="margin-bottom:24px">
-      <h2 style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-        color:#0F3460;margin:0 0 10px;padding-bottom:7px;border-bottom:2px solid #0F3460">${t}</h2>${c}</div>`;
-
-    const badge = (v, ok, warn, err) => {
-      const cls = v===ok?'#D1FAE5:#065F46':v===warn?'#FEF3C7:#92400E':v===err?'#FEE2E2:#991B1B':'#F3F4F6:#4A5568';
-      const [bg,color] = cls.split(':');
-      return `<span style="background:${bg};color:${color};padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700;text-transform:uppercase">${esc(v)}</span>`;
-    };
-
-    const tbl  = (cabs, filas) => `<table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:11px">
-      <tr>${cabs.map(c=>`<th style="padding:6px 10px;border:1px solid #E2E8F0;background:#F4F6F9;font-weight:700;color:#0F3460;text-align:left">${c}</th>`).join('')}</tr>
-      ${filas.map(f=>`<tr>${f.map(c=>`<td style="padding:6px 10px;border:1px solid #E2E8F0;vertical-align:top">${c}</td>`).join('')}</tr>`).join('')}
-    </table>`;
-
-    const html = `<!DOCTYPE html><html lang="es"><head>
-<meta charset="UTF-8"><title>Informe ARGOS — ${esc(inc.Nombre)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARGOS · VOST Spain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Spectral:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:'Inter',sans-serif; font-size:12px; color:#374151; background:#fff; padding:32px; max-width:820px; margin:0 auto; }
-.mono { font-family:'JetBrains Mono',monospace; font-size:10px; color:#0F3460; }
-@media print { .noprint{display:none} body{padding:0} }
-</style></head><body>
-  <div class="noprint" style="margin-bottom:20px">
-    <button onclick="window.print()" style="background:#0F3460;color:#fff;border:none;padding:10px 20px;border-radius:6px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;font-size:12px">
-      Imprimir / Guardar como PDF
-    </button>
-  </div>
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:16px;border-bottom:3px solid #0F3460">
-    ${logoSrc ? `<img src="${logoSrc}" style="height:44px">` : '<span style="font-weight:900;font-size:20px;color:#0F3460">ARGOS</span>'}
-    <div>
-      <div style="font-size:9px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#0EA5E9">VOST Spain · Sistema ARGOS</div>
-      <div style="font-size:18px;font-weight:700;color:#0F3460">${esc(inc.Nombre)}</div>
-      <div class="mono">Generado: ${ahora}</div>
+/* ── RESET ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── TOKENS ── */
+:root{
+  --primary:#0F3460;--primary-h:#1A4A80;--primary-dim:rgba(15,52,96,.12);
+  --secondary:#0EA5E9;--accent:#38BDF8;
+  --text:#374151;--muted:#9CA3AF;--mid:#4A5568;
+  --alert:#F59E0B;--alert-bg:rgba(245,158,11,.1);
+  --green:#10B981;--green-bg:rgba(16,185,129,.1);
+  --red:#EF4444;--red-bg:rgba(239,68,68,.1);
+  --dark:#0D1B2A;--dark2:#0F2035;
+  --bg:#F4F6F9;--surface:#FFFFFF;--border:#E2E8F0;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Inter',system-ui,sans-serif;
+  --serif:'Spectral',Georgia,serif;
+  --sw:230px;--th:58px;--r:8px;--rl:10px;
+}
+
+/* ── BASE ── */
+html,body{height:100%;font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden}
+body{display:flex}
+
+/* ── SPLASH ── */
+#splash{position:fixed;inset:0;z-index:999;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s}
+#splash.gone{opacity:0;pointer-events:none}
+.sp-logo{font-family:var(--sans);font-size:36px;font-weight:800;color:#fff;letter-spacing:.06em}
+.sp-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.sp-spinner{width:22px;height:22px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--secondary);border-radius:50%;animation:rot .7s linear infinite;margin-top:6px}
+
+/* ── SIDEBAR ── */
+#sidebar{width:var(--sw);height:100vh;flex-shrink:0;background:var(--dark);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;z-index:100}
+.sb-brand{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;min-height:var(--th)}
+#logo-svg{flex-shrink:0}
+#logo-img{height:26px;width:auto;flex-shrink:0;display:none}
+.sb-txt .t1{font-weight:800;font-size:16px;color:#fff;letter-spacing:.04em}
+.sb-txt .t2{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:.1em;text-transform:uppercase;margin-top:1px}
+.sb-nav{flex:1;padding:8px 0;overflow-y:auto}
+.sb-sec{padding:14px 16px 3px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+.nb{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;border:none;background:none;width:calc(100% - 16px);text-align:left;cursor:pointer;color:rgba(255,255,255,.5);font-size:13px;font-weight:500;font-family:var(--sans);transition:background .13s,color .13s}
+.nb:hover{background:rgba(255,255,255,.06);color:#fff}
+.nb.active{background:rgba(14,165,233,.15);color:var(--secondary)}
+.nb svg{width:16px;height:16px;flex-shrink:0}
+.nb-bx{font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;background:var(--red);color:#fff;margin-left:auto;display:none}
+.nb-bx.on{display:block}
+
+/* ── WRAPPER ── */
+#wrapper{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* ── TOPBAR ── */
+#topbar{height:var(--th);background:var(--primary);border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
+#topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--secondary) 50%,transparent 100%);background-size:200% 100%;animation:scan 2.8s linear infinite}
+@keyframes scan{0%{background-position:-100% 0}100%{background-position:200% 0}}
+#tb-title{font-family:var(--sans);font-size:16px;font-weight:700;color:#fff}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.status-chip{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--green);font-size:11px;font-weight:700;letter-spacing:.04em}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pls 1.8s ease-out infinite}
+@keyframes pls{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+#clock{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5)}
+
+/* ── INCIDENT BANNER ── */
+#inc-banner{display:none;background:var(--primary-dim);border-bottom:1px solid var(--border);padding:8px 22px;display:none;align-items:center;gap:12px}
+#inc-banner.show{display:flex}
+.ib-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+#ib-nombre{font-weight:600;color:var(--primary)}
+#ib-id{font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+/* ── CONTENT ── */
+#content{flex:1;overflow-y:auto;padding:22px}
+.view{display:none}
+.view.active{display:block}
+
+/* ── GRID ── */
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mt16{margin-top:16px}.mt20{margin-top:20px}
+.fx{display:flex}.ai{align-items:center}.je{justify-content:flex-end}.fw{flex-wrap:wrap}.f1{flex:1}
+.g8{gap:8px}.g10{gap:10px}.g12{gap:12px}
+
+/* ── CARD ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px}
+.card-title{font-family:var(--serif);font-weight:600;font-size:14px;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* ── KPI ── */
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px 18px 16px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi.b::before{background:var(--secondary)}
+.kpi.a::before{background:var(--alert)}
+.kpi.r::before{background:var(--red)}
+.kpi.g::before{background:var(--green)}
+.kpi-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kpi-val{font-family:var(--sans);font-size:38px;font-weight:800;line-height:1;margin-bottom:4px}
+.kpi.b .kpi-val{color:var(--secondary)}.kpi.a .kpi-val{color:var(--alert)}
+.kpi.r .kpi-val{color:var(--red)}.kpi.g .kpi-val{color:var(--green)}
+.kpi-sub{font-size:11px;color:var(--muted)}
+
+/* ── SECTION HEADER ── */
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.sh-title{font-family:var(--sans);font-size:20px;font-weight:800;color:var(--primary)}
+
+/* ── TABLE ── */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:7px 12px;border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F9FAFB}
+.mono{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+
+/* ── BADGES ── */
+.bx{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.bx-g{background:var(--green-bg);color:var(--green)}
+.bx-a{background:var(--alert-bg);color:var(--alert)}
+.bx-r{background:var(--red-bg);color:var(--red)}
+.bx-b{background:var(--primary-dim);color:var(--secondary)}
+.bx-m{background:#F3F4F6;color:var(--mid)}
+
+/* ── SEVERITY BADGES ── */
+.sv-Extremo{background:var(--red-bg);color:var(--red)}
+.sv-Alto{background:var(--alert-bg);color:var(--alert)}
+.sv-Medio{background:var(--primary-dim);color:var(--secondary)}
+.sv-Bajo{background:var(--green-bg);color:var(--green)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .13s,opacity .13s;border:none;font-family:var(--sans);white-space:nowrap}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:var(--primary);color:#fff}.btn-p:hover:not(:disabled){background:var(--primary-h)}
+.btn-s{background:var(--secondary);color:#fff}.btn-s:hover:not(:disabled){background:#0891b2}
+.btn-g{background:var(--green-bg);color:var(--green);border:1px solid rgba(16,185,129,.3)}.btn-g:hover:not(:disabled){background:rgba(16,185,129,.2)}
+.btn-r{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3)}.btn-r:hover:not(:disabled){background:rgba(239,68,68,.2)}
+.btn-gh{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-gh:hover:not(:disabled){background:var(--bg);color:var(--text)}
+.btn-sm{padding:5px 10px;font-size:12px}
+
+/* ── FORMS ── */
+.fg{display:flex;flex-direction:column;gap:5px}
+.fgr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fgr .full{grid-column:span 2}
+label{font-size:11.5px;font-weight:600;color:var(--mid)}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;width:100%;transition:border-color .13s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--secondary)}
+select option{background:#fff}
+textarea{resize:vertical;min-height:80px}
+.range-row{display:flex;align-items:center;gap:10px}
+input[type=range]{flex:1;accent-color:var(--primary)}
+.range-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--primary);min-width:18px;text-align:center}
+
+/* ── MODAL ── */
+#modal-bd{position:fixed;inset:0;z-index:200;background:rgba(13,27,42,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
+#modal-bd.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);width:min(620px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:mIn .18s ease-out}
+@keyframes mIn{from{opacity:0;transform:scale(.97) translateY(-8px)}}
+.mh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mh-title{font-family:var(--sans);font-weight:700;font-size:15px;color:var(--primary)}
+.m-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
+.mb{padding:20px;display:flex;flex-direction:column;gap:13px}
+.mf{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none}
+.ti{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 15px;font-size:13px;display:flex;align-items:center;gap:10px;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.12);animation:ti .2s ease-out}
+@keyframes ti{from{opacity:0;transform:translateX(16px)}}
+.ti.ok{border-left:3px solid var(--green)}.ti.err{border-left:3px solid var(--red)}.ti.info{border-left:3px solid var(--secondary)}
+
+/* ── SPINNER ── */
+.sp{width:16px;height:16px;border:2px solid rgba(15,52,96,.2);border-top-color:var(--primary);border-radius:50%;animation:rot .7s linear infinite;display:inline-block}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+/* ── DRAFT TABS ── */
+.ch-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:14px}
+.cht{padding:8px 14px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .13s,border-color .13s;font-family:var(--sans)}
+.cht.active{color:var(--primary);border-bottom-color:var(--primary)}
+.cht:hover{color:var(--text)}
+.draft-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:13px;line-height:1.75;min-height:120px;white-space:pre-wrap;word-break:break-word;color:var(--text);font-family:var(--sans)}
+.draft-empty{color:var(--muted);font-style:italic}
+
+/* ── NCRS METER ── */
+.ncrs-display{background:var(--bg);border:2px solid var(--border);border-radius:var(--rl);padding:14px 18px;text-align:center}
+.ncrs-num{font-family:var(--sans);font-size:42px;font-weight:800;line-height:1}
+.ncrs-tactica{font-size:12.5px;font-weight:600;margin-top:6px}
+.ncrs-1,.ncrs-2{color:var(--green)}.ncrs-3{color:var(--alert)}.ncrs-4,.ncrs-5{color:var(--red)}
+
+/* ── HIPOTESIS CARDS ── */
+.hip-card{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.hip-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.hip-body{padding:16px}
+.hip-cat{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
+.hip-H1{background:var(--primary-dim);color:var(--primary)}
+.hip-H2{background:var(--red-bg);color:var(--red)}
+.hip-H3{background:var(--alert-bg);color:var(--alert)}
+.hip-H4{background:var(--green-bg);color:var(--green)}
+.hip-prob{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.prob-Alta{background:var(--red-bg);color:var(--red)}
+.prob-Media{background:var(--alert-bg);color:var(--alert)}
+.prob-Baja{background:var(--green-bg);color:var(--green)}
+.prec-box{background:var(--bg);border-left:3px solid var(--secondary);padding:10px 12px;border-radius:0 6px 6px 0;margin-top:10px;font-size:12.5px;color:var(--mid)}
+
+/* ── ALERT BOXES ── */
+.info-box{background:var(--primary-dim);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:var(--secondary);margin-bottom:14px}
+.warn-box{background:var(--alert-bg);border:1px solid rgba(245,158,11,.25);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:#92400E;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
+.crit-box{background:var(--red-bg);border:1px solid rgba(239,68,68,.25);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:var(--red);margin-bottom:14px}
+
+/* ── EMPTY STATE ── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted)}
+.ei{font-size:32px;margin-bottom:8px}.em{font-size:13px}
+
+/* ── ALERT CARDS ── */
+.alert-card{padding:11px 14px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:8px}
+.alert-card.rojo{border-left:3px solid var(--red);background:var(--red-bg)}
+.alert-card.naranja{border-left:3px solid var(--alert);background:var(--alert-bg)}
+.alert-card.csn{border-left:3px solid var(--muted);background:#F9FAFB}
+
+/* ── LOGIN SCREEN ── */
+#login-screen{position:fixed;inset:0;z-index:998;background:var(--dark);display:none;align-items:center;justify-content:center;flex-direction:column}
+#login-screen.show{display:flex}
+.login-box{width:min(400px,92vw);text-align:center}
+.login-eye{margin:0 auto 20px;display:block}
+.login-brand{font-family:var(--sans);font-size:34px;font-weight:800;color:#fff;letter-spacing:.06em;margin-bottom:4px}
+.login-sub{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px}
+.login-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:var(--rl);padding:28px}
+.login-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;text-align:left;display:block}
+.login-input{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--sans);font-size:15px;padding:11px 14px;width:100%;transition:border-color .13s;text-align:center}
+.login-input:focus{outline:none;border-color:var(--secondary)}
+.login-input::placeholder{color:rgba(255,255,255,.25)}
+.login-btn{width:100%;padding:12px;background:var(--secondary);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:background .13s;margin-top:14px}
+.login-btn:hover:not(:disabled){background:#0891b2}
+.login-btn:disabled{opacity:.5;cursor:not-allowed}
+.login-err{background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:var(--r);padding:9px 13px;font-size:13px;color:var(--red);margin-top:12px;text-align:left;display:none}
+.login-ok{font-size:12px;color:rgba(255,255,255,.4);margin-top:12px;text-align:center}
+.otp-boxes{display:flex;gap:8px;justify-content:center;margin:4px 0}
+.otp-box{width:46px;height:54px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--mono);font-size:22px;font-weight:700;text-align:center;transition:border-color .13s}
+.otp-box:focus{outline:none;border-color:var(--secondary)}
+.login-back{background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;margin-top:14px;font-family:var(--sans)}
+.login-back:hover{color:#fff}
+.login-timer{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.3);margin-top:8px}
+
+/* ── TOPBAR USER ── */
+#tb-user{font-size:12px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:8px}
+#btn-logout{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans)}
+#btn-logout:hover{background:rgba(255,255,255,.08);color:#fff}
+
+/* ── ADMIN PANEL ── */
+.admin-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:rgba(167,139,250,.15);color:#A78BFA}
+
+/* ── RESPONSIVE ── */
+@media(max-width:900px){#sidebar{width:52px}.sb-txt,.nb .lbl,.nb-bx,.sb-sec{display:none}.sb-brand{justify-content:center;padding:12px 8px}.nb{justify-content:center;padding:9px;margin:2px 6px}.nb svg{width:19px;height:19px}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){#content{padding:14px}.g4,.g3,.g2{grid-template-columns:1fr}.fgr{grid-template-columns:1fr}.fgr .full{grid-column:span 1}}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="sp-logo">ARGOS</div>
+  <div class="sp-sub">VOST Spain · Iniciando sistema</div>
+  <div class="sp-spinner"></div>
+</div>
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen">
+
+  <!-- PASO 1: Solicitar código -->
+  <div id="login-paso1" class="login-box">
+    <svg class="login-eye" width="56" height="56" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#0EA5E9" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#0EA5E9"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0D1B2A"/>
+      <line x1="14" y1="2" x2="14" y2="5" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="14" y1="23" x2="14" y2="26" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="2" y1="14" x2="5" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="23" y1="14" x2="26" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <div class="login-brand">ARGOS</div>
+    <div class="login-sub">VOST Spain · Acceso restringido</div>
+    <div class="login-card">
+      <label class="login-label" for="login-email">Tu dirección de correo electrónico</label>
+      <input class="login-input" id="login-email" type="email" placeholder="nombre@ejemplo.com"
+        onkeydown="if(event.key==='Enter') solicitarCodigo()">
+      <div class="login-err" id="login-err1"></div>
+      <button class="login-btn" id="btn-solicitar" onclick="solicitarCodigo()">Solicitar código de acceso</button>
+      <div class="login-ok" id="login-ok1" style="display:none">Comprueba tu bandeja de entrada.</div>
     </div>
   </div>
 
-  ${sec('Datos del incidente', tbl(['Campo','Valor','Campo','Valor'],[
-    ['ID', `<span class="mono">${esc(inc.ID_Incidente)}</span>`, 'Tipo', esc(inc.Tipo)],
-    ['Gravedad', esc(inc.Gravedad), 'Estado', badge(inc.Estado,'Activo','Standby','Cerrado')],
-    ['Ubicación', esc(inc.Ubicacion), 'Apertura', `<span class="mono">${esc(inc.Timestamp)}</span>`],
-    ['Cierre', `<span class="mono">${esc(inc.Fecha_Cierre)||'—'}</span>`, 'Operador', esc(inc.Operador_Alta)],
-    ['<strong>Situación</strong>', `<span colspan="3">${esc(inc.Situacion)}</span>`, '', '']
-  ]))}
-
-  ${sec(`Actualizaciones públicas (${acts.length})`, acts.length
-    ? tbl(['Timestamp','Hechos verificados','Estado'],
-        acts.map(a=>[`<span class="mono">${esc(a.Timestamp)}</span>`, esc(a.INPUT_Hechos), badge(a.Estado,'Publicado','Borrador','')]))
-    : '<p style="color:#9CA3AF;font-style:italic">Sin actualizaciones registradas.</p>')}
-
-  ${sec(`Notas internas confidenciales (${nots.length})`, nots.length
-    ? tbl(['Timestamp','Operador','Categoría','Contenido'],
-        nots.map(n=>[`<span class="mono">${esc(n.Timestamp)}</span>`, esc(n.Operador), esc(n.Categoria), esc(n.Contenido)]))
-    : '<p style="color:#9CA3AF;font-style:italic">Sin notas internas.</p>')}
-
-  ${sec(`Narrativas monitorizadas (${nars.length})`, nars.length
-    ? tbl(['Descripción','Plataforma','NCRS','Táctica'],
-        nars.map(n=>{
-          const ncrs = Number(n.NCRS_Total)||0;
-          const bg = ncrs>=4?'#FEE2E2':ncrs>=3?'#FEF3C7':'#F3F4F6';
-          const color = ncrs>=4?'#991B1B':ncrs>=3?'#92400E':'#4A5568';
-          return [esc(n.Descripcion), esc(n.Plataforma),
-            `<span style="background:${bg};color:${color};padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700">${ncrs}</span>`,
-            esc(n.Tactica)];
-        }))
-    : '<p style="color:#9CA3AF;font-style:italic">Sin narrativas registradas.</p>')}
-
-  ${sec(`Lecciones aprendidas (${lecs.length})`, lecs.length
-    ? tbl(['Título','Categoría','Prioridad','Acción correctiva','Estado'],
-        lecs.map(l=>[esc(l.Titulo), esc(l.Categoria), esc(l.Prioridad), esc(l.Accion_Correctiva), badge(l.Estado,'Cerrada','Pendiente','')]))
-    : '<p style="color:#9CA3AF;font-style:italic">Sin lecciones registradas.</p>')}
-
-  <div style="margin-top:32px;padding-top:12px;border-top:1px solid #E2E8F0;display:flex;justify-content:space-between">
-    <div style="font-size:10px;color:#9CA3AF">VOST Spain · ARGOS · ${ahora}</div>
-    <div style="font-size:10px;color:#9CA3AF">Documento confidencial. No distribuir sin autorización.</div>
+  <!-- PASO 2: Introducir código OTP -->
+  <div id="login-paso2" class="login-box" style="display:none">
+    <svg class="login-eye" width="56" height="56" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#10B981" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#10B981"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0D1B2A"/>
+    </svg>
+    <div class="login-brand" style="font-size:26px">Introduce el código</div>
+    <div class="login-sub" id="login-desc-email">Enviado a —</div>
+    <div class="login-card">
+      <label class="login-label">Código de verificación (6 dígitos)</label>
+      <div class="otp-boxes">
+        <input class="otp-box" id="otp0" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(0)" onkeydown="otpKey(event,0)">
+        <input class="otp-box" id="otp1" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(1)" onkeydown="otpKey(event,1)">
+        <input class="otp-box" id="otp2" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(2)" onkeydown="otpKey(event,2)">
+        <input class="otp-box" id="otp3" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(3)" onkeydown="otpKey(event,3)">
+        <input class="otp-box" id="otp4" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(4)" onkeydown="otpKey(event,4)">
+        <input class="otp-box" id="otp5" maxlength="1" type="text" inputmode="numeric" pattern="[0-9]" oninput="otpInput(5)" onkeydown="otpKey(event,5)">
+      </div>
+      <div class="login-err" id="login-err2"></div>
+      <button class="login-btn" id="btn-verificar" onclick="verificarCodigo()" disabled>Acceder a ARGOS</button>
+      <div class="login-timer" id="login-timer">Código válido 10:00</div>
+      <button class="login-back" onclick="volverPaso1()">← Usar otro email</button>
+    </div>
   </div>
-</body></html>`;
 
-    return { ok: true, html };
-  } catch(err) { return { ok: false, error: err.message }; }
+</div>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sb-brand">
+    <svg id="logo-svg" width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+      <ellipse cx="14" cy="14" rx="12" ry="7.5" stroke="#0EA5E9" stroke-width="1.6"/>
+      <circle cx="14" cy="14" r="4.5" fill="#0EA5E9"/>
+      <circle cx="14" cy="14" r="1.8" fill="#0D1B2A"/>
+      <line x1="14" y1="2" x2="14" y2="5" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="14" y1="23" x2="14" y2="26" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="2" y1="14" x2="5" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+      <line x1="23" y1="14" x2="26" y2="14" stroke="#0EA5E9" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <img id="logo-img" src="" alt="ARGOS">
+    <div class="sb-txt"><div class="t1">ARGOS</div><div class="t2">VOST Spain</div></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-sec">Sistema</div>
+    <button class="nb active" data-v="dashboard" onclick="irA('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+      <span class="lbl">Dashboard</span>
+    </button>
+    <button class="nb" data-v="incidentes" onclick="irA('incidentes')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <span class="lbl">Incidentes</span>
+    </button>
+    <div class="sb-sec">Comunicación</div>
+    <button class="nb" data-v="actualizaciones" onclick="irA('actualizaciones')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+      <span class="lbl">Comunicación</span>
+      <span class="nb-bx" id="bx-act">!</span>
+    </button>
+    <button class="nb" data-v="notas" onclick="irA('notas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      <span class="lbl">Notas internas</span>
+    </button>
+    <div class="sb-sec">Inteligencia</div>
+    <button class="nb" data-v="narrativas" onclick="irA('narrativas')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span class="lbl">Narrativas</span>
+      <span class="nb-bx" id="bx-nar">!</span>
+    </button>
+    <button class="nb" data-v="hipotesis" onclick="irA('hipotesis')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span class="lbl">Hipótesis</span>
+    </button>
+    <div class="sb-sec">Aprendizaje</div>
+    <button class="nb" data-v="lecciones" onclick="irA('lecciones')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+      <span class="lbl">Lecciones</span>
+    </button>
+
+    <!-- Solo visible para el administrador -->
+    <div id="sb-admin-sec" style="display:none">
+      <div class="sb-sec">Administración</div>
+      <button class="nb" data-v="admin" onclick="irA('admin')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span class="lbl">Control de acceso</span>
+      </button>
+    </div>
+  </nav>
+</aside>
+
+<!-- MAIN WRAPPER -->
+<div id="wrapper">
+  <header id="topbar">
+    <div id="tb-title">Dashboard</div>
+    <div class="tb-right">
+      <div class="status-chip"><span class="pulse"></span><span>ARGOS ACTIVO</span></div>
+      <div id="tb-user">
+        <span id="tb-nombre" style="font-size:12px;color:rgba(255,255,255,.7)"></span>
+        <button id="btn-logout" onclick="cerrarSesion()">Salir</button>
+      </div>
+      <div id="clock"></div>
+    </div>
+  </header>
+
+  <!-- INCIDENT BANNER -->
+  <div id="inc-banner">
+    <span class="ib-label">Incidente activo</span>
+    <span id="ib-nombre">—</span>
+    <span id="ib-id">—</span>
+    <div style="margin-left:auto">
+      <button class="btn btn-gh btn-sm" onclick="APP.incActivo=null;ocultarBanner()">× Deseleccionar</button>
+    </div>
+  </div>
+
+  <main id="content">
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <section class="view active" id="view-dashboard">
+    <div class="sh">
+      <div class="sh-title">Panel de control</div>
+      <div class="fx ai g8">
+        <button class="btn btn-p" onclick="abrirModalNuevoInc()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nuevo incidente
+        </button>
+      </div>
+    </div>
+    <div class="g4">
+      <div class="kpi b"><div class="kpi-lbl">Activos</div><div class="kpi-val" id="k-act">—</div><div class="kpi-sub">incidentes en curso</div></div>
+      <div class="kpi a"><div class="kpi-lbl">Standby</div><div class="kpi-val" id="k-stby">—</div><div class="kpi-sub">en seguimiento</div></div>
+      <div class="kpi g"><div class="kpi-lbl">Cerrados</div><div class="kpi-val" id="k-cerr">—</div><div class="kpi-sub">histórico total</div></div>
+      <div class="kpi r"><div class="kpi-lbl">Narrativas NCRS≥4</div><div class="kpi-val" id="k-nar">—</div><div class="kpi-sub">requieren desmentido</div></div>
+    </div>
+    <div class="g2 mt20">
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V7.5L14.5 2z"/></svg>
+          Incidentes recientes
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Nombre</th><th>Gravedad</th><th>Estado</th></tr></thead>
+          <tbody id="t-recientes"><tr><td colspan="4" style="text-align:center;padding:28px"><div class="sp"></div></td></tr></tbody>
+        </table></div>
+      </div>
+      <div class="card">
+        <div class="card-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+          Alertas externas
+        </div>
+        <div id="ext-alerts"><div style="color:var(--muted);font-size:12px">Consultando AEMET y CSN...</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ INCIDENTES ═══ -->
+  <section class="view" id="view-incidentes">
+    <div class="sh">
+      <div class="sh-title">Incidentes</div>
+      <div class="fx ai g8 fw">
+        <input type="text" id="inc-buscar" placeholder="Buscar..." style="width:190px" oninput="filtrarInc()">
+        <select id="inc-estado" style="width:130px" onchange="filtrarInc()">
+          <option value="">Todos los estados</option>
+          <option>Activo</option><option>Standby</option><option>Cerrado</option>
+        </select>
+        <button class="btn btn-p" onclick="abrirModalNuevoInc()">+ Nuevo</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="tw"><table>
+        <thead><tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Gravedad</th><th>Estado</th><th>Ubicación</th><th>Apertura</th><th>Acciones</th></tr></thead>
+        <tbody id="t-inc"><tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  <!-- ═══ ACTUALIZACIONES ═══ -->
+  <section class="view" id="view-actualizaciones">
+    <div class="sh"><div class="sh-title">Comunicación pública</div></div>
+    <div id="act-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver y gestionar sus actualizaciones.</div>
+    <div id="act-panel" style="display:none">
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Nueva actualización</div>
+            <div class="fg" style="gap:10px">
+              <div class="fg"><label>Hechos verificados *</label>
+                <textarea id="a-hechos" rows="4" placeholder="Describe los hechos verificados que quieres comunicar. Incluye fuente oficial."></textarea></div>
+              <div class="fg"><label>Objetivo de comunicación</label>
+                <input id="a-obj" type="text" placeholder="Ej. Informar del avance de los medios, tranquilizar a la ciudadanía..."></div>
+              <div class="fx g8 je">
+                <button class="btn btn-p" id="btn-crear-act" onclick="crearActualizacion()">Guardar actualización</button>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Historial de actualizaciones</div>
+            <div class="tw"><table>
+              <thead><tr><th>Timestamp</th><th>Hechos</th><th>Estado</th><th>Acciones</th></tr></thead>
+              <tbody id="t-acts"><tr><td colspan="4" style="text-align:center;padding:28px"><div class="sp"></div></td></tr></tbody>
+            </table></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" id="drafts-panel">
+            <div class="card-title">Borradores IA</div>
+            <div id="drafts-estado" class="info-box">Selecciona una actualización de la lista y pulsa «Generar borradores» para crear los textos con Claude.</div>
+            <div id="drafts-content" style="display:none">
+              <div class="ch-tabs">
+                <button class="cht active" onclick="cambiarDraft('x',this)">𝕏 Twitter</button>
+                <button class="cht" onclick="cambiarDraft('telegram',this)">✈ Telegram</button>
+                <button class="cht" onclick="cambiarDraft('whatsapp',this)">💬 WhatsApp</button>
+                <button class="cht" onclick="cambiarDraft('prensa',this)">📰 Prensa</button>
+              </div>
+              <div id="draft-txt" class="draft-box draft-empty">Sin borrador generado.</div>
+              <div class="fx g8 mt16 je fw">
+                <button class="btn btn-gh btn-sm" id="btn-copiar" onclick="copiarDraft()">Copiar</button>
+                <button class="btn btn-gh btn-sm" id="btn-prensa" onclick="generarPrensaAct()" style="display:none">📰 Generar nota de prensa</button>
+                <button class="btn btn-s btn-sm" id="btn-gen-draft" onclick="generarDraftsAct()">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                  Generar con IA
+                </button>
+                <button class="btn btn-g btn-sm" onclick="marcarPublicado()">✓ Marcar como publicado</button>
+              </div>
+              <div id="advertencias-act" style="margin-top:10px"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ NOTAS INTERNAS ═══ -->
+  <section class="view" id="view-notas">
+    <div class="sh"><div class="sh-title">Notas internas</div></div>
+    <div class="warn-box" style="margin-bottom:16px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span>Información de uso interno. <strong>No se genera contenido IA ni se publica.</strong> Solo visible para el equipo VOST Spain.</span>
+    </div>
+    <div id="notas-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver y añadir notas internas.</div>
+    <div id="notas-panel" style="display:none">
+      <div class="g2" style="align-items:start">
+        <div class="card">
+          <div class="card-title">Nueva nota</div>
+          <div class="fg" style="gap:10px">
+            <div class="fg"><label>Categoría</label>
+              <select id="n-cat">
+                <option>PMA / Reunión</option><option>Coordinación</option>
+                <option>Información personal / sensible</option><option>Recursos</option><option>General</option>
+              </select></div>
+            <div class="fg"><label>Contenido de la nota *</label>
+              <textarea id="n-cont" rows="5" placeholder="Ej. En reunión con responsable PMA se ha comentado que..."></textarea></div>
+            <div class="fx je"><button class="btn btn-p" onclick="guardarNota()">Guardar nota</button></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Notas del incidente</div>
+          <div id="lista-notas">
+            <div class="empty"><div class="ei">🔒</div><div class="em">Cargando notas...</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ NARRATIVAS ═══ -->
+  <section class="view" id="view-narrativas">
+    <div class="sh"><div class="sh-title">Monitor de narrativas</div></div>
+    <div id="nar-sel-banner" class="info-box" style="display:none">Selecciona un incidente para gestionar sus narrativas.</div>
+    <div id="nar-panel" style="display:none">
+      <div class="g2" style="align-items:start">
+        <div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title">Registrar narrativa</div>
+            <div class="fg" style="gap:10px">
+              <div class="fg"><label>Descripción del contenido detectado *</label>
+                <textarea id="nr-desc" rows="3" placeholder="Describe la narrativa falsa o desinformación detectada..."></textarea></div>
+              <div class="fgr">
+                <div class="fg"><label>Plataforma</label>
+                  <select id="nr-plat">
+                    <option>X/Twitter</option><option>Instagram</option><option>Facebook</option>
+                    <option>TikTok</option><option>Telegram</option><option>WhatsApp</option>
+                    <option>Web/Medios</option><option>Otro</option>
+                  </select></div>
+                <div class="fg"><label>Fuente de origen</label>
+                  <input id="nr-fuente" type="text" placeholder="Cuenta, medio, perfil..."></div>
+                <div class="fg full"><label>URL del contenido</label>
+                  <input id="nr-url" type="url" placeholder="https://..."></div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding-top:12px">
+                <div style="font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Escala NCRS (1 = mínimo / 5 = máximo)</div>
+                <div class="fg" style="gap:8px">
+                  <label>Alcance — ¿hasta dónde ha llegado?</label>
+                  <div class="range-row"><span style="font-size:11px;color:var(--muted);width:28px">Local</span><input type="range" id="nr-alc" min="1" max="5" value="1" oninput="actualizarNcrs()"><span style="font-size:11px;color:var(--muted);width:52px;text-align:right">Viral/Int.</span><span class="range-val" id="rv-alc">1</span></div>
+                  <label style="margin-top:4px">Verosimilitud — ¿qué tan convincente es?</label>
+                  <div class="range-row"><span style="font-size:11px;color:var(--muted);width:28px">Obvia</span><input type="range" id="nr-ver" min="1" max="5" value="1" oninput="actualizarNcrs()"><span style="font-size:11px;color:var(--muted);width:52px;text-align:right">Muy conv.</span><span class="range-val" id="rv-ver">1</span></div>
+                  <label style="margin-top:4px">Velocidad — ¿con qué rapidez se propaga?</label>
+                  <div class="range-row"><span style="font-size:11px;color:var(--muted);width:28px">Lenta</span><input type="range" id="nr-vel" min="1" max="5" value="1" oninput="actualizarNcrs()"><span style="font-size:11px;color:var(--muted);width:52px;text-align:right">Explosiva</span><span class="range-val" id="rv-vel">1</span></div>
+                  <label style="margin-top:4px">Malicia — ¿parece intencionada?</label>
+                  <div class="range-row"><span style="font-size:11px;color:var(--muted);width:28px">Error</span><input type="range" id="nr-mal" min="1" max="5" value="1" oninput="actualizarNcrs()"><span style="font-size:11px;color:var(--muted);width:52px;text-align:right">Campaña</span><span class="range-val" id="rv-mal">1</span></div>
+                </div>
+              </div>
+              <div class="ncrs-display">
+                <div class="ncrs-num ncrs-1" id="ncrs-num">1</div>
+                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">NCRS Total</div>
+                <div class="ncrs-tactica ncrs-1" id="ncrs-tac">Solo monitorizar</div>
+              </div>
+              <div class="fx je"><button class="btn btn-p" onclick="guardarNarrativa()">Registrar narrativa</button></div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-title">Narrativas detectadas</div>
+            <div id="lista-nar">
+              <div class="empty"><div class="ei">👁</div><div class="em">Cargando narrativas...</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ HIPÓTESIS ═══ -->
+  <section class="view" id="view-hipotesis">
+    <div class="sh"><div class="sh-title">Análisis predictivo</div></div>
+    <div id="hip-sel-banner" class="info-box" style="display:none">Selecciona un incidente para generar el análisis predictivo.</div>
+    <div id="hip-panel" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div class="fx ai g12 fw">
+          <div style="flex:1">
+            <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--primary)">Generación de hipótesis con IA + búsqueda web</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Claude analizará el incidente, buscará precedentes históricos reales en internet y generará 4 hipótesis operativas.</div>
+          </div>
+          <button class="btn btn-s" id="btn-gen-hip" onclick="generarHipotesis()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Generar análisis predictivo
+          </button>
+        </div>
+      </div>
+      <div id="hip-resultado">
+        <div class="empty"><div class="ei">🔮</div><div class="em">Pulsa el botón para iniciar el análisis.</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ LECCIONES ═══ -->
+  <section class="view" id="view-lecciones">
+    <div class="sh">
+      <div class="sh-title">Lecciones aprendidas</div>
+      <button class="btn btn-p" onclick="abrirModalNuevaLec()">+ Añadir lección</button>
+    </div>
+    <div id="lec-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver sus lecciones aprendidas.</div>
+    <div id="lec-panel" style="display:none">
+      <div class="card">
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Título</th><th>Categoría</th><th>Prioridad</th><th>Acción correctiva</th><th>Estado</th><th>Fuente</th></tr></thead>
+          <tbody id="t-lec"><tr><td colspan="7" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ ADMIN ═══ -->
+  <section class="view" id="view-admin">
+    <div class="sh">
+      <div>
+        <div class="sh-title">Control de acceso</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">Solo el administrador puede gestionar quién tiene acceso a ARGOS.</div>
+      </div>
+      <button class="btn btn-p" onclick="abrirModalNuevoUsuario()">+ Añadir usuario</button>
+    </div>
+    <div class="card">
+      <div class="tw"><table>
+        <thead><tr><th>Email</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Alta</th><th>Añadido por</th><th>Acciones</th></tr></thead>
+        <tbody id="t-acceso"><tr><td colspan="7" style="text-align:center;padding:40px"><div class="sp"></div></td></tr></tbody>
+      </table></div>
+    </div>
+  </section>
+
+  </main>
+</div>
+
+<!-- MODAL -->
+<div id="modal-bd" onclick="cerrarModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="mh"><div class="mh-title" id="m-title">Modal</div><button class="m-close" onclick="cerrarModales()">✕</button></div>
+    <div class="mb" id="m-body"></div>
+    <div class="mf"><button class="btn btn-gh" onclick="cerrarModales()">Cancelar</button><button class="btn" id="m-ok">Confirmar</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══ LOGIN / OTP ═════════════════════════════════════════════
+
+let loginEmail   = '';
+let otpTimer     = null;
+let otpSecondsLeft = 600; // 10 minutos
+
+function mostrarLoginScreen() {
+  document.getElementById('login-screen').classList.add('show');
 }
 
-// ============================================================
-// TRIGGERS
-// ============================================================
-
-function instalarTodosTriggers() {
-  const fns = ['procesarAvisosAemet', 'procesarSucesosCsn'];
-  ScriptApp.getProjectTriggers()
-    .filter(t => fns.includes(t.getHandlerFunction()))
-    .forEach(t => ScriptApp.deleteTrigger(t));
-  ScriptApp.newTrigger('procesarAvisosAemet').timeBased().everyMinutes(30).create();
-  ScriptApp.newTrigger('procesarSucesosCsn').timeBased().everyHours(1).create();
-  console.log('✅ Triggers instalados: AEMET cada 30min · CSN cada hora');
+function ocultarLoginScreen() {
+  document.getElementById('login-screen').classList.remove('show');
 }
+
+function solicitarCodigo() {
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    mostrarErrLogin(1, 'Introduce un email válido.');
+    return;
+  }
+  const btn = document.getElementById('btn-solicitar');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+  ocultarErrLogin(1);
+
+  gas('solicitarCodigo', email, res => {
+    loginEmail = email;
+    btn.disabled = false;
+    btn.textContent = 'Solicitar código de acceso';
+    document.getElementById('login-desc-email').textContent = `Enviado a ${email}`;
+    document.getElementById('login-paso1').style.display = 'none';
+    document.getElementById('login-paso2').style.display = 'block';
+    // Limpiar cajas OTP
+    for (let i = 0; i < 6; i++) {
+      const el = document.getElementById(`otp${i}`);
+      if (el) el.value = '';
+    }
+    document.getElementById('otp0')?.focus();
+    iniciarTimerOtp();
+  }, res => {
+    btn.disabled = false;
+    btn.textContent = 'Solicitar código de acceso';
+    mostrarErrLogin(1, res?.error || 'Error al enviar el código.');
+  });
+}
+
+function verificarCodigo() {
+  const codigo = [0,1,2,3,4,5].map(i => document.getElementById(`otp${i}`)?.value || '').join('');
+  if (codigo.length < 6) { mostrarErrLogin(2, 'Introduce los 6 dígitos del código.'); return; }
+
+  const btn = document.getElementById('btn-verificar');
+  btn.disabled = true;
+  btn.textContent = 'Verificando...';
+  ocultarErrLogin(2);
+
+  gas('verificarCodigo', { email: loginEmail, codigo }, res => {
+    clearInterval(otpTimer);
+    // Guardar sesión
+    APP.operador = res.nombre;
+    APP.email    = res.email;
+    APP.rol      = res.rol;
+    sessionStorage.setItem('argos_sesion', JSON.stringify({ nombre: res.nombre, email: res.email, rol: res.rol }));
+    // Actualizar UI
+    document.getElementById('tb-nombre').textContent = res.nombre;
+    if (res.rol === 'Administrador') {
+      document.getElementById('sb-admin-sec').style.display = 'block';
+    }
+    ocultarLoginScreen();
+    completarInit();
+    btn.disabled = false;
+    btn.textContent = 'Acceder a ARGOS';
+  }, res => {
+    btn.disabled = false;
+    btn.textContent = 'Acceder a ARGOS';
+    mostrarErrLogin(2, res?.error || 'Código incorrecto.');
+    // Si el código ha caducado, volver al paso 1
+    if ((res?.error || '').includes('caducado') || (res?.error || '').includes('Solicita')) {
+      setTimeout(() => volverPaso1(), 2000);
+    }
+  });
+}
+
+function volverPaso1() {
+  clearInterval(otpTimer);
+  for (let i = 0; i < 6; i++) {
+    const el = document.getElementById(`otp${i}`);
+    if (el) el.value = '';
+  }
+  document.getElementById('login-paso2').style.display = 'none';
+  document.getElementById('login-paso1').style.display = 'block';
+  document.getElementById('login-email').value = '';
+  ocultarErrLogin(1);
+}
+
+function mostrarErrLogin(paso, msg) {
+  const el = document.getElementById(`login-err${paso}`);
+  if (el) { el.textContent = msg; el.style.display = 'block'; }
+}
+
+function ocultarErrLogin(paso) {
+  const el = document.getElementById(`login-err${paso}`);
+  if (el) el.style.display = 'none';
+}
+
+function iniciarTimerOtp() {
+  clearInterval(otpTimer);
+  otpSecondsLeft = 600;
+  actualizarTimerDisplay();
+  otpTimer = setInterval(() => {
+    otpSecondsLeft--;
+    actualizarTimerDisplay();
+    if (otpSecondsLeft <= 0) {
+      clearInterval(otpTimer);
+      mostrarErrLogin(2, 'El código ha caducado. Solicita uno nuevo.');
+      document.getElementById('btn-verificar').disabled = true;
+      setTimeout(() => volverPaso1(), 2500);
+    }
+  }, 1000);
+}
+
+function actualizarTimerDisplay() {
+  const m = String(Math.floor(otpSecondsLeft / 60)).padStart(2, '0');
+  const s = String(otpSecondsLeft % 60).padStart(2, '0');
+  const el = document.getElementById('login-timer');
+  if (el) el.textContent = `Código válido ${m}:${s}`;
+}
+
+// Navegación entre cajas OTP
+function otpInput(idx) {
+  const el = document.getElementById(`otp${idx}`);
+  if (!el) return;
+  // Solo permitir dígitos
+  el.value = el.value.replace(/[^0-9]/g, '');
+  if (el.value.length === 1 && idx < 5) {
+    document.getElementById(`otp${idx + 1}`)?.focus();
+  }
+  // Habilitar botón solo cuando los 6 están rellenos
+  const completo = [0,1,2,3,4,5].every(i => (document.getElementById(`otp${i}`)?.value || '') !== '');
+  document.getElementById('btn-verificar').disabled = !completo;
+}
+
+function otpKey(event, idx) {
+  if (event.key === 'Backspace' && !document.getElementById(`otp${idx}`)?.value && idx > 0) {
+    document.getElementById(`otp${idx - 1}`)?.focus();
+  }
+  if (event.key === 'Enter') verificarCodigo();
+}
+
+function cerrarSesion() {
+  sessionStorage.removeItem('argos_sesion');
+  APP.operador = ''; APP.email = ''; APP.rol = '';
+  location.reload();
+}
+
+// ═══ ESTADO GLOBAL ═══════════════════════════════════════════
+const APP = {
+  operador:   '',
+  email:      '',
+  rol:        '',
+  incActivo:  null,   // {id, nombre}
+  incs:       [],
+  acts:       [],
+  notas:      [],
+  narrativas: [],
+  drafts:     { x:'', telegram:'', whatsapp:'', prensa:'' },
+  actSelId:   null,
+  canalDraft: 'x'
+};
+
+const TITULOS = {
+  dashboard:'Dashboard', incidentes:'Incidentes',
+  actualizaciones:'Comunicación pública', notas:'Notas internas',
+  narrativas:'Monitor de narrativas', hipotesis:'Análisis predictivo',
+  lecciones:'Lecciones aprendidas', admin:'Control de acceso'
+};
+
+// ═══ NAV ═════════════════════════════════════════════════════
+function irA(v) {
+  document.querySelectorAll('.view').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(e => e.classList.remove('active'));
+  document.getElementById('view-' + v)?.classList.add('active');
+  document.querySelector(`[data-v="${v}"]`)?.classList.add('active');
+  document.getElementById('tb-title').textContent = TITULOS[v] || v;
+  const needsInc = ['actualizaciones','notas','narrativas','hipotesis','lecciones'];
+  if (needsInc.includes(v)) {
+    if (!APP.incActivo) mostrarSelectorInc(v);
+    else cargarModulo(v);
+  }
+  if (v === 'dashboard')  cargarDashboard();
+  if (v === 'incidentes') cargarIncidentes();
+  if (v === 'admin')      cargarAdmin();
+}
+
+function cargarModulo(v) {
+  if (v === 'actualizaciones') cargarActualizaciones();
+  if (v === 'notas')           cargarNotas();
+  if (v === 'narrativas')      cargarNarrativas();
+  if (v === 'hipotesis')       cargarHipotesis();
+  if (v === 'lecciones')       cargarLecciones();
+}
+
+function mostrarSelectorInc(volver) {
+  const ops = APP.incs.filter(i => i.Estado === 'Activo' || i.Estado === 'Standby')
+    .map(i => `<option value="${i.ID_Incidente}">${i.ID_Incidente} · ${tc(i.Nombre,40)} [${i.Estado}]</option>`)
+    .join('');
+  abrirModal('Seleccionar incidente', `
+    <div class="fg">
+      <label>Incidente</label>
+      <select id="sel-inc-modal">
+        <option value="">— Selecciona un incidente —</option>
+        ${ops}
+        ${APP.incs.filter(i=>i.Estado==='Cerrado').map(i=>`<option value="${i.ID_Incidente}">${i.ID_Incidente} · ${tc(i.Nombre,40)} [Cerrado]</option>`).join('')}
+      </select>
+    </div>
+  `, 'Seleccionar', 'btn-p', () => {
+    const id = document.getElementById('sel-inc-modal').value;
+    if (!id) { toast('Selecciona un incidente', 'err'); return; }
+    const inc = APP.incs.find(i => i.ID_Incidente === id);
+    if (inc) { setIncActivo(inc); cerrarModales(); cargarModulo(volver); }
+  });
+}
+
+function setIncActivo(inc) {
+  APP.incActivo = { id: inc.ID_Incidente, nombre: inc.Nombre };
+  document.getElementById('ib-nombre').textContent = inc.Nombre || '—';
+  document.getElementById('ib-id').textContent = inc.ID_Incidente;
+  document.getElementById('inc-banner').classList.add('show');
+}
+
+function ocultarBanner() {
+  document.getElementById('inc-banner').classList.remove('show');
+  APP.incActivo = null;
+}
+
+// ═══ CLOCK ═══════════════════════════════════════════════════
+function tick() {
+  const d = new Date(), p = n => String(n).padStart(2,'0');
+  document.getElementById('clock').textContent =
+    `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+// ═══ TOAST ═══════════════════════════════════════════════════
+function toast(msg, tipo='ok') {
+  const c = document.getElementById('toast');
+  const e = document.createElement('div');
+  e.className = `ti ${tipo}`;
+  const ico = tipo==='ok'?'✓':tipo==='err'?'✕':'ℹ';
+  e.innerHTML = `<span style="font-weight:700">${ico}</span><span>${msg}</span>`;
+  c.appendChild(e);
+  setTimeout(() => e.remove(), 4500);
+}
+
+// ═══ GAS BRIDGE ══════════════════════════════════════════════
+function gas(fn, arg, ok, err) {
+  let r = google.script.run
+    .withFailureHandler(e => { toast('Error: ' + e.message, 'err'); if(err) err(e); })
+    .withSuccessHandler(res => {
+      if (res && res.ok === false) { toast('Error: ' + (res.error || 'desconocido'), 'err'); if(err) err(res); }
+      else { if(ok) ok(res); }
+    });
+  arg !== undefined ? r[fn](arg) : r[fn]();
+}
+
+// ═══ HELPERS ═════════════════════════════════════════════════
+function tc(s, n) { return s && s.length > n ? s.slice(0,n)+'…' : (s||'—'); }
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function bGrav(v) {
+  const cls = {Extremo:'r', Alto:'a', Medio:'b', Bajo:'g'};
+  return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
+}
+function bEst(v) {
+  const cls = {Activo:'g', Standby:'a', Cerrado:'m'};
+  return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
+}
+function bNcrs(n) {
+  const num = Number(n)||0;
+  const cls = num>=4?'r':num>=3?'a':num<=2?'g':'m';
+  return `<span class="bx bx-${cls}">${num}</span>`;
+}
+
+// ═══ DASHBOARD ═══════════════════════════════════════════════
+function cargarDashboard() {
+  gas('getResumenDashboard', undefined, res => {
+    document.getElementById('k-act').textContent  = res.activos  ?? '0';
+    document.getElementById('k-stby').textContent = res.standby  ?? '0';
+    document.getElementById('k-cerr').textContent = res.cerrados ?? '0';
+    document.getElementById('k-nar').textContent  = res.criticas ?? '0';
+    const bxNar = document.getElementById('bx-nar');
+    if ((res.criticas||0) > 0) { bxNar.textContent = res.criticas; bxNar.classList.add('on'); }
+    const tbody = document.getElementById('t-recientes');
+    if (!res.recientes?.length) {
+      tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>';
+    } else {
+      tbody.innerHTML = res.recientes.map(o => `<tr>
+        <td><span class="mono">${o.ID_Incidente||'—'}</span></td>
+        <td><strong>${tc(o.Nombre,36)}</strong></td>
+        <td>${bGrav(o.Gravedad)}</td>
+        <td>${bEst(o.Estado)}</td>
+      </tr>`).join('');
+    }
+    cargarAlertasExternas();
+  });
+}
+
+function cargarAlertasExternas() {
+  const c = document.getElementById('ext-alerts');
+  c.innerHTML = '<div style="color:var(--muted);font-size:12px">Consultando...</div>';
+  gas('getAlertasExternas', undefined, res => {
+    let h = '';
+    if (res.aemet?.length) {
+      h += '<div style="margin-bottom:12px"><div style="font-size:9px;font-weight:700;color:var(--alert);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">⚡ AEMET</div>';
+      h += res.aemet.map(a => {
+        const cls = a.color?.match(/RED|ROJO|4/) ? 'rojo' : 'naranja';
+        return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:12px">${esc(a.evento||'—')}</div>
+          <div style="font-size:11px;color:var(--muted)">📍 ${esc(a.zona)} · ${esc(a.severidad)}</div></div>`;
+      }).join('') + '</div>';
+    } else {
+      h += '<div style="margin-bottom:10px"><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">AEMET</div><div style="font-size:12px;color:var(--muted)">Sin alertas activas</div></div>';
+    }
+    if (res.csn?.length) {
+      h += '<div><div style="font-size:9px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">☢ CSN</div>';
+      h += res.csn.map(s => `<div class="alert-card csn"><div style="font-weight:600;font-size:12px">${esc(tc(s.titulo,60))}</div>
+        <div style="font-size:11px;color:var(--muted)">${esc(s.instalacion)} · ${esc(s.nivelInes)}</div></div>`).join('') + '</div>';
+    } else {
+      h += '<div><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CSN</div><div style="font-size:12px;color:var(--muted)">Sin sucesos notificados</div></div>';
+    }
+    c.innerHTML = h;
+  }, () => { c.innerHTML = '<div style="font-size:12px;color:var(--muted)">No se pudieron cargar las alertas.</div>'; });
+}
+
+// ═══ INCIDENTES ══════════════════════════════════════════════
+function cargarIncidentes() {
+  document.getElementById('t-inc').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:40px"><div class="sp"></div></td></tr>';
+  gas('getIncidentes', undefined, res => {
+    APP.incs = res.data || [];
+    renderInc(APP.incs);
+    poblarOpsSelects();
+  });
+}
+
+function filtrarInc() {
+  const q = document.getElementById('inc-buscar').value.toLowerCase();
+  const e = document.getElementById('inc-estado').value;
+  renderInc(APP.incs.filter(o =>
+    (!q || [o.Nombre,o.ID_Incidente,o.Tipo,o.Ubicacion].some(x=>(x||'').toLowerCase().includes(q))) &&
+    (!e || o.Estado === e)
+  ));
+}
+
+function renderInc(list) {
+  const t = document.getElementById('t-inc');
+  if (!list.length) {
+    t.innerHTML = '<tr><td colspan="8"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>'; return;
+  }
+  t.innerHTML = [...list].reverse().map(o => `<tr>
+    <td><span class="mono">${o.ID_Incidente||'—'}</span></td>
+    <td><strong>${tc(o.Nombre,38)}</strong></td>
+    <td><span class="bx bx-m">${o.Tipo||'—'}</span></td>
+    <td>${bGrav(o.Gravedad)}</td>
+    <td>${bEst(o.Estado)}</td>
+    <td>${tc(o.Ubicacion,22)}</td>
+    <td class="mono">${o.Timestamp||'—'}</td>
+    <td>
+      <div class="fx g8">
+        <button class="btn btn-gh btn-sm" onclick='seleccionarIncTrabajo(${JSON.stringify(o)})'>Trabajar</button>
+        ${o.Estado!=='Cerrado'?`<button class="btn btn-r btn-sm" onclick="confirmarCierre('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Cerrar</button>`:''}
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function seleccionarIncTrabajo(inc) {
+  setIncActivo(inc);
+  toast(`Incidente activo: ${inc.Nombre}`, 'ok');
+}
+
+function confirmarCierre(id, nombre) {
+  abrirModal('Cerrar incidente', `
+    <p>¿Seguro que quieres cerrar <strong>${nombre}</strong>?</p>
+    <p style="margin-top:8px;font-size:12px;color:var(--muted)">Claude generará automáticamente un informe de lecciones aprendidas.</p>
+  `, 'Cerrar incidente', 'btn-r', () => {
+    gas('cerrarIncidente', id, () => {
+      toast('Incidente cerrado. Lecciones generadas.', 'ok');
+      cerrarModales(); cargarIncidentes(); cargarDashboard();
+    });
+  });
+}
+
+function abrirModalNuevoInc() {
+  abrirModal('Nuevo incidente', `
+    <div class="fgr">
+      <div class="fg full"><label>Nombre del incidente *</label>
+        <input id="i-nom" type="text" placeholder="Ej. DANA Gredos · Aviso Naranja"></div>
+      <div class="fg"><label>Tipo</label>
+        <select id="i-tipo">
+          <option>Inundación</option><option>Incendio forestal</option><option>Incendio urbano</option>
+          <option>Meteorológico</option><option>Accidente grave</option><option>Terremoto</option>
+          <option>Nuclear/Radiológico</option><option>Sanitario</option>
+          <option>Desinformación</option><option>Ciberseguridad</option><option>Otro</option>
+        </select></div>
+      <div class="fg"><label>Nivel de gravedad</label>
+        <select id="i-grav"><option>Bajo</option><option selected>Medio</option><option>Alto</option><option>Extremo</option></select></div>
+      <div class="fg full"><label>Ubicación</label>
+        <input id="i-ubi" type="text" placeholder="Localidad, región o coordenadas"></div>
+      <div class="fg full"><label>Situación inicial</label>
+        <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
+    </div>
+  `, 'Crear incidente', 'btn-p', () => {
+    const nombre = document.getElementById('i-nom').value.trim();
+    if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+    gas('crearIncidente', {
+      nombre, tipo: document.getElementById('i-tipo').value,
+      gravedad: document.getElementById('i-grav').value,
+      ubicacion: document.getElementById('i-ubi').value,
+      situacion: document.getElementById('i-sit').value,
+      operador: APP.operador
+    }, res => {
+      toast(`Incidente ${res.id} creado`, 'ok');
+      cerrarModales(); cargarIncidentes(); cargarDashboard();
+    });
+  });
+}
+
+// ═══ ACTUALIZACIONES ═════════════════════════════════════════
+function cargarActualizaciones() {
+  if (!APP.incActivo) { mostrarPanel('act', false); return; }
+  mostrarPanel('act', true);
+  APP.actSelId = null;
+  resetDraftsPanel();
+  gas('getActualizaciones', APP.incActivo.id, res => {
+    APP.acts = res.data || [];
+    renderActs(APP.acts);
+  });
+}
+
+function renderActs(acts) {
+  const t = document.getElementById('t-acts');
+  if (!acts.length) {
+    t.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="ei">📡</div><div class="em">Sin actualizaciones</div></div></td></tr>'; return;
+  }
+  t.innerHTML = [...acts].reverse().map(a => `<tr>
+    <td class="mono">${a.Timestamp||'—'}</td>
+    <td>${tc(a.INPUT_Hechos,50)}</td>
+    <td>${bEst(a.Estado)}</td>
+    <td><button class="btn btn-gh btn-sm" onclick="selActualizacion('${a.ID_Actualizacion}')">Ver borradores</button></td>
+  </tr>`).join('');
+}
+
+function crearActualizacion() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  const hechos = document.getElementById('a-hechos').value.trim();
+  if (!hechos) { toast('Los hechos son obligatorios', 'err'); return; }
+  const btn = document.getElementById('btn-crear-act');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> Guardando...';
+  gas('crearActualizacion', {
+    id_incidente: APP.incActivo.id,
+    hechos, objetivo: document.getElementById('a-obj').value,
+    operador: APP.operador
+  }, res => {
+    toast('Actualización guardada', 'ok');
+    document.getElementById('a-hechos').value = '';
+    document.getElementById('a-obj').value = '';
+    btn.disabled = false; btn.innerHTML = 'Guardar actualización';
+    cargarActualizaciones();
+    // Auto-seleccionar la nueva para generar borradores
+    setTimeout(() => selActualizacion(res.id), 500);
+  }, () => { btn.disabled=false; btn.innerHTML='Guardar actualización'; });
+}
+
+function selActualizacion(id) {
+  APP.actSelId = id;
+  const act = APP.acts.find(a => a.ID_Actualizacion === id);
+  if (!act) return;
+  mostrarDraftsPanel(act);
+}
+
+function mostrarDraftsPanel(act) {
+  document.getElementById('drafts-estado').style.display = 'none';
+  document.getElementById('drafts-content').style.display = 'block';
+  APP.drafts = {
+    x:        act.Draft_X        || '',
+    telegram: act.Draft_Telegram || '',
+    whatsapp: act.Draft_WhatsApp || '',
+    prensa:   act.Draft_Prensa   || ''
+  };
+  mostrarDraft(APP.canalDraft);
+  const tieneActs = !!act.Draft_X;
+  document.getElementById('btn-prensa').style.display = tieneActs ? 'inline-flex' : 'none';
+}
+
+function resetDraftsPanel() {
+  document.getElementById('drafts-estado').style.display = 'block';
+  document.getElementById('drafts-content').style.display = 'none';
+  document.getElementById('advertencias-act').innerHTML = '';
+}
+
+function mostrarDraft(canal) {
+  APP.canalDraft = canal;
+  const box = document.getElementById('draft-txt');
+  const txt = APP.drafts[canal] || '';
+  if (txt) { box.textContent = txt; box.classList.remove('draft-empty'); }
+  else { box.textContent = 'Sin borrador para este canal.'; box.classList.add('draft-empty'); }
+}
+
+function cambiarDraft(canal, btn) {
+  document.querySelectorAll('.cht').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  mostrarDraft(canal);
+}
+
+function generarDraftsAct() {
+  if (!APP.actSelId) { toast('Selecciona una actualización primero', 'err'); return; }
+  const btn = document.getElementById('btn-gen-draft');
+  btn.disabled = true; btn.innerHTML = '<div class="sp"></div> Generando...';
+  gas('generarDrafts', APP.actSelId, res => {
+    const d = res.drafts || {};
+    APP.drafts.x        = d.x?.contenido        || '';
+    APP.drafts.telegram = d.telegram?.contenido  || '';
+    APP.drafts.whatsapp = d.whatsapp?.contenido  || '';
+    mostrarDraft(APP.canalDraft);
+    document.getElementById('btn-prensa').style.display = 'inline-flex';
+    if (res.advertencias?.length) {
+      document.getElementById('advertencias-act').innerHTML =
+        `<div class="warn-box" style="margin-bottom:0"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+        <span>${res.advertencias.join('<br>')}</span></div>`;
+    }
+    toast('Borradores generados. Revisa antes de publicar.', 'ok');
+    btn.disabled = false; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar con IA';
+    cargarActualizaciones();
+  }, () => { btn.disabled=false; btn.innerHTML='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar con IA'; });
+}
+
+function generarPrensaAct() {
+  if (!APP.actSelId) return;
+  const btn = document.getElementById('btn-prensa');
+  btn.disabled = true; btn.textContent = '⏳ Generando...';
+  gas('generarNotaPrensa', APP.actSelId, res => {
+    APP.drafts.prensa = res.nota?.texto_completo || '';
+    toast('Nota de prensa generada', 'ok');
+    const pBtn = document.querySelectorAll('.cht')[3];
+    if (pBtn) { document.querySelectorAll('.cht').forEach(b=>b.classList.remove('active')); pBtn.classList.add('active'); }
+    APP.canalDraft = 'prensa';
+    mostrarDraft('prensa');
+    btn.disabled = false; btn.textContent = '📰 Nota de prensa';
+    cargarActualizaciones();
+  }, () => { btn.disabled=false; btn.textContent='📰 Generar nota de prensa'; });
+}
+
+function copiarDraft() {
+  const txt = APP.drafts[APP.canalDraft] || '';
+  if (!txt) { toast('Sin contenido para copiar', 'info'); return; }
+  navigator.clipboard.writeText(txt).then(() => toast('Copiado al portapapeles', 'ok'));
+}
+
+function marcarPublicado() {
+  if (!APP.actSelId) return;
+  gas('marcarPublicado', APP.actSelId, () => { toast('Marcado como publicado', 'ok'); cargarActualizaciones(); });
+}
+
+// ═══ NOTAS INTERNAS ══════════════════════════════════════════
+function cargarNotas() {
+  if (!APP.incActivo) { mostrarPanel('notas', false); return; }
+  mostrarPanel('notas', true);
+  gas('getNotas', APP.incActivo.id, res => {
+    APP.notas = res.data || [];
+    renderNotas(APP.notas);
+  });
+}
+
+function renderNotas(notas) {
+  const c = document.getElementById('lista-notas');
+  if (!notas.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">🔒</div><div class="em">Sin notas internas</div></div>'; return;
+  }
+  c.innerHTML = [...notas].reverse().map(n => `
+    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div class="fx ai g8" style="margin-bottom:4px">
+        <span class="bx bx-m">${esc(n.Categoria)}</span>
+        <span class="mono">${esc(n.Timestamp)}</span>
+        <span style="font-size:11px;color:var(--muted)">${esc(n.Operador)}</span>
+      </div>
+      <div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(n.Contenido)}</div>
+    </div>`).join('');
+}
+
+function guardarNota() {
+  if (!APP.incActivo) return;
+  const contenido = document.getElementById('n-cont').value.trim();
+  if (!contenido) { toast('El contenido es obligatorio', 'err'); return; }
+  gas('crearNota', {
+    id_incidente: APP.incActivo.id,
+    operador: APP.operador,
+    contenido,
+    categoria: document.getElementById('n-cat').value
+  }, () => {
+    toast('Nota guardada', 'ok');
+    document.getElementById('n-cont').value = '';
+    cargarNotas();
+  });
+}
+
+// ═══ NARRATIVAS ══════════════════════════════════════════════
+function cargarNarrativas() {
+  if (!APP.incActivo) { mostrarPanel('nar', false); return; }
+  mostrarPanel('nar', true);
+  gas('getNarrativas', APP.incActivo.id, res => {
+    APP.narrativas = res.data || [];
+    renderNarrativas(APP.narrativas);
+  });
+}
+
+function renderNarrativas(nars) {
+  const c = document.getElementById('lista-nar');
+  if (!nars.length) {
+    c.innerHTML = '<div class="empty"><div class="ei">👁</div><div class="em">Sin narrativas detectadas</div></div>'; return;
+  }
+  c.innerHTML = [...nars].reverse().map(n => {
+    const ncrs = Number(n.NCRS_Total)||0;
+    const cls  = ncrs>=4?'rojo':ncrs>=3?'naranja':'';
+    return `<div class="alert-card ${cls}" style="margin-bottom:8px">
+      <div class="fx ai g8 fw" style="margin-bottom:5px">
+        ${bNcrs(ncrs)}
+        <span class="bx bx-m">${esc(n.Plataforma)}</span>
+        <span class="mono">${esc(n.Timestamp)}</span>
+      </div>
+      <div style="font-size:13px;margin-bottom:5px">${esc(tc(n.Descripcion,120))}</div>
+      <div style="font-size:12px;color:var(--mid);font-weight:600">${esc(n.Tactica)}</div>
+      ${ncrs >= 4 ? `<button class="btn btn-r btn-sm" style="margin-top:8px" onclick="generarDesmentido('${n.ID_Narrativa}')">
+        Generar desmentido con IA
+      </button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function actualizarNcrs() {
+  const a   = Number(document.getElementById('nr-alc').value);
+  const v   = Number(document.getElementById('nr-ver').value);
+  const vel = Number(document.getElementById('nr-vel').value);
+  const mal = Number(document.getElementById('nr-mal').value);
+  document.getElementById('rv-alc').textContent = a;
+  document.getElementById('rv-ver').textContent = v;
+  document.getElementById('rv-vel').textContent = vel;
+  document.getElementById('rv-mal').textContent = mal;
+  const ncrs = Math.ceil((a + v + vel + mal) / 4);
+  const el   = document.getElementById('ncrs-num');
+  const te   = document.getElementById('ncrs-tac');
+  el.textContent = ncrs;
+  el.className = `ncrs-num ncrs-${ncrs}`;
+  const tacticas = {1:'Solo monitorizar',2:'Solo monitorizar',3:'Monitorizar + alerta interna al equipo',4:'Publicar desmentido — generar borradores',5:'Desmentido urgente + contactar autoridades'};
+  te.textContent = tacticas[ncrs] || '';
+  te.className = `ncrs-tactica ncrs-${ncrs}`;
+}
+
+function guardarNarrativa() {
+  if (!APP.incActivo) return;
+  const desc = document.getElementById('nr-desc').value.trim();
+  if (!desc) { toast('La descripción es obligatoria', 'err'); return; }
+  gas('crearNarrativa', {
+    id_incidente:  APP.incActivo.id,
+    operador:      APP.operador,
+    descripcion:   desc,
+    plataforma:    document.getElementById('nr-plat').value,
+    fuente:        document.getElementById('nr-fuente').value,
+    url:           document.getElementById('nr-url').value,
+    alcance:       document.getElementById('nr-alc').value,
+    verosimilitud: document.getElementById('nr-ver').value,
+    velocidad:     document.getElementById('nr-vel').value,
+    malicia:       document.getElementById('nr-mal').value
+  }, res => {
+    toast(`Narrativa registrada. NCRS: ${res.ncrs} · ${res.tactica?.texto||''}`, 'ok');
+    document.getElementById('nr-desc').value = '';
+    document.getElementById('nr-url').value = '';
+    cargarNarrativas();
+  });
+}
+
+function generarDesmentido(idNarrativa) {
+  abrirModal('Generar desmentido', `
+    <p>Claude generará borradores de corrección (X, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
+    <p style="margin-top:8px;font-size:12px;color:var(--muted)">La corrección se guardará en la narrativa y podrás copiarla para publicar manualmente.</p>
+  `, 'Generar desmentido', 'btn-r', () => {
+    cerrarModales();
+    toast('Generando desmentido con IA...', 'info');
+    gas('generarDesmentido', idNarrativa, res => {
+      const d = res.drafts || {};
+      abrirModal('Borradores de desmentido', `
+        <div class="ch-tabs">
+          <button class="cht active" onclick="cambiarDesmentido('x',this,${JSON.stringify(d).replace(/"/g,"'")})">𝕏 Twitter</button>
+          <button class="cht" onclick="cambiarDesmentido('telegram',this,${JSON.stringify(d).replace(/"/g,"'")})">✈ Telegram</button>
+          <button class="cht" onclick="cambiarDesmentido('whatsapp',this,${JSON.stringify(d).replace(/"/g,"'")})">💬 WhatsApp</button>
+        </div>
+        <div id="desm-txt" class="draft-box">${esc(d.x?.contenido||'Sin contenido')}</div>
+        <button class="btn btn-gh btn-sm" style="margin-top:10px" onclick="navigator.clipboard.writeText(document.getElementById('desm-txt').textContent)">Copiar</button>
+      `, 'Cerrar', 'btn-gh', cerrarModales);
+    });
+  });
+}
+
+function cambiarDesmentido(canal, btn, drafts) {
+  document.querySelectorAll('.cht').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const el = document.getElementById('desm-txt');
+  if (el) el.textContent = drafts[canal]?.contenido || 'Sin borrador';
+}
+
+// ═══ HIPÓTESIS ════════════════════════════════════════════════
+function cargarHipotesis() {
+  if (!APP.incActivo) { mostrarPanel('hip', false); return; }
+  mostrarPanel('hip', true);
+  gas('getHipotesis', APP.incActivo.id, res => {
+    const data = res.data || [];
+    if (data.length) {
+      try {
+        const last = JSON.parse(data[data.length-1].JSON_Completo || '{}');
+        renderHipotesis(last);
+      } catch(_) {}
+    }
+  });
+}
+
+function generarHipotesis() {
+  if (!APP.incActivo) return;
+  const btn = document.getElementById('btn-gen-hip');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="sp"></div> Analizando + buscando precedentes en internet...';
+  document.getElementById('hip-resultado').innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--muted)">
+      <div class="sp" style="width:28px;height:28px;border-width:3px;margin:0 auto 14px"></div>
+      <div style="font-size:14px">Claude está analizando el incidente y buscando precedentes históricos en internet.<br>Este proceso puede tardar 15-30 segundos.</div>
+    </div>`;
+  gas('generarHipotesis', APP.incActivo.id, res => {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar análisis predictivo';
+    renderHipotesis(res.hipotesis || {});
+    toast('Análisis predictivo completado', 'ok');
+  }, () => {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Generar análisis predictivo';
+  });
+}
+
+function renderHipotesis(data) {
+  const hips = data.hipotesis || [];
+  if (!hips.length) {
+    document.getElementById('hip-resultado').innerHTML = '<div class="empty"><div class="ei">🔮</div><div class="em">No hay hipótesis generadas todavía.</div></div>';
+    return;
+  }
+  const catCls = { 'Evolución física':'H1', 'Narrativas hostiles':'H2', 'Comportamiento ciudadano':'H3', 'Estrategia informativa':'H4' };
+  let h = '';
+  if (data.resumen_ejecutivo) {
+    h += `<div class="card" style="margin-bottom:16px">
+      <div class="card-title">Resumen ejecutivo</div>
+      <p style="font-size:13.5px;line-height:1.75;color:var(--text)">${esc(data.resumen_ejecutivo)}</p>
+      ${data.alerta_temprana ? `<div class="crit-box" style="margin-top:12px;margin-bottom:0"><strong>⚡ Alerta temprana:</strong> ${esc(data.alerta_temprana)}</div>` : ''}
+    </div>`;
+  }
+  h += '<div class="g2">' + hips.map(hip => {
+    const num     = hip.numero || 1;
+    const catKey  = Object.keys(catCls).find(k => (hip.categoria||'').includes(k)) || '';
+    const cls     = catCls[catKey] || `H${num}`;
+    const prec    = hip.precedente || {};
+    return `<div class="hip-card">
+      <div class="hip-header">
+        <span class="hip-cat hip-${cls}">${esc(hip.categoria||`Hipótesis ${num}`)}</span>
+        <span class="hip-prob prob-${hip.probabilidad||'Media'}">${hip.probabilidad||'—'}</span>
+        <span style="font-weight:700;font-size:14px;margin-left:4px;flex:1">${esc(hip.titulo||'')}</span>
+      </div>
+      <div class="hip-body">
+        <p style="font-size:13px;line-height:1.7;color:var(--text);margin-bottom:10px">${esc(hip.descripcion||'')}</p>
+        ${prec.descripcion ? `<div class="prec-box">
+          <div style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">📚 Precedente histórico</div>
+          <div style="font-size:12px">${esc(prec.descripcion)}</div>
+          ${prec.lugar_fecha ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${esc(prec.lugar_fecha)} · ${esc(prec.fuente||'')}</div>` : ''}
+        </div>` : ''}
+        ${hip.recomendacion_argos ? `<div style="margin-top:10px;padding:9px 12px;background:var(--green-bg);border-radius:6px;font-size:12.5px;color:#065F46"><strong>Recomendación ARGOS:</strong> ${esc(hip.recomendacion_argos)}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+  document.getElementById('hip-resultado').innerHTML = h;
+}
+
+// ═══ LECCIONES ═══════════════════════════════════════════════
+function cargarLecciones() {
+  if (!APP.incActivo) { mostrarPanel('lec', false); return; }
+  mostrarPanel('lec', true);
+  gas('getLecciones', APP.incActivo.id, res => {
+    const data = res.data || [];
+    const t    = document.getElementById('t-lec');
+    if (!data.length) {
+      t.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="ei">📚</div><div class="em">Sin lecciones registradas. Se generarán al cerrar el incidente.</div></div></td></tr>'; return;
+    }
+    t.innerHTML = data.map(l => `<tr>
+      <td class="mono">${l.ID_Leccion||'—'}</td>
+      <td><strong>${esc(tc(l.Titulo,42))}</strong></td>
+      <td><span class="bx bx-m">${esc(l.Categoria)}</span></td>
+      <td>${bGrav(l.Prioridad)}</td>
+      <td>${esc(tc(l.Accion_Correctiva,50))}</td>
+      <td>${bEst(l.Estado)}</td>
+      <td><span class="bx ${l.Generada_Por==='IA'?'bx-b':'bx-m'}">${esc(l.Generada_Por||'—')}</span></td>
+    </tr>`).join('');
+  });
+}
+
+function abrirModalNuevaLec() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  abrirModal('Nueva lección aprendida', `
+    <div class="fgr">
+      <div class="fg full"><label>Título *</label><input id="l-tit" type="text" placeholder="Qué ocurrió y qué se aprendió..."></div>
+      <div class="fg full"><label>Descripción</label><textarea id="l-desc" rows="3"></textarea></div>
+      <div class="fg"><label>Categoría</label>
+        <select id="l-cat"><option>Comunicación</option><option>Coordinación</option><option>Proceso</option><option>Tecnología</option><option>Recursos</option><option>General</option></select></div>
+      <div class="fg"><label>Prioridad</label>
+        <select id="l-pri"><option>Baja</option><option selected>Media</option><option>Alta</option><option>Crítica</option></select></div>
+      <div class="fg full"><label>Acción correctiva</label>
+        <textarea id="l-acc" rows="2" placeholder="Qué se hará diferente la próxima vez..."></textarea></div>
+    </div>
+  `, 'Guardar lección', 'btn-p', () => {
+    const tit = document.getElementById('l-tit').value.trim();
+    if (!tit) { toast('El título es obligatorio', 'err'); return; }
+    gas('crearLeccion', {
+      id_incidente: APP.incActivo.id,
+      titulo: tit, descripcion: document.getElementById('l-desc').value,
+      categoria: document.getElementById('l-cat').value,
+      prioridad: document.getElementById('l-pri').value,
+      accion_correctiva: document.getElementById('l-acc').value,
+      estado: 'Pendiente', generada_por: 'Manual'
+    }, () => { toast('Lección registrada', 'ok'); cerrarModales(); cargarLecciones(); });
+  });
+}
+
+// ═══ MODAL ═══════════════════════════════════════════════════
+function abrirModal(titulo, contenido, labelOk, clsBtn, onOk) {
+  document.getElementById('m-title').textContent  = titulo;
+  document.getElementById('m-body').innerHTML     = contenido;
+  const btn = document.getElementById('m-ok');
+  btn.textContent = labelOk;
+  btn.className   = `btn ${clsBtn}`;
+  btn.onclick     = onOk;
+  document.getElementById('modal-bd').classList.add('open');
+}
+function cerrarModal(e) { if (e.target.id==='modal-bd') cerrarModales(); }
+function cerrarModales() { document.getElementById('modal-bd').classList.remove('open'); }
+
+// ═══ PANELES CONTEXTUALES ════════════════════════════════════
+function mostrarPanel(prefix, show) {
+  const bannerMap = { act:'act', notas:'notas', nar:'nar', hip:'hip', lec:'lec' };
+  const panelMap  = { act:'act-panel', notas:'notas-panel', nar:'nar-panel', hip:'hip-panel', lec:'lec-panel' };
+  const bannerEl  = document.getElementById(`${bannerMap[prefix]}-sel-banner`);
+  const panelEl   = document.getElementById(panelMap[prefix]);
+  if (bannerEl) bannerEl.style.display = show ? 'none' : 'block';
+  if (panelEl)  panelEl.style.display  = show ? 'block' : 'none';
+}
+
+// ═══ INFORME PDF ══════════════════════════════════════════════
+function abrirInforme() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  toast('Generando informe...', 'info');
+  gas('generarInformeHTML', APP.incActivo.id, res => {
+    if (!res.html) { toast('Error generando informe', 'err'); return; }
+    const w = window.open('', '_blank');
+    w.document.write(res.html);
+    w.document.close();
+  });
+}
+
+// ═══ PANEL DE ADMINISTRACIÓN ══════════════════════════════════
+function cargarAdmin() {
+  if (APP.rol !== 'Administrador') {
+    toast('Acceso restringido al administrador.', 'err');
+    irA('dashboard'); return;
+  }
+  document.getElementById('t-acceso').innerHTML =
+    '<tr><td colspan="7" style="text-align:center;padding:40px"><div class="sp"></div></td></tr>';
+  gas('getUsuariosAcceso', undefined, res => {
+    const data = res.data || [];
+    const t    = document.getElementById('t-acceso');
+    if (!data.length) {
+      t.innerHTML = '<tr><td colspan="7"><div class="empty"><div class="ei">👥</div><div class="em">Sin usuarios registrados</div></div></td></tr>';
+      return;
+    }
+    t.innerHTML = data.map(u => {
+      const activo = ['sí','si','true','1'].includes((u.Activo||'').toLowerCase());
+      return `<tr>
+        <td class="mono">${esc(u.Email)}</td>
+        <td><strong>${esc(u.Nombre)}</strong></td>
+        <td>${u.Rol==='Administrador'?`<span class="admin-tag">Admin</span>`:`<span class="bx bx-m">Operador</span>`}</td>
+        <td>${activo?`<span class="bx bx-g">Activo</span>`:`<span class="bx bx-m">Inactivo</span>`}</td>
+        <td class="mono">${esc(u.Fecha_Alta||'—')}</td>
+        <td>${esc(u.Añadido_Por||'—')}</td>
+        <td>
+          ${u.Email!==APP.email?`<button class="btn btn-${activo?'r':'g'} btn-sm" onclick="toggleUsuario('${esc(u.Email)}')">
+            ${activo?'Desactivar':'Activar'}
+          </button>`:'<span style="font-size:11px;color:var(--muted)">(tú)</span>'}
+        </td>
+      </tr>`;
+    }).join('');
+  });
+}
+
+function abrirModalNuevoUsuario() {
+  if (APP.rol !== 'Administrador') return;
+  abrirModal('Añadir usuario', `
+    <div class="fgr">
+      <div class="fg full"><label>Email *</label>
+        <input id="nu-email" type="email" placeholder="email@ejemplo.com"></div>
+      <div class="fg full"><label>Nombre *</label>
+        <input id="nu-nom" type="text" placeholder="Nombre completo"></div>
+      <div class="fg full"><label>Rol</label>
+        <select id="nu-rol"><option>Operador</option><option>Administrador</option></select></div>
+    </div>
+  `, 'Añadir usuario', 'btn-p', () => {
+    const email  = document.getElementById('nu-email').value.trim().toLowerCase();
+    const nombre = document.getElementById('nu-nom').value.trim();
+    if (!email || !nombre) { toast('Email y nombre son obligatorios.', 'err'); return; }
+    gas('gestionarAcceso', {
+      accion:'crear', email, nombre,
+      rol: document.getElementById('nu-rol').value,
+      añadido_por: APP.operador
+    }, () => { toast('Usuario añadido correctamente.', 'ok'); cerrarModales(); cargarAdmin(); });
+  });
+}
+
+function toggleUsuario(email) {
+  if (APP.rol !== 'Administrador') return;
+  gas('gestionarAcceso', { accion:'toggle', email }, res => {
+    toast(`Usuario ${res.activo==='Sí'?'activado':'desactivado'}.`, 'ok');
+    cargarAdmin();
+  });
+}
+
+// ═══ SELECTOR DE OPERADOR (ya no se usa — reemplazado por login OTP) ══
+
+// ═══ POPULATE SELECTS ════════════════════════════════════════
+function poblarOpsSelects() {
+  // Nada adicional por ahora — se hace on-demand al abrir modales
+}
+
+// ═══ INIT ════════════════════════════════════════════════════
+function init() {
+  tick(); setInterval(tick, 1000);
+
+  // Ocultar splash
+  setTimeout(() => document.getElementById('splash').classList.add('gone'), 900);
+
+  // Logo en background
+  try {
+    google.script.run
+      .withSuccessHandler(r => {
+        if (r.ok) {
+          const img = document.getElementById('logo-img');
+          img.src = r.dataUri; img.style.display='block';
+          document.getElementById('logo-svg').style.display='none';
+        }
+      })
+      .getLogoBase64();
+  } catch(_) {}
+
+  // Añadir botón de informe en la barra de herramientas
+  const tbRight = document.querySelector('.tb-right');
+  const btnInf  = document.createElement('button');
+  btnInf.className = 'btn btn-gh btn-sm';
+  btnInf.style.cssText = 'background:rgba(255,255,255,.1);color:#fff;border-color:rgba(255,255,255,.2)';
+  btnInf.innerHTML = '📄 Informe';
+  btnInf.onclick   = abrirInforme;
+  tbRight.prepend(btnInf);
+
+  // Comprobar si hay sesión activa en sessionStorage
+  setTimeout(() => {
+    const sesionGuardada = sessionStorage.getItem('argos_sesion');
+    if (sesionGuardada) {
+      try {
+        const s = JSON.parse(sesionGuardada);
+        if (s.nombre && s.email) {
+          APP.operador = s.nombre;
+          APP.email    = s.email;
+          APP.rol      = s.rol || 'Operador';
+          document.getElementById('tb-nombre').textContent = s.nombre;
+          if (s.rol === 'Administrador') {
+            document.getElementById('sb-admin-sec').style.display = 'block';
+          }
+          completarInit();
+          return;
+        }
+      } catch(_) {}
+    }
+    // Sin sesión activa: mostrar pantalla de login
+    mostrarLoginScreen();
+  }, 950);
+}
+
+function completarInit() {
+  // Cargar datos base
+  gas('getIncidentes', undefined, r => { APP.incs = r.data || []; });
+  cargarDashboard();
+  // Refresh automático cada 3 minutos si el dashboard está activo
+  setInterval(() => {
+    if (document.querySelector('#view-dashboard.active')) cargarDashboard();
+  }, 180000);
+}
+
+// Arranque en contexto GAS
+if (typeof google !== 'undefined' && google.script) {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('splash').classList.add('gone');
+    console.warn('ARGOS: fuera del contexto GAS. Modo demostración.');
+  });
+}
+</script>
+</body>
+</html>
