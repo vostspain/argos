@@ -942,10 +942,12 @@ function toast(msg, tipo='ok') {
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPLn3hETppfNlOsHWucnSxcWl-nClhsr8tfIUlIWqh4XKmZZq8g_2IzUNYM-pgx-jG/exec';
 
 function gas(fn, arg, ok, err) {
+  const form = new FormData();
+  form.append('payload', JSON.stringify({ fn, arg }));
+
   fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fn, arg })
+    body: form
   })
   .then(r => r.json())
   .then(res => {
