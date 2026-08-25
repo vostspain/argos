@@ -2697,14 +2697,16 @@ function mostrarPanel(prefix, show) {
 // ═══ INFORME PDF ══════════════════════════════════════════════
 function abrirInforme() {
   if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
-  toast('Generando informe...', 'info');
-  gas('getDatosInforme', APP.incActivo.id, res => {
+  toast('Generando informe, espera...', 'info');
+  gas('generarInformeHTML', APP.incActivo.id, res => {
     if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
-    const html = _renderInforme(res);
-    const w    = window.open('', '_blank');
-    if (!w) { toast('Permite las ventanas emergentes para este sitio', 'err'); return; }
-    w.document.write(html);
-    w.document.close();
+    if (res.url) {
+      window.open(res.url, '_blank');
+    } else if (res.email) {
+      toast('Informe enviado a tu correo electrónico', 'ok');
+    } else {
+      toast('Error generando el informe', 'err');
+    }
   });
 }
 
