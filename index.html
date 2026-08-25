@@ -2697,10 +2697,121 @@ function mostrarPanel(prefix, show) {
 // ═══ INFORME PDF ══════════════════════════════════════════════
 function abrirInforme() {
   if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
-  // El informe se sirve directamente como HTML via doGet para evitar límites de tamaño de respuesta JSON
-  const url = GAS_API_URL + '?id=' + encodeURIComponent(APP.incActivo.id);
-  const w   = window.open(url, '_blank');
-  if (!w) toast('El navegador bloqueó la ventana emergente. Permite las ventanas emergentes para este sitio.', 'err');
+  toast('Generando informe...', 'info');
+  gas('getDatosInforme', APP.incActivo.id, res => {
+    if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
+    const html = _renderInforme(res);
+    const w    = window.open('', '_blank');
+    if (!w) { toast('Permite las ventanas emergentes para este sitio', 'err'); return; }
+    w.document.write(html);
+    w.document.close();
+  });
+}
+
+function _renderInforme(d) {
+  const inc  = d.inc  || {};
+  const acts = d.acts || [];
+  const nars = d.nars || [];
+  const lecs = d.lecs || [];
+  const e    = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const dur  = calcularDuracion(inc.Timestamp, inc.Fecha_Cierre || null);
+
+  const badge = (v, ok, warn, err) => {
+    const col = v===ok ? '#D1FAE5;color:#065F46' : v===warn ? '#FEF3C7;color:#92400E'
+      : v===err ? '#FEE2E2;color:#991B1B' : '#F3F4F6;color:#4A5568';
+    return `<span style="background:${col.split(';')[0]};${col.split(';')[1]};padding:2px 8px;border-radius:3px;font-size:9px;font-weight:700">${e(v)}</span>`;
+  };
+
+  const tbl = (cabs, filas) => !filas.length ? '<p style="color:#9CA3AF;font-size:11px">Sin registros.</p>' :
+    `<table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px">
+    <tr>${cabs.map(c=>`<th style="padding:6px 10px;border:1px solid #E2E8F0;background:#F4F6F9;font-weight:700;text-align:left;color:#374151">${c}</th>`).join('')}</tr>
+    ${filas.map((f,i)=>`<tr style="background:${i%2?'#fff':'#F9FAFB'}">${f.map(c=>`<td style="padding:6px 10px;border:1px solid #E2E8F0;vertical-align:top">${c}</td>`).join('')}</tr>`).join('')}
+    </table>`;
+
+  const sec = (t, c) => `<div style="margin-bottom:28px">
+    <h2 style="font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+      color:#374151;border-bottom:2px solid #374151;padding-bottom:6px;margin-bottom:12px">${t}</h2>${c}</div>`;
+
+  return `<!DOCTYPE html><html lang="es"><head>
+<meta charset="UTF-8">
+<title>Informe ARGOS — ${e(inc.Nombre)}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:12px;
+  color:#1F2937;background:#fff;padding:36px;max-width:840px;margin:0 auto;line-height:1.6}
+.mono{font-family:'Courier New',monospace;font-size:10px}
+@media print{body{padding:10px;max-width:100%}}
+</style></head><body>
+<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:3px solid #374151;padding-bottom:16px;margin-bottom:28px">
+  <div>
+    <div style="font-size:22px;font-weight:800;color:#374151;letter-spacing:-.5px">ARGOS</div>
+    <div style="font-size:11px;color:#6B7280">VOST Spain · Informe de incidente</div>
+  </div>
+  <div style="text-align:right;font-size:10px;color:#9CA3AF">
+    Generado: ${e(d.ahora)}<br>
+    <span class="mono">${e(inc.ID_Incidente)}</span>
+  </div>
+</div>
+
+${sec('Datos del incidente',
+  `<table style="width:100%;border-collapse:collapse;font-size:11px"><tbody>
+  <tr><td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB;width:22%">Nombre</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0" colspan="3"><strong>${e(inc.Nombre)}</strong></td></tr>
+  <tr><td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Tipo</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0">${e(inc.Tipo)}</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB;width:22%">Gravedad</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0">${e(inc.Gravedad)}</td></tr>
+  <tr><td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Estado</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0">${badge(inc.Estado,'Activo','Standby','Cerrado')}</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Duración</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0"><strong>${dur}</strong></td></tr>
+  <tr><td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Ubicación</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0">${e(inc.Ubicacion)}</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Apertura</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0 class="mono">${e(inc.Timestamp)}</td></tr>
+  <tr><td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Cierre</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0 class="mono">${e(inc.Fecha_Cierre)||'—'}</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Hashtags</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0 class="mono">${e(inc.Hashtags)||'—'}</td></tr>
+  <tr><td style="padding:5px 10px;border:1px solid #E2E8F0;font-weight:700;background:#F9FAFB">Situación</td>
+      <td style="padding:5px 10px;border:1px solid #E2E8F0" colspan="3">${e(inc.Situacion)}</td></tr>
+  </tbody></table>`
+)}
+
+${sec('Actualizaciones publicadas',
+  tbl(['Timestamp','Hechos','Estado'],
+    acts.filter(a=>a.Estado==='Publicado'||a.Draft_X||a.INPUT_Hechos).map(a=>[
+      `<span class="mono">${e(a.Timestamp)}</span>`,
+      e((a.INPUT_Hechos||'').substring(0,120)) + ((a.INPUT_Hechos||'').length>120?'…':''),
+      badge(a.Estado,'Publicado','Borrador','')
+    ]))
+)}
+
+${sec('Narrativas detectadas',
+  tbl(['Descripción','Plataforma','NCRS','Estado'],
+    nars.map(n=>[
+      e((n.Descripcion||'').substring(0,100))+'…',
+      e(n.Plataforma),
+      `<strong>${n.NCRS_Total||'—'}</strong>`,
+      e(n.Estado)
+    ]))
+)}
+
+${sec('Lecciones aprendidas',
+  tbl(['Título','Categoría','Prioridad','Acción correctiva'],
+    lecs.filter(l=>l.Titulo&&l.Titulo!=='IA').map(l=>[
+      e(l.Titulo),
+      e(l.Categoria),
+      e(l.Prioridad),
+      e((l.Accion_Correctiva||'').substring(0,80))
+    ]))
+)}
+
+<div style="margin-top:40px;padding-top:16px;border-top:1px solid #E2E8F0;
+  font-size:10px;color:#9CA3AF;text-align:center">
+  ARGOS · VOST Spain · Documento de uso interno · ${e(d.ahora)}
+</div>
+</body></html>`;
 }
 
 // ═══ FOTOS EN ACTUALIZACIONES ════════════════════════════════
