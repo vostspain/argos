@@ -2700,10 +2700,15 @@ function abrirInforme() {
   toast('Generando informe, espera...', 'info');
   gas('generarInformeHTML', APP.incActivo.id, res => {
     if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
+    // GAS nuevo devuelve URL de Drive; GAS antiguo devuelve HTML directo
     if (res.url) {
       window.open(res.url, '_blank');
     } else if (res.email) {
       toast('Informe enviado a tu correo electrónico', 'ok');
+    } else if (res.html) {
+      const w = window.open('', '_blank');
+      if (w) { w.document.write(res.html); w.document.close(); }
+      else toast('Permite ventanas emergentes para este sitio', 'err');
     } else {
       toast('Error generando el informe', 'err');
     }
