@@ -555,7 +555,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
       <circle cx="14" cy="14" r="1.8" fill="#0F3460"/>
     </svg>
     <div>
-      <div class="ai-msg"><span id="ai-msg-txt">Claude está analizando</span><span class="ai-dots"></span></div>
+      <div class="ai-msg"><span id="ai-msg-txt">Analizando incidente...</span><span class="ai-dots"></span></div>
     </div>
     <div class="ai-sub" id="ai-timer"></div>
   </div>
@@ -880,7 +880,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
         <div class="fx ai g12 fw">
           <div style="flex:1">
             <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--primary)">Generación de hipótesis con IA + búsqueda web</div>
-            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">Claude analizará el incidente, buscará precedentes históricos reales en internet y generará 4 hipótesis operativas.</div>
+            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">El sistema analizará el incidente, buscará precedentes históricos reales en internet y generará 4 hipótesis operativas.</div>
           </div>
           <button class="btn btn-s" id="btn-gen-hip" onclick="generarHipotesis()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -1315,7 +1315,7 @@ let aiTimer = null;
 let aiSeconds = 0;
 
 function aiThinking(msg) {
-  msg = msg || 'Claude está analizando';
+  msg = msg || 'Analizando incidente...';
   document.getElementById('ai-msg-txt').textContent = msg;
   document.getElementById('ai-thinking').classList.add('show');
   aiSeconds = 0;
@@ -1679,7 +1679,7 @@ function cargarDashboard() {
       t.innerHTML = !recientes.length
         ? '<tr><td colspan="4"><div class="empty"><div class="ei">📋</div><div class="em">Sin incidentes</div></div></td></tr>'
         : recientes.slice(0,5).map(i =>
-            `<tr><td class="mono">${esc(i.ID_Incidente)}</td>
+            `<tr style="cursor:pointer" title="Clic para trabajar con este incidente" onclick='seleccionarIncTrabajo(${JSON.stringify(i)});irA("actualizaciones")'><td class="mono">${esc(i.ID_Incidente)}</td>
              <td>${esc(tc(i.Nombre,35))}</td>
              <td>${bGrav(i.Gravedad)}</td>
              <td>${bEst(i.Estado)}</td></tr>`
@@ -1936,7 +1936,7 @@ function seleccionarIncTrabajo(inc) {
 function confirmarCierre(id, nombre) {
   abrirModal('Cerrar incidente', `
     <p>¿Seguro que quieres cerrar <strong>${nombre}</strong>?</p>
-    <p style="margin-top:8px;font-size:12px;color:var(--muted)">ARGOS enviará notificaciones a Slack y Telegram, y luego Claude generará el informe de lecciones aprendidas (puede tardar hasta 60 segundos).</p>
+    <p style="margin-top:8px;font-size:12px;color:var(--muted)">ARGOS enviará notificaciones a Slack y Telegram y generará el informe de lecciones aprendidas automáticamente (puede tardar hasta 60 segundos).</p>
   `, 'Cerrar incidente', 'btn-r', () => {
     cerrarModales();
     aiThinking('Cerrando incidente y enviando notificaciones...');
@@ -1949,7 +1949,7 @@ function confirmarCierre(id, nombre) {
 
       // Paso 2: generar lecciones (puede tardar)
       document.getElementById('ai-msg-txt').textContent =
-        'Claude está generando el informe de lecciones aprendidas — puede tardar hasta 60 segundos';
+        'Generando informe de lecciones aprendidas — puede tardar hasta 60 segundos';
 
       gas('generarLeccionesIncidente', id, resLec => {
         aiDone();
@@ -2082,7 +2082,8 @@ function renderHistorial(acts) {
     { key: 'Draft_Facebook', label: '📘 Facebook',  cls: 'pub-pr' },
     { key: 'Draft_Prensa',   label: '📰 Nota prensa', cls: 'pub-pr' }
   ];
-  lista.innerHTML = [...publicadas].reverse().map(a => {
+  lista.innerHTML = [...publicadas].reverse().map((a, idx) => {
+    const uid = `pub-body-${idx}`;
     const bloques = canales
       .filter(c => a[c.key] && String(a[c.key]).trim())
       .map(c => `
@@ -2101,16 +2102,23 @@ function renderHistorial(acts) {
         ? `<a href="https://drive.google.com/file/d/${id}/view" target="_blank" style="display:block;border-radius:6px;overflow:hidden;flex:1;max-width:120px"><img src="${th}" style="width:100%;height:80px;object-fit:cover" alt="foto ${i}"></a>`
         : '';
     }).filter(Boolean).join('');
+    // Canal badges para la cabecera colapsada
+    const canalBadges = canales.filter(c => a[c.key] && String(a[c.key]).trim())
+      .map(c => `<span class="pub-canal ${c.cls}" style="font-size:10px;padding:2px 6px">${c.label}</span>`).join('');
 
-    return `<div class="pub-card">
-      <div class="pub-header">
-        <span class="bx bx-g">✓ Publicado</span>
-        <span class="pub-ts">${esc(a.Timestamp || '—')}</span>
-        <span style="font-size:12px;color:var(--muted);flex:1;margin-left:8px">${esc(tc(a.INPUT_Hechos, 70))}</span>
+    return `<div class="pub-card" style="padding:0">
+      <div class="pub-header" style="cursor:pointer;padding:10px 14px" onclick="var b=document.getElementById('${uid}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.pub-toggle').textContent=b.style.display==='none'?'▶':'▼'">
+        <span class="bx bx-g" style="flex-shrink:0">✓ Publicado</span>
+        <span class="pub-ts" style="flex-shrink:0">${esc(a.Timestamp || '—')}</span>
+        <span style="font-size:12px;color:var(--muted);flex:1;margin:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(tc(a.INPUT_Hechos, 55))}</span>
+        <span style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${canalBadges}</span>
+        <span class="pub-toggle" style="margin-left:8px;font-size:11px;color:var(--muted);flex-shrink:0">▶</span>
       </div>
-      ${fotosHtml ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${fotosHtml}</div>` : ''}
-      ${bloques ||
-        '<div style="font-size:12px;color:var(--muted);padding:8px 0">Esta publicación fue marcada sin borradores guardados.</div>'}
+      <div id="${uid}" style="display:none;padding:0 14px 14px">
+        ${fotosHtml ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${fotosHtml}</div>` : ''}
+        ${bloques ||
+          '<div style="font-size:12px;color:var(--muted);padding:8px 0">Esta publicación fue marcada sin borradores guardados.</div>'}
+      </div>
     </div>`;
   }).join('');
 }
@@ -2200,7 +2208,7 @@ function generarDraftsAct() {
   if (!APP.actSelId) { toast('Selecciona una actualización primero', 'err'); return; }
   const btn = document.getElementById('btn-gen-draft');
   btn.disabled = true; btn.innerHTML = '<div class="sp"></div> Generando...';
-  aiThinking('Claude está redactando los borradores');
+  aiThinking('Redactando borradores...');
   gas('generarDrafts', APP.actSelId, res => {
     aiDone();
     const d = res.drafts || {};
@@ -2226,7 +2234,7 @@ function generarPrensaAct() {
   if (!APP.actSelId) return;
   const btn = document.getElementById('btn-prensa');
   btn.disabled = true; btn.textContent = '⏳ Generando...';
-  aiThinking('Claude está redactando la nota de prensa');
+  aiThinking('Redactando nota de prensa...');
   gas('generarNotaPrensa', APP.actSelId, res => {
     aiDone();
     APP.drafts.prensa = res.nota?.texto_completo || '';
@@ -2318,12 +2326,13 @@ function renderNarrativas(nars) {
   if (!nars.length) {
     c.innerHTML = '<div class="empty"><div class="ei">👁</div><div class="em">Sin narrativas detectadas</div></div>'; return;
   }
-  c.innerHTML = [...nars].reverse().map(n => {
+  c.innerHTML = [...nars].reverse().map((n, idx) => {
     const ncrs    = Number(n.NCRS_Total) || 0;
     const estado  = n.Estado || 'Activa';
     const cls     = ncrs >= 4 ? 'rojo' : ncrs >= 3 ? 'naranja' : '';
     const publicado = estado === 'Desmentido publicado';
     const generado  = estado === 'Desmentido generado';
+    const uid       = `nar-body-${idx}`;
 
     // Badge de estado
     const estBadge = publicado
@@ -2335,23 +2344,27 @@ function renderNarrativas(nars) {
           : `<span class="bx bx-m">Monitorización</span>`;
 
     return `<div class="alert-card ${publicado ? '' : cls}" style="margin-bottom:10px;${publicado ? 'opacity:.7' : ''}">
-      <div class="fx ai g8 fw" style="margin-bottom:6px">
+      <div class="fx ai g8 fw" style="margin-bottom:4px;cursor:pointer" onclick="document.getElementById('${uid}').style.display=document.getElementById('${uid}').style.display==='none'?'block':'none';this.querySelector('.nar-toggle').textContent=document.getElementById('${uid}').style.display==='none'?'▶':'▼'">
         ${bNcrs(ncrs)}
         <span class="bx bx-m">${esc(n.Plataforma)}</span>
-        <span class="mono">${esc(n.Timestamp)}</span>
-        <span style="margin-left:auto">${estBadge}</span>
+        <span class="mono" style="font-size:11px">${esc(n.Timestamp)}</span>
+        <span style="flex:1;font-size:12px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:200px">${esc(tc(n.Descripcion, 60))}</span>
+        <span style="margin-left:auto;flex-shrink:0">${estBadge}</span>
+        <span class="nar-toggle" style="margin-left:8px;font-size:11px;color:var(--muted);flex-shrink:0">▶</span>
       </div>
-      <div style="font-size:13px;line-height:1.6;margin-bottom:6px">${esc(n.Descripcion)}</div>
-      <div style="font-size:12px;color:var(--mid);font-weight:600;margin-bottom:8px">${esc(n.Tactica)}</div>
-      ${n.Fuente_Origen ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Fuente: ${esc(n.Fuente_Origen)}</div>` : ''}
-      <div class="fx g8 fw">
-        ${ncrs >= 4 && !publicado ? `<button class="btn btn-r btn-sm" onclick="generarDesmentido('${n.ID_Narrativa}')">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          ${generado ? 'Regenerar desmentido' : 'Generar desmentido con IA'}
-        </button>` : ''}
-        ${generado && !publicado ? `<button class="btn btn-g btn-sm" onclick="marcarDesmentidoPublicado('${n.ID_Narrativa}')">
-          ✓ Marcar desmentido como publicado
-        </button>` : ''}
+      <div id="${uid}" style="display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:6px">
+        <div style="font-size:13px;line-height:1.6;margin-bottom:6px">${esc(n.Descripcion)}</div>
+        <div style="font-size:12px;color:var(--mid);font-weight:600;margin-bottom:8px">${esc(n.Tactica)}</div>
+        ${n.Fuente_Origen ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Fuente: ${esc(n.Fuente_Origen)}</div>` : ''}
+        <div class="fx g8 fw">
+          ${!publicado ? `<button class="btn btn-r btn-sm" onclick="generarDesmentido('${n.ID_Narrativa}')">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            ${generado ? 'Regenerar desmentido' : 'Generar desmentido con IA'}
+          </button>` : ''}
+          ${generado && !publicado ? `<button class="btn btn-g btn-sm" onclick="marcarDesmentidoPublicado('${n.ID_Narrativa}')">
+            ✓ Marcar desmentido como publicado
+          </button>` : ''}
+        </div>
       </div>
     </div>`;
   }).join('');
@@ -2411,11 +2424,11 @@ function marcarDesmentidoPublicado(idNarrativa) {
 
 function generarDesmentido(idNarrativa) {
   abrirModal('Generar desmentido', `
-    <p>Claude generará borradores de corrección (X, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
+    <p>Se generarán borradores de corrección (X, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
     <p style="margin-top:8px;font-size:12px;color:var(--muted)">La corrección se guardará en la narrativa y podrás copiarla para publicar manualmente.</p>
   `, 'Generar desmentido', 'btn-r', () => {
     cerrarModales();
-    aiThinking('Claude está generando el desmentido');
+    aiThinking('Generando desmentido...');
     gas('generarDesmentido', idNarrativa, res => {
       aiDone();
       const d = res.drafts || {};
@@ -2459,11 +2472,11 @@ function generarHipotesis() {
   const btn = document.getElementById('btn-gen-hip');
   btn.disabled = true;
   btn.innerHTML = '<div class="sp"></div> Analizando...';
-  aiThinking('Claude analiza el incidente y busca precedentes históricos — puede tardar entre 1 y 3 minutos');
+  aiThinking('Analizando incidente y buscando precedentes históricos — puede tardar entre 1 y 3 minutos');
   document.getElementById('hip-resultado').innerHTML = `
     <div style="text-align:center;padding:48px 20px;color:var(--muted)">
       <div class="sp" style="width:32px;height:32px;border-width:3px;margin:0 auto 18px;border-top-color:var(--primary)"></div>
-      <div style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:8px">Claude está analizando el incidente</div>
+      <div style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:8px">Analizando el incidente...</div>
       <div style="font-size:13px;line-height:1.7;max-width:400px;margin:0 auto">
         Está revisando los datos del incidente, buscando precedentes históricos reales
         y generando las 4 hipótesis operativas.<br><br>
@@ -2494,7 +2507,7 @@ function renderHipotesis(data) {
   if (data.resumen_ejecutivo) {
     h += `<div class="card" style="margin-bottom:16px">
       <div class="card-title">Resumen ejecutivo</div>
-      <p style="font-size:13.5px;line-height:1.75;color:var(--text)">${esc(data.resumen_ejecutivo)}</p>
+      <p style="font-size:15px;line-height:1.8;color:var(--text)">${esc(data.resumen_ejecutivo)}</p>
       ${data.alerta_temprana ? `<div class="crit-box" style="margin-top:12px;margin-bottom:0"><strong>⚡ Alerta temprana:</strong> ${esc(data.alerta_temprana)}</div>` : ''}
     </div>`;
   }
@@ -2510,7 +2523,7 @@ function renderHipotesis(data) {
         <span style="font-weight:700;font-size:14px;margin-left:4px;flex:1">${esc(hip.titulo||'')}</span>
       </div>
       <div class="hip-body">
-        <p style="font-size:13px;line-height:1.7;color:var(--text);margin-bottom:10px">${esc(hip.descripcion||'')}</p>
+        <p style="font-size:15px;line-height:1.75;color:var(--text);margin-bottom:10px">${esc(hip.descripcion||'')}</p>
         ${prec.descripcion ? `<div class="prec-box">
           <div style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">📚 Precedente histórico</div>
           <div style="font-size:12px">${esc(prec.descripcion)}</div>
@@ -2633,7 +2646,7 @@ function verLeccion(idx) {
 }
 
 function regenerarLecciones(idIncidente) {
-  aiThinking('Claude está generando el informe de lecciones — puede tardar hasta 60 segundos');
+  aiThinking('Generando informe de lecciones aprendidas — puede tardar hasta 60 segundos');
   gas('generarLeccionesIncidente', idIncidente, () => {
     aiDone();
     toast('Lecciones generadas correctamente', 'ok');
@@ -2919,7 +2932,7 @@ function procesarArchivoLecciones(event) {
   const reader = new FileReader();
 
   reader.onload = () => {
-    aiThinking(`Claude está extrayendo las lecciones de «${file.name}» — puede tardar unos segundos`);
+    aiThinking(`Extrayendo lecciones de «${file.name}» — puede tardar unos segundos`);
 
     gas('importarLecciones', {
       id_incidente:   APP.incActivo.id,
@@ -3184,10 +3197,10 @@ function abrirModalNuevoDato() {
 
   const fuenteOps = ['A','B','C','D','E','F'].map(l =>
     `<button class="alm-cell ${['conf','conf','prob','dudoso','improbable','nc'][['A','B','C','D','E','F'].indexOf(l)]}"
-      id="almF-${l}" onclick="selAlm('fuente','${l}')">${l}</button>`).join('');
+      id="almF-${l}" title="${ALM_FUENTE_LABELS[l]}" onclick="selAlm('fuente','${l}')">${l}</button>`).join('');
   const datoOps = ['1','2','3','4','5','6'].map(n =>
     `<button class="alm-cell ${['conf','prob','dudoso','dudoso','improbable','nc'][parseInt(n)-1]}"
-      id="almD-${n}" onclick="selAlm('dato','${n}')">${n}</button>`).join('');
+      id="almD-${n}" title="${ALM_DATO_LABELS[n]}" onclick="selAlm('dato','${n}')">${n}</button>`).join('');
 
   abrirModal('Registrar dato de monitorización', `
     <div class="fgr">
