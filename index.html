@@ -1477,6 +1477,10 @@ function inicializarMapaMini(lat, lon) {
     const { lat: ly, lng: lx } = e.latlng;
     actualizarCoordsMini(ly.toFixed(6), lx.toFixed(6));
   });
+  // Evitar que el modal robe el scroll wheel — permite zoom con rueda
+  _mapaMini.getContainer().addEventListener('wheel', e => e.stopPropagation(), { passive: false });
+  // Recalcular tamaño tras la animación del modal
+  setTimeout(() => _mapaMini.invalidateSize(), 300);
 }
 
 function actualizarCoordsMini(lat, lon) {
