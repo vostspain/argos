@@ -1607,24 +1607,26 @@ function toast(msg, tipo='ok') {
 // URL de la GAS Web App — actualiza tras redesplegar en Apps Script
 const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxv5rrffhvLRbUgFiaKbqStsQ_8WH-kw7O8Y3W-JBGGqrRZx_fEH_G4kLDdqJ-ksoE65w/exec';
 
-// ═══ GAS BRIDGE — fetch() en lugar de google.script.run ══════
-// Funciona desde cualquier host externo (GitHub Pages, etc.)
-// Content-Type: text/plain evita el preflight CORS con GAS.
+// ═══ GAS BRIDGE ══════════════════════════════════════════════
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPLn3hETppfNlOsHWucnSxcWl-nClhsr8tfIUlIWqh4XKmZZq8g_2IzUNYM-pgx-jG/exec';
+
 function gas(fn, arg, ok, err) {
-  fetch(GAS_API_URL, {
-    method:  'POST',
+  fetch(GAS_URL, {
+    method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body:    JSON.stringify({ fn, arg: arg !== undefined ? arg : null })
+    body: JSON.stringify({ fn, arg })
   })
-  .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+  .then(r => r.json())
   .then(res => {
     if (res && res.ok === false) {
       toast('Error: ' + (res.error || 'desconocido'), 'err');
       if (err) err(res);
-    } else { if (ok) ok(res); }
+    } else {
+      if (ok) ok(res);
+    }
   })
   .catch(e => {
-    toast('Sin conexión con ARGOS API: ' + e.message, 'err');
+    toast('Error de conexión con ARGOS.', 'err');
     if (err) err(e);
   });
 }
@@ -2700,15 +2702,10 @@ function abrirInforme() {
   toast('Generando informe, espera...', 'info');
   gas('generarInformeHTML', APP.incActivo.id, res => {
     if (!res.ok) { toast('Error: ' + (res.error || 'desconocido'), 'err'); return; }
-    // GAS nuevo devuelve URL de Drive; GAS antiguo devuelve HTML directo
     if (res.url) {
       window.open(res.url, '_blank');
     } else if (res.email) {
       toast('Informe enviado a tu correo electrónico', 'ok');
-    } else if (res.html) {
-      const w = window.open('', '_blank');
-      if (w) { w.document.write(res.html); w.document.close(); }
-      else toast('Permite ventanas emergentes para este sitio', 'err');
     } else {
       toast('Error generando el informe', 'err');
     }
