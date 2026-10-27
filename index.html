@@ -317,7 +317,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── MAPA LEAFLET ── */
 #mapa-dashboard{height:340px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
-#mapa-mini{height:140px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
+#mapa-mini{height:280px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
 .leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
 .inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
@@ -1464,7 +1464,7 @@ function abrirIncDesdeMap(id) {
 function inicializarMapaMini(lat, lon) {
   if (!document.getElementById('mapa-mini')) return;
   if (_mapaMini) { _mapaMini.remove(); _mapaMini = null; _mapaMiniMarker = null; }
-  _mapaMini = L.map('mapa-mini', { zoomControl: false, scrollWheelZoom: false })
+  _mapaMini = L.map('mapa-mini', { zoomControl: true, scrollWheelZoom: true })
     .setView([lat||40.4, lon||-3.7], lat ? 13 : 6);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OSM', maxZoom: 18,
@@ -3540,8 +3540,10 @@ function importarFuentesCSV(input) {
     const lineas = texto.split(/\r?\n/).filter(l => l.trim());
     if (!lineas.length) { toast('El archivo CSV está vacío', 'err'); input.value = ''; return; }
 
+    // Detectar separador (coma o punto y coma — Excel español usa ;)
+    const sep = lineas[0].includes(';') ? ';' : ',';
     // Detectar cabecera
-    const cabecera = lineas[0].split(',').map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
+    const cabecera = lineas[0].split(sep).map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
     const idx = {
       organismo: cabecera.indexOf('organismo'),
       ambito:    cabecera.indexOf('ambito'),
@@ -3561,7 +3563,7 @@ function importarFuentesCSV(input) {
       for (let i=0;i<line.length;i++) {
         const c = line[i];
         if (c==='"') { inQ=!inQ; }
-        else if (c===',' && !inQ) { result.push(cur.trim()); cur=''; }
+        else if (c===sep && !inQ) { result.push(cur.trim()); cur=''; }
         else cur += c;
       }
       result.push(cur.trim()); return result;
@@ -3570,32 +3572,28 @@ function importarFuentesCSV(input) {
     const filas = lineas.slice(1).map(l => parseCSVLine(l)).filter(f => f[idx.organismo]);
     if (!filas.length) { toast('No se encontraron datos en el CSV', 'err'); input.value=''; return; }
 
+    const v = (f, k) => (idx[k]>=0 && f[idx[k]]) ? f[idx[k]].replace(/^"|"$/g,'') : '';
+    const lote = filas.map(f => ({
+      organismo: v(f,'organismo'), ambito: v(f,'ambito') || 'Nacional',
+      ccaa: v(f,'ccaa'), categoria: v(f,'categoria') || 'General',
+      x_handle: v(f,'x_handle'), bluesky_handle: v(f,'bluesky_handle'),
+      whatsapp_canal: v(f,'whatsapp_canal'), web_oficial: v(f,'web_oficial'),
+      notas: v(f,'notas')
+    }));
     abrirModal('Importar fuentes CSV', `
       <p>Se van a importar <strong>${filas.length} fuentes</strong> desde el archivo <em>${esc(file.name)}</em>.</p>
-      <p style="margin-top:8px;font-size:12px;color:var(--muted)">Las fuentes existentes con el mismo nombre no se duplicarán si el backend lo detecta.</p>
+      <p style="margin-top:8px;font-size:12px;color:var(--muted)">Todas las filas se envían en una sola operación (rápido).</p>
     `, 'Importar', 'btn-p', () => {
       cerrarModales();
-      let ok=0, err=0;
-      const g = idx; // alias
-      const importarFila = (i) => {
-        if (i >= filas.length) {
-          toast(`Importación finalizada: ${ok} fuentes añadidas${err?', '+err+' errores':''}`, ok>0?'ok':'err');
+      toast(`Importando ${filas.length} fuentes…`, 'info');
+      gas('importarFuentesLote', { filas: lote },
+        r => {
+          toast(`✓ ${r.insertadas} fuentes importadas`, 'ok');
           _todasFuentes = []; cambiarTabFuentes('dir');
           input.value = '';
-          return;
-        }
-        const f = filas[i];
-        const v = k => (g[k]>=0 && f[g[k]]) ? f[g[k]].replace(/^"|"$/g,'') : '';
-        gas('crearFuente', {
-          organismo: v('organismo'), ambito: v('ambito') || 'Nacional',
-          ccaa: v('ccaa'), categoria: v('categoria') || 'General',
-          x_handle: v('x_handle'), bluesky_handle: v('bluesky_handle'),
-          whatsapp_canal: v('whatsapp_canal'), web_oficial: v('web_oficial'),
-          notas: v('notas')
-        }, () => { ok++; importarFila(i+1); }, () => { err++; importarFila(i+1); });
-      };
-      toast(`Importando ${filas.length} fuentes...`, 'info');
-      importarFila(0);
+        },
+        () => { toast('Error al importar. Revisa el backend.', 'err'); input.value = ''; }
+      );
     });
   };
   reader.readAsText(file, 'UTF-8');
