@@ -42,7 +42,7 @@ body{display:flex}
 #sidebar{width:var(--sw);height:100vh;flex-shrink:0;background:var(--dark);border-right:1px solid rgba(255,255,255,.06);display:flex;flex-direction:column;z-index:100}
 .sb-brand{padding:20px 12px 18px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px}
 #logo-svg{flex-shrink:0}
-#logo-img{height:110px;width:auto;max-width:200px;object-fit:contain;flex-shrink:0;display:none}
+#logo-img{max-height:130px;width:100%;max-width:240px;object-fit:contain;flex-shrink:0;display:none}
 .sb-txt{display:none}/* texto eliminado — el logo ya incluye nombre y marca */
 .sb-nav{flex:1;padding:8px 0;overflow-y:auto}
 .sb-sec{padding:14px 16px 3px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
@@ -589,10 +589,14 @@ input[type=range]{flex:1;accent-color:var(--primary)}
         </table></div>
       </div>
       <div class="card">
-        <div class="card-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-          Alertas externas
+        <div class="card-title fx ai" style="justify-content:space-between">
+          <span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+            Alertas externas
+          </span>
+          <button class="btn btn-gh" style="padding:2px 8px;font-size:11px" onclick="cargarAlertasExternas()" title="Actualizar alertas">↻</button>
         </div>
+        <div id="ext-alerts-ts" style="font-size:10px;color:var(--muted);margin-bottom:6px"></div>
         <div id="ext-alerts"><div style="color:var(--muted);font-size:12px">Consultando AEMET y CSN...</div></div>
       </div>
     </div>
@@ -988,7 +992,11 @@ input[type=range]{flex:1;accent-color:var(--primary)}
   <section class="view" id="view-fuentes">
     <div class="sh">
       <div class="sh-title">Fuentes oficiales</div>
-      <button class="btn btn-p" onclick="abrirModalNuevaFuente()">+ Añadir fuente</button>
+      <div class="fx ai g8">
+        <button class="btn btn-gh" onclick="document.getElementById('csv-fuentes-input').click()">⬆ Importar CSV</button>
+        <input type="file" id="csv-fuentes-input" accept=".csv,text/csv" style="display:none" onchange="importarFuentesCSV(this)">
+        <button class="btn btn-p" onclick="abrirModalNuevaFuente()">+ Añadir fuente</button>
+      </div>
     </div>
     <div class="mod-tabs">
       <button class="mod-tab active" id="tab-dir" onclick="cambiarTabFuentes('dir')">📋 Directorio completo</button>
@@ -1387,12 +1395,13 @@ function renderizarMarcadores(incs) {
     const marker = L.marker([lat, lon], { icon: crearMarcadorSVG(inc.Tipo, inc.Gravedad) });
     const estado_color = { Activo:'#10B981', Standby:'#F59E0B', Cerrado:'#9CA3AF' };
     const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${estado_color[inc.Estado]||'#64748b'};margin-right:5px"></span>`;
-    marker.bindPopup(`<div style="min-width:180px">
+    marker.bindPopup(`<div style="min-width:200px">
       <div style="font-weight:700;font-size:13px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
       <div style="font-size:11px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
       <div style="font-size:11px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
       <div style="font-size:10px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
       ${inc.Ubicacion ? '<div style="font-size:11px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
+      <button onclick="abrirIncDesdeMap('${inc.ID_Incidente}')" style="margin-top:8px;background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;width:100%">Abrir incidente →</button>
     </div>`);
     marker.addTo(_mapaDash);
   });
@@ -1428,18 +1437,26 @@ function actualizarMapaDashboard() {
       const marker = L.marker([lat, lon], { icon: crearMarcadorSVG(inc.Tipo, inc.Gravedad) });
       const estado_color = { Activo:'#10B981', Standby:'#F59E0B', Cerrado:'#9CA3AF' };
       const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${estado_color[inc.Estado]||'#64748b'};margin-right:5px"></span>`;
-      marker.bindPopup(`<div style="min-width:180px">
+      marker.bindPopup(`<div style="min-width:200px">
         <div style="font-weight:700;font-size:13px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
         <div style="font-size:11px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
         <div style="font-size:11px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
         <div style="font-size:10px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
         ${inc.Ubicacion ? '<div style="font-size:11px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
+        <button onclick="abrirIncDesdeMap('${inc.ID_Incidente}')" style="margin-top:8px;background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;width:100%">Abrir incidente →</button>
       </div>`);
       marker.addTo(_mapaDash);
     });
     if (bounds.length === 1) { _mapaDash.setView(bounds[0], 12); }
     else if (bounds.length > 1) { _mapaDash.fitBounds(bounds, { padding: [30, 30] }); }
   });
+}
+
+// Abre un incidente desde el popup del mapa del dashboard
+function abrirIncDesdeMap(id) {
+  const inc = APP.incs.find(i => i.ID_Incidente === id);
+  if (inc) { seleccionarIncTrabajo(inc); irA('actualizaciones'); }
+  else { irA('incidentes'); }
 }
 
 // Mapa mini en modal de incidente
@@ -1732,7 +1749,8 @@ function renderAlertas(data) {
 }
 
 function cargarAlertasExternas() {
-  const c = document.getElementById('ext-alerts');
+  const c  = document.getElementById('ext-alerts');
+  const ts = document.getElementById('ext-alerts-ts');
   c.innerHTML = '<div style="color:var(--muted);font-size:12px">Consultando...</div>';
   gas('getAlertasExternas', undefined, res => {
     let h = '';
@@ -1740,7 +1758,9 @@ function cargarAlertasExternas() {
       h += '<div style="margin-bottom:12px"><div style="font-size:9px;font-weight:700;color:var(--alert);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">⚡ AEMET</div>';
       h += res.aemet.map(a => {
         const cls = a.color?.match(/RED|ROJO|4/) ? 'rojo' : 'naranja';
-        return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:12px">${esc(a.evento||'—')}</div>
+        const especial = a.tipo === 'especial' || a.tipo === 'informativa'
+          ? `<span style="font-size:10px;background:#1e3a5f;color:#93c5fd;border-radius:3px;padding:1px 5px;margin-left:4px">${a.tipo==='especial'?'Aviso especial':'Nota informativa'}</span>` : '';
+        return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:12px">${esc(a.evento||'—')}${especial}</div>
           <div style="font-size:11px;color:var(--muted)">📍 ${esc(a.zona)} · ${esc(a.severidad)}</div></div>`;
       }).join('') + '</div>';
     } else {
@@ -1754,7 +1774,11 @@ function cargarAlertasExternas() {
       h += '<div><div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">CSN</div><div style="font-size:12px;color:var(--muted)">Sin sucesos notificados</div></div>';
     }
     c.innerHTML = h;
-  }, () => { c.innerHTML = '<div style="font-size:12px;color:var(--muted)">No se pudieron cargar las alertas.</div>'; });
+    if (ts) { const now = new Date(); ts.textContent = `Última actualización: ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`; }
+  }, () => {
+    c.innerHTML = '<div style="font-size:12px;color:var(--muted)">No se pudieron cargar las alertas.</div>';
+    if (ts) ts.textContent = 'Error al consultar';
+  });
 }
 
 // ═══ INCIDENTES ══════════════════════════════════════════════
@@ -1994,7 +2018,8 @@ function abrirModalNuevoInc() {
           <input id="i-lat" type="text" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:12px">
           <input id="i-lon" type="text" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:12px">
         </div>
-        <div id="mapa-mini" style="display:none"></div>
+        <div id="mapa-mini"></div>
+        <div style="font-size:10px;color:var(--muted);margin-top:3px">💡 Pincha en el mapa para fijar la ubicación exacta</div>
       </div>
       <div class="fg full"><label>Situación inicial</label>
         <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
@@ -2110,7 +2135,7 @@ function renderHistorial(acts) {
       <div class="pub-header" style="cursor:pointer;padding:10px 14px" onclick="var b=document.getElementById('${uid}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.pub-toggle').textContent=b.style.display==='none'?'▶':'▼'">
         <span class="bx bx-g" style="flex-shrink:0">✓ Publicado</span>
         <span class="pub-ts" style="flex-shrink:0">${esc(a.Timestamp || '—')}</span>
-        <span style="font-size:12px;color:var(--muted);flex:1;margin:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(tc(a.INPUT_Hechos, 55))}</span>
+        <span style="font-size:12px;color:var(--muted);flex:1;margin:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(tc(a.INPUT_Hechos, 90))}</span>
         <span style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${canalBadges}</span>
         <span class="pub-toggle" style="margin-left:8px;font-size:11px;color:var(--muted);flex-shrink:0">▶</span>
       </div>
@@ -2130,7 +2155,7 @@ function renderActs(acts) {
   }
   t.innerHTML = [...acts].reverse().map(a => `<tr>
     <td class="mono">${a.Timestamp||'—'}</td>
-    <td>${tc(a.INPUT_Hechos,50)}</td>
+    <td style="max-width:300px;white-space:normal;word-break:break-word">${tc(a.INPUT_Hechos,120)}</td>
     <td>${bEst(a.Estado)}</td>
     <td><button class="btn btn-gh btn-sm" onclick="selActualizacion('${a.ID_Actualizacion}')">Ver borradores</button></td>
   </tr>`).join('');
@@ -2432,6 +2457,7 @@ function generarDesmentido(idNarrativa) {
     gas('generarDesmentido', idNarrativa, res => {
       aiDone();
       const d = res.drafts || {};
+      const titulo = res.titulo || '';
       abrirModal('Borradores de desmentido', `
         <div class="ch-tabs">
           <button class="cht active" onclick="cambiarDesmentido('x',this,${JSON.stringify(d).replace(/"/g,"'")})">𝕏 Twitter</button>
@@ -2439,7 +2465,11 @@ function generarDesmentido(idNarrativa) {
           <button class="cht" onclick="cambiarDesmentido('whatsapp',this,${JSON.stringify(d).replace(/"/g,"'")})">💬 WhatsApp</button>
         </div>
         <div id="desm-txt" class="draft-box">${esc(d.x?.contenido||'Sin contenido')}</div>
-        <button class="btn btn-gh btn-sm" style="margin-top:10px" onclick="navigator.clipboard.writeText(document.getElementById('desm-txt').textContent)">Copiar</button>
+        <div class="fx g8" style="margin-top:10px">
+          <button class="btn btn-gh btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('desm-txt').textContent)">Copiar</button>
+          <button class="btn btn-p btn-sm" onclick="enviarDesmentidoAComunicacion('${idNarrativa}',${JSON.stringify(d).replace(/"/g,"'")},${JSON.stringify(titulo).replace(/"/g,"'")})">→ Enviar a Comunicación</button>
+        </div>
+        <div id="desm-env-ok" style="display:none;margin-top:8px;font-size:12px;color:var(--green)">✓ Borradores enviados a Comunicación — aparecerán en el historial de publicaciones.</div>
       `, 'Cerrar', 'btn-gh', cerrarModales);
     });
   });
@@ -2450,6 +2480,25 @@ function cambiarDesmentido(canal, btn, drafts) {
   if (btn) btn.classList.add('active');
   const el = document.getElementById('desm-txt');
   if (el) el.textContent = drafts[canal]?.contenido || 'Sin borrador';
+}
+
+function enviarDesmentidoAComunicacion(idNarrativa, drafts, titulo) {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  const btn = document.querySelector('#desm-env-ok');
+  gas('crearActualizacionDesdeDesmentido', {
+    id_incidente: APP.incActivo.id,
+    id_narrativa: idNarrativa,
+    titulo:       titulo || 'Desmentido',
+    draft_x:       drafts.x?.contenido || '',
+    draft_telegram: drafts.telegram?.contenido || '',
+    draft_whatsapp: drafts.whatsapp?.contenido || '',
+    operador:     APP.operador
+  }, () => {
+    if (btn) { btn.style.display = 'block'; }
+    toast('Borradores enviados a Comunicación', 'ok');
+    // Recargar actualizaciones para que aparezcan en historial
+    if (APP.incActivo) cargarActualizaciones();
+  }, () => { toast('No se pudieron enviar los borradores', 'err'); });
 }
 
 // ═══ HIPÓTESIS ════════════════════════════════════════════════
@@ -3085,6 +3134,10 @@ function completarInit() {
   setInterval(() => {
     if (document.querySelector('#view-dashboard.active')) cargarDashboard();
   }, 180000);
+  // Auto-refresh de alertas externas cada 30 minutos
+  setInterval(() => {
+    if (document.querySelector('#view-dashboard.active')) cargarAlertasExternas();
+  }, 1800000);
 }
 
 
@@ -3474,6 +3527,77 @@ function abrirModalNuevaFuente() {
       cambiarTabFuentes('dir');
     });
   });
+}
+
+// ═══ v3: IMPORTAR FUENTES DESDE CSV ══════════════════════════
+function importarFuentesCSV(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const texto = e.target.result;
+    const lineas = texto.split(/\r?\n/).filter(l => l.trim());
+    if (!lineas.length) { toast('El archivo CSV está vacío', 'err'); input.value = ''; return; }
+
+    // Detectar cabecera
+    const cabecera = lineas[0].split(',').map(h => h.trim().replace(/^"|"$/g,'').toLowerCase());
+    const idx = {
+      organismo: cabecera.indexOf('organismo'),
+      ambito:    cabecera.indexOf('ambito'),
+      ccaa:      cabecera.indexOf('ccaa'),
+      categoria: cabecera.indexOf('categoria'),
+      x_handle:       cabecera.findIndex(h=>h==='x_handle'||h==='x handle'||h==='twitter'),
+      bluesky_handle: cabecera.findIndex(h=>h==='bluesky_handle'||h==='bluesky handle'||h==='bluesky'),
+      whatsapp_canal: cabecera.findIndex(h=>h==='whatsapp_canal'||h==='whatsapp canal'||h==='whatsapp'),
+      web_oficial:    cabecera.findIndex(h=>h==='web_oficial'||h==='web oficial'||h==='web'),
+      notas:          cabecera.indexOf('notas')
+    };
+
+    if (idx.organismo < 0) { toast('El CSV debe tener columna "Organismo"', 'err'); input.value = ''; return; }
+
+    const parseCSVLine = line => {
+      const result = []; let cur = ''; let inQ = false;
+      for (let i=0;i<line.length;i++) {
+        const c = line[i];
+        if (c==='"') { inQ=!inQ; }
+        else if (c===',' && !inQ) { result.push(cur.trim()); cur=''; }
+        else cur += c;
+      }
+      result.push(cur.trim()); return result;
+    };
+
+    const filas = lineas.slice(1).map(l => parseCSVLine(l)).filter(f => f[idx.organismo]);
+    if (!filas.length) { toast('No se encontraron datos en el CSV', 'err'); input.value=''; return; }
+
+    abrirModal('Importar fuentes CSV', `
+      <p>Se van a importar <strong>${filas.length} fuentes</strong> desde el archivo <em>${esc(file.name)}</em>.</p>
+      <p style="margin-top:8px;font-size:12px;color:var(--muted)">Las fuentes existentes con el mismo nombre no se duplicarán si el backend lo detecta.</p>
+    `, 'Importar', 'btn-p', () => {
+      cerrarModales();
+      let ok=0, err=0;
+      const g = idx; // alias
+      const importarFila = (i) => {
+        if (i >= filas.length) {
+          toast(`Importación finalizada: ${ok} fuentes añadidas${err?', '+err+' errores':''}`, ok>0?'ok':'err');
+          _todasFuentes = []; cambiarTabFuentes('dir');
+          input.value = '';
+          return;
+        }
+        const f = filas[i];
+        const v = k => (g[k]>=0 && f[g[k]]) ? f[g[k]].replace(/^"|"$/g,'') : '';
+        gas('crearFuente', {
+          organismo: v('organismo'), ambito: v('ambito') || 'Nacional',
+          ccaa: v('ccaa'), categoria: v('categoria') || 'General',
+          x_handle: v('x_handle'), bluesky_handle: v('bluesky_handle'),
+          whatsapp_canal: v('whatsapp_canal'), web_oficial: v('web_oficial'),
+          notas: v('notas')
+        }, () => { ok++; importarFila(i+1); }, () => { err++; importarFila(i+1); });
+      };
+      toast(`Importando ${filas.length} fuentes...`, 'info');
+      importarFila(0);
+    });
+  };
+  reader.readAsText(file, 'UTF-8');
 }
 
 // ═══ v3: HASHTAGS EN EL INCIDENTE ════════════════════════════
