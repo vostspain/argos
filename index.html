@@ -28,7 +28,7 @@
 }
 
 /* ── BASE ── */
-html,body{height:100%;font-family:var(--sans);font-size:14px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden}
+html,body{height:100%;font-family:var(--sans);font-size:15px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden}
 body{display:flex}
 
 /* ── SPLASH ── */
@@ -348,7 +348,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .admin-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:rgba(167,139,250,.15);color:#A78BFA}
 
 /* ── MAPA LEAFLET ── */
-#mapa-dashboard{height:210px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
+#mapa-dashboard{height:280px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
 #mapa-mini{height:280px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
 .leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
@@ -515,6 +515,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     <button class="nb" data-v="notas" onclick="irA('notas')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       <span class="lbl">Notas internas</span>
+      <span class="nb-bx" id="bx-notas" style="display:none">0</span>
     </button>
     <div class="sb-sec">Inteligencia</div>
     <button class="nb" data-v="narrativas" onclick="irA('narrativas')">
@@ -1708,7 +1709,7 @@ function bGrav(v) {
   return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
 }
 function bEst(v) {
-  const cls = {Activo:'g', Standby:'a', Cerrado:'m'};
+  const cls = {Activo:'g', Standby:'a', Cerrado:'m', Publicado:'g', Borrador:'m'};
   return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
 }
 function bNcrs(n) {
@@ -2225,12 +2226,15 @@ function renderActs(acts) {
   if (!acts.length) {
     t.innerHTML = '<tr><td colspan="4"><div class="empty"><div class="ei">📡</div><div class="em">Sin actualizaciones</div></div></td></tr>'; return;
   }
-  t.innerHTML = [...acts].reverse().map(a => `<tr>
-    <td class="mono">${a.Timestamp||'—'}</td>
-    <td style="max-width:300px;white-space:normal;word-break:break-word">${tc(a.INPUT_Hechos,120)}</td>
-    <td>${bEst(a.Estado)}</td>
-    <td><button class="btn btn-gh btn-sm" onclick="selActualizacion('${a.ID_Actualizacion}')">Ver borradores</button></td>
-  </tr>`).join('');
+  t.innerHTML = [...acts].reverse().map(a => {
+    const esPublicada = (a.Estado||'').trim().toLowerCase() === 'publicado';
+    return `<tr${esPublicada ? ' style="background:var(--green-bg)"' : ''}>
+      <td class="mono">${a.Timestamp||'—'}</td>
+      <td style="max-width:300px;white-space:normal;word-break:break-word">${tc(a.INPUT_Hechos,120)}</td>
+      <td>${bEst(a.Estado)}${esPublicada ? ' <span style="font-size:12px">✅</span>' : ''}</td>
+      <td><button class="btn btn-gh btn-sm" onclick="selActualizacion('${a.ID_Actualizacion}')">Generar borradores</button></td>
+    </tr>`;
+  }).join('');
 }
 
 function crearActualizacion() {
@@ -2376,20 +2380,51 @@ function cargarNotas() {
   });
 }
 
+function _notasLeidasKey() {
+  return 'argos_notas_leidas_' + (APP.incActivo?.id || 'global');
+}
+function _notaId(n) {
+  return (n.ID_Nota || (n.Timestamp + '_' + n.Operador)).replace(/[^\w-]/g, '_');
+}
+function marcarNotaLeida(nid) {
+  let leidas = new Set();
+  try { leidas = new Set(JSON.parse(localStorage.getItem(_notasLeidasKey()) || '[]')); } catch(e) {}
+  leidas.add(nid);
+  try { localStorage.setItem(_notasLeidasKey(), JSON.stringify([...leidas])); } catch(e) {}
+  renderNotas(APP.notas);
+}
+function actualizarBadgeNotas(n) {
+  const el = document.getElementById('bx-notas');
+  if (!el) return;
+  if (n > 0) { el.textContent = n > 9 ? '9+' : n; el.style.display = 'inline-flex'; }
+  else { el.style.display = 'none'; }
+}
 function renderNotas(notas) {
   const c = document.getElementById('lista-notas');
   if (!notas.length) {
-    c.innerHTML = '<div class="empty"><div class="ei">🔒</div><div class="em">Sin notas internas</div></div>'; return;
+    c.innerHTML = '<div class="empty"><div class="ei">🔒</div><div class="em">Sin notas internas</div></div>';
+    actualizarBadgeNotas(0); return;
   }
-  c.innerHTML = [...notas].reverse().map(n => `
-    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
-      <div class="fx ai g8" style="margin-bottom:4px">
+  let leidas = new Set();
+  try { leidas = new Set(JSON.parse(localStorage.getItem(_notasLeidasKey()) || '[]')); } catch(e) {}
+  let sinLeer = 0;
+  c.innerHTML = [...notas].reverse().map(n => {
+    const nid   = _notaId(n);
+    const leida = leidas.has(nid);
+    if (!leida) sinLeer++;
+    return `
+    <div style="padding:12px;border-bottom:1px solid var(--border);border-radius:6px;margin-bottom:4px;${!leida ? 'background:rgba(14,165,233,.07);border-left:3px solid var(--secondary)' : ''}">
+      <div class="fx ai g8 fw" style="margin-bottom:4px">
+        ${!leida ? '<span style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0">● No leída</span>' : ''}
         <span class="bx bx-m">${esc(n.Categoria)}</span>
         <span class="mono">${esc(n.Timestamp)}</span>
         <span style="font-size:11px;color:var(--muted)">${esc(n.Operador)}</span>
+        ${!leida ? `<button class="btn btn-gh btn-sm" style="margin-left:auto;font-size:10px;padding:2px 8px" onclick="marcarNotaLeida('${nid}')">✓ Marcar leída</button>` : ''}
       </div>
       <div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(n.Contenido)}</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+  actualizarBadgeNotas(sinLeer);
 }
 
 function guardarNota() {
@@ -2426,23 +2461,47 @@ function renderNarrativas(nars) {
   c.innerHTML = [...nars].reverse().map((n, idx) => {
     const ncrs    = Number(n.NCRS_Total) || 0;
     const estado  = n.Estado || 'Activa';
-    const cls     = ncrs >= 4 ? 'rojo' : ncrs >= 3 ? 'naranja' : '';
     const publicado = estado === 'Desmentido publicado';
     const generado  = estado === 'Desmentido generado';
     const uid       = `nar-body-${idx}`;
+
+    // Detectar si el input proviene de J2 Inteligencia
+    const esDeJ2 = !!(n.Cal_Fuente || (n.Fuente_Origen || '').toUpperCase().includes('J2'));
+    // Para ítems J2: mostrar escala del Almirantazgo en lugar de NCRS
+    const calCombinada = n.Cal_Combinada || ((n.Cal_Fuente || '') + (n.Cal_Dato || ''));
+    const almLabel = calCombinada || (n.Cal_Fuente ? n.Cal_Fuente + (n.Cal_Dato || '6') : 'E-6');
+
+    // Badge de cabecera: NCRS para narrativas analizadas, Almirantazgo para entradas J2
+    const encabezadoBadge = esDeJ2
+      ? `<span class="bx bx-a" title="Escala del Almirantazgo (J2)">🔍 ${almLabel}</span>`
+      : bNcrs(ncrs);
+
+    // Clase de alerta (solo aplica si se ha hecho análisis NCRS)
+    const cls = !esDeJ2 ? (ncrs >= 4 ? 'rojo' : ncrs >= 3 ? 'naranja' : '') : 'naranja';
 
     // Badge de estado
     const estBadge = publicado
       ? `<span class="bx bx-g">✓ Desmentido publicado</span>`
       : generado
         ? `<span class="bx bx-a">Desmentido generado — pendiente de publicar</span>`
-        : ncrs >= 4
-          ? `<span class="bx bx-r">Requiere desmentido</span>`
-          : `<span class="bx bx-m">Monitorización</span>`;
+        : esDeJ2
+          ? `<span class="bx bx-a">⚠ Input J2 — pendiente análisis NCRS</span>`
+          : ncrs >= 4
+            ? `<span class="bx bx-r">Requiere desmentido</span>`
+            : `<span class="bx bx-m">Monitorización</span>`;
 
-    return `<div class="alert-card ${publicado ? '' : cls}" style="margin-bottom:10px;${publicado ? 'opacity:.7' : ''}">
+    // Aviso específico para ítems derivados de J2
+    const avisoJ2 = esDeJ2 ? `
+      <div style="margin-bottom:10px;padding:8px 12px;background:rgba(245,158,11,.1);border-left:3px solid var(--alert);border-radius:4px;font-size:12px;color:var(--mid)">
+        <strong>⚠ Dato procedente de J2 Inteligencia</strong><br>
+        Escala del Almirantazgo: <strong>${almLabel}</strong>
+        ${n.Cal_Fuente ? ` (${ALM_FUENTE_LABELS[n.Cal_Fuente]||''} / ${ALM_DATO_LABELS[n.Cal_Dato]||'No valorable'})` : ' (E-6 — fuente no valorable / credibilidad no valorable)'}<br>
+        <span style="color:var(--red)">El análisis NCRS no está disponible para este ítem. El operador debe realizar el análisis manual (Alcance, Verosimilitud, Velocidad, Malicia) antes de tratarlo como narrativa clasificada.</span>
+      </div>` : '';
+
+    return `<div class="alert-card ${publicado ? '' : cls}" style="margin-bottom:10px;${publicado ? 'opacity:.7' : ''}${esDeJ2 && !publicado ? ';border-left:3px solid var(--alert)' : ''}">
       <div class="fx ai g8 fw" style="margin-bottom:4px;cursor:pointer" onclick="document.getElementById('${uid}').style.display=document.getElementById('${uid}').style.display==='none'?'block':'none';this.querySelector('.nar-toggle').textContent=document.getElementById('${uid}').style.display==='none'?'▶':'▼'">
-        ${bNcrs(ncrs)}
+        ${encabezadoBadge}
         <span class="bx bx-m">${esc(n.Plataforma)}</span>
         <span class="mono" style="font-size:11px">${esc(n.Timestamp)}</span>
         <span style="flex:1;font-size:12px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:200px">${esc(tc(n.Descripcion, 60))}</span>
@@ -2450,6 +2509,7 @@ function renderNarrativas(nars) {
         <span class="nar-toggle" style="margin-left:8px;font-size:11px;color:var(--muted);flex-shrink:0">▶</span>
       </div>
       <div id="${uid}" style="display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:6px">
+        ${avisoJ2}
         <div style="font-size:13px;line-height:1.6;margin-bottom:6px">${esc(n.Descripcion)}</div>
         <div style="font-size:12px;color:var(--mid);font-weight:600;margin-bottom:8px">${esc(n.Tactica)}</div>
         ${n.Fuente_Origen ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Fuente: ${esc(n.Fuente_Origen)}</div>` : ''}
@@ -2521,7 +2581,7 @@ function marcarDesmentidoPublicado(idNarrativa) {
 
 function generarDesmentido(idNarrativa) {
   abrirModal('Generar desmentido', `
-    <p>Se generarán borradores de corrección (X, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
+    <p>Se generarán borradores de corrección (X, Bluesky, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
     <p style="margin-top:8px;font-size:12px;color:var(--muted)">La corrección se guardará en la narrativa y podrás copiarla para publicar manualmente.</p>
   `, 'Generar desmentido', 'btn-r', () => {
     cerrarModales();
@@ -2533,6 +2593,7 @@ function generarDesmentido(idNarrativa) {
       abrirModal('Borradores de desmentido', `
         <div class="ch-tabs">
           <button class="cht active" onclick="cambiarDesmentido('x',this,${JSON.stringify(d).replace(/"/g,"'")})">𝕏 Twitter</button>
+          <button class="cht" onclick="cambiarDesmentido('bluesky',this,${JSON.stringify(d).replace(/"/g,"'")})">🦋 Bluesky</button>
           <button class="cht" onclick="cambiarDesmentido('telegram',this,${JSON.stringify(d).replace(/"/g,"'")})">✈ Telegram</button>
           <button class="cht" onclick="cambiarDesmentido('whatsapp',this,${JSON.stringify(d).replace(/"/g,"'")})">💬 WhatsApp</button>
         </div>
@@ -2561,7 +2622,8 @@ function enviarDesmentidoAComunicacion(idNarrativa, drafts, titulo) {
     id_incidente: APP.incActivo.id,
     id_narrativa: idNarrativa,
     titulo:       titulo || 'Desmentido',
-    draft_x:       drafts.x?.contenido || '',
+    draft_x:        drafts.x?.contenido       || '',
+    draft_bluesky:  drafts.bluesky?.contenido || '',
     draft_telegram: drafts.telegram?.contenido || '',
     draft_whatsapp: drafts.whatsapp?.contenido || '',
     operador:     APP.operador
