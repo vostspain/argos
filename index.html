@@ -3890,8 +3890,9 @@ function _monRenderPaso(paso) {
 
 function _monPaso1(body, footer) {
   const inc  = APP.incActivo || {};
-  const ubi  = e(inc.Ubicacion || inc.ubicacion || '');
-  const tipo = e(inc.Tipo || inc.tipo || '');
+  const _esc = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+  const ubi  = _esc(inc.Ubicacion || inc.ubicacion || '');
+  const tipo = _esc(inc.Tipo || inc.tipo || '');
   body.innerHTML = `
   <div class="fgr">
     <div class="fg full">
