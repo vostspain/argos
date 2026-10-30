@@ -413,6 +413,28 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 /* ── RESPONSIVE ── */
 @media(max-width:900px){#sidebar{width:52px}.sb-txt,.nb .lbl,.nb-bx,.sb-sec{display:none}.sb-brand{justify-content:center;padding:12px 8px}.nb{justify-content:center;padding:9px;margin:2px 6px}.nb svg{width:19px;height:19px}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){#content{padding:14px}.g4,.g3,.g2{grid-template-columns:1fr}.fgr{grid-template-columns:1fr}.fgr .full{grid-column:span 1}}
+
+/* ── MONITOR DE REDES SOCIALES ── */
+#mon-bd{position:fixed;inset:0;z-index:1100;background:rgba(13,27,42,.78);backdrop-filter:blur(4px);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto}
+#mon-bd.open{display:flex}
+#mon-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);width:min(900px,96vw);box-shadow:0 28px 64px rgba(0,0,0,.32);animation:mIn .18s ease-out;margin:auto}
+.mon-plat{border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:12px;background:var(--bg)}
+.mon-plat-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:13px}
+.mon-query{width:100%;font-family:var(--mono,'Courier New',monospace);font-size:11.5px;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;background:var(--surface);color:var(--text);resize:vertical;min-height:52px;line-height:1.5;transition:border-color .13s}
+.mon-query:focus{outline:none;border-color:var(--secondary)}
+.mon-query-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.mon-query-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
+.mon-copy{padding:5px 10px;font-size:11px;white-space:nowrap;cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);transition:all .12s;font-family:var(--sans)}
+.mon-copy:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
+.mon-ext{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;white-space:nowrap;cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--secondary);text-decoration:none;transition:all .12s;font-family:var(--sans)}
+.mon-ext:hover{background:var(--secondary);color:#fff;border-color:var(--secondary)}
+.mon-alert-chip{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--rl);font-size:12px;font-weight:600;cursor:pointer;border:2px solid transparent;transition:all .14s;opacity:.52;font-family:var(--sans)}
+.mon-alert-chip.sel{opacity:1;box-shadow:0 2px 10px rgba(0,0,0,.15)}
+.mon-step-bar{display:flex;gap:6px;padding:12px 20px;border-bottom:1px solid var(--border)}
+.mon-step-pill{flex:1;height:4px;border-radius:2px;background:var(--border);transition:background .22s}
+.mon-step-pill.done{background:var(--primary)}
+.mon-step-pill.active{background:var(--secondary)}
+.mon-refinar-box{background:linear-gradient(135deg,rgba(99,102,241,.07),rgba(139,92,246,.05));border:1px dashed rgba(139,92,246,.4);border-radius:var(--rl);padding:14px 16px;margin-bottom:16px}
 </style>
   <!-- Leaflet — carga diferida para no bloquear el render inicial -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -994,7 +1016,10 @@ input[type=range]{flex:1;accent-color:var(--primary)}
         <div class="sh-title">J2 Inteligencia</div>
         <div style="font-size:13px;color:var(--muted);margin-top:2px">Sistema del Almirantazgo — clasificación y verificación de datos de monitorización</div>
       </div>
-      <button class="btn btn-p" onclick="abrirModalNuevoDato()">+ Registrar dato</button>
+      <div class="fx ai g8">
+        <button class="btn btn-gh" onclick="abrirMonitorRedes()">🔍 Monitor de redes</button>
+        <button class="btn btn-p" onclick="abrirModalNuevoDato()">+ Registrar dato</button>
+      </div>
     </div>
 
     <div id="int-sel-banner" class="info-box">Selecciona un incidente para ver y registrar datos de monitorización.</div>
@@ -3795,8 +3820,420 @@ function guardarEdicionDraft() {
   });
 }
 
+/* ════════════════════════════════════════════
+   MONITOR DE REDES SOCIALES — J2 Inteligencia
+   ════════════════════════════════════════════ */
+
+let _monPaso = 1;
+const _MON_PASOS = ['Parámetros del incidente', 'Vectores de búsqueda', 'Hallazgos y trazabilidad'];
+
+function abrirMonitorRedes() {
+  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  APP._mon = {
+    alerta:  null,
+    params:  null,
+    queries: null,
+    plats:   { x: true, facebook: true, instagram: true, telegram: true, tiktok: true }
+  };
+  _monPaso = 1;
+  _monRenderPaso(1);
+  document.getElementById('mon-bd').classList.add('open');
+}
+
+function cerrarMonitor() {
+  document.getElementById('mon-bd').classList.remove('open');
+}
+
+function _monPills(paso) {
+  ['msp1', 'msp2', 'msp3'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'mon-step-pill' + (i + 1 < paso ? ' done' : (i + 1 === paso ? ' active' : ''));
+  });
+  document.getElementById('mon-step-lbl').textContent = `Paso ${paso} de 3 — ${_MON_PASOS[paso - 1]}`;
+}
+
+function _monRenderPaso(paso) {
+  _monPaso = paso;
+  _monPills(paso);
+  const body   = document.getElementById('mon-body');
+  const footer = document.getElementById('mon-footer');
+  if (paso === 1)      _monPaso1(body, footer);
+  else if (paso === 2) _monPaso2(body, footer);
+  else                 _monPaso3(body, footer);
+}
+
+function _monPaso1(body, footer) {
+  const inc  = APP.incActivo || {};
+  const ubi  = e(inc.Ubicacion || inc.ubicacion || '');
+  const tipo = e(inc.Tipo || inc.tipo || '');
+  body.innerHTML = `
+  <div class="fgr">
+    <div class="fg full">
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:var(--text)">Ubicación del incidente <span style="color:var(--red)">*</span></label>
+      <input id="mon-ubi" class="inp" type="text" placeholder="Ej: Bilbao, Getxo, Basauri…" value="${ubi}">
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <label style="font-size:12px;font-weight:700;color:var(--text)">Variantes toponímicas <span style="font-size:11px;font-weight:400;color:var(--muted)">(una por línea)</span></label>
+        <button class="btn btn-gh btn-sm" id="mon-btn-top" onclick="sugerirToponimoIA()">✨ Sugerir con IA</button>
+      </div>
+      <textarea id="mon-variantes" class="inp" rows="2" placeholder="Bilbo, Casco Viejo Bilbao, Bilbao centro…"></textarea>
+    </div>
+    <div class="fg full" style="margin-top:4px">
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:var(--text)">Tipo de incidente <span style="color:var(--red)">*</span></label>
+      <input id="mon-tipo" class="inp" type="text" placeholder="Ej: inundación, incendio, accidente múltiple…" value="${tipo}">
+    </div>
+    <div class="fg full">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+        <label style="font-size:12px;font-weight:700;color:var(--text)">Vectores de rumorología <span style="font-size:11px;font-weight:400;color:var(--muted)">(uno por línea)</span></label>
+        <button class="btn btn-gh btn-sm" id="mon-btn-vec" onclick="sugerirVectoresIA()">✨ Sugerir con IA</button>
+      </div>
+      <textarea id="mon-vectores" class="inp" rows="4" placeholder="me dicen que\naudio de WhatsApp\nestán ocultando\nnube tóxica\npresa rota…"></textarea>
+    </div>
+    <div class="fg full">
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:var(--text)">Cuentas/fuentes oficiales a excluir <span style="font-size:11px;font-weight:400;color:var(--muted)">(un handle por línea)</span></label>
+      <textarea id="mon-excluir" class="inp" rows="2" placeholder="@112Euskadi&#10;@BomBizkaia&#10;@ProtCivilEus…"></textarea>
+    </div>
+  </div>`;
+  footer.innerHTML = `
+    <button class="btn btn-gh" onclick="cerrarMonitor()">Cancelar</button>
+    <button class="btn btn-p" onclick="_monAvanzar()">Generar vectores de búsqueda →</button>`;
+}
+
+function sugerirToponimoIA() {
+  const ubi  = (document.getElementById('mon-ubi')?.value  || '').trim();
+  const tipo = (document.getElementById('mon-tipo')?.value || '').trim();
+  if (!ubi) { toast('Introduce la ubicación primero', 'err'); return; }
+  const btn = document.getElementById('mon-btn-top');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Consultando…'; }
+  gas('sugerirVariantesToponimicas', { ubicacion: ubi, tipo_incidente: tipo }, res => {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
+    if (res?.variantes?.length) {
+      const ta = document.getElementById('mon-variantes');
+      if (ta) ta.value = res.variantes.join('\n');
+      toast(`${res.variantes.length} variantes sugeridas`, 'ok');
+    } else toast('No se obtuvieron sugerencias', 'err');
+  });
+}
+
+function sugerirVectoresIA() {
+  const tipo = (document.getElementById('mon-tipo')?.value || '').trim();
+  const ubi  = (document.getElementById('mon-ubi')?.value  || '').trim();
+  if (!tipo) { toast('Introduce el tipo de incidente primero', 'err'); return; }
+  const btn = document.getElementById('mon-btn-vec');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Consultando…'; }
+  gas('sugerirVectoresRumorologia', { tipo_incidente: tipo, ubicacion: ubi }, res => {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
+    if (res?.vectores?.length) {
+      const ta = document.getElementById('mon-vectores');
+      if (ta) ta.value = res.vectores.join('\n');
+      toast(`${res.vectores.length} vectores sugeridos`, 'ok');
+    } else toast('No se obtuvieron sugerencias', 'err');
+  });
+}
+
+function _monAvanzar() {
+  if (_monPaso === 1) {
+    const ubi  = (document.getElementById('mon-ubi')?.value  || '').trim();
+    const tipo = (document.getElementById('mon-tipo')?.value || '').trim();
+    if (!ubi || !tipo) { toast('Completa la ubicación y el tipo de incidente', 'err'); return; }
+    const variantes = (document.getElementById('mon-variantes')?.value || '').split('\n').map(v => v.trim()).filter(Boolean);
+    const vectores  = (document.getElementById('mon-vectores')?.value  || '').split('\n').map(v => v.trim()).filter(Boolean);
+    const excluir   = (document.getElementById('mon-excluir')?.value   || '').split('\n').map(v => v.trim()).filter(Boolean);
+    APP._mon.params  = { ubi, tipo, variantes, vectores, excluir };
+    APP._mon.queries = _monGenerarQueries(APP._mon.params);
+    _monRenderPaso(2);
+  } else if (_monPaso === 2) {
+    _monRenderPaso(3);
+  } else {
+    _monGuardar();
+  }
+}
+
+function _monGenerarQueries({ ubi, tipo, variantes, vectores, excluir }) {
+  const topos  = [ubi, ...variantes].filter(Boolean);
+  const topoQ  = topos.map(t => `"${t}"`).join(' OR ');
+  const vecQ   = vectores.length ? '(' + vectores.map(v => `"${v}"`).join(' OR ') + ')' : `"${tipo}"`;
+  const excXQ  = excluir.length ? ' ' + excluir.map(h => `-from:${h.replace('@', '')}`).join(' ') : '';
+  const topoGD = topos.map(t => `"${t}"`).join(' OR ');
+  const vecGD  = ` (${vecQ})`;
+
+  const gurl = q => `https://www.google.com/search?q=${encodeURIComponent(q)}`;
+  const xurl = q => `https://twitter.com/search?q=${encodeURIComponent(q)}&f=live`;
+
+  return {
+    x: [
+      {
+        label: 'Búsqueda nativa X/Twitter',
+        query: `(${topoQ}) (${vecQ}) lang:es -is:retweet${excXQ}`.replace(/\s+/g, ' ').trim(),
+        tipo:  'nativa',
+        url:   xurl(`(${topoQ}) (${vecQ}) lang:es -is:retweet${excXQ}`)
+      },
+      {
+        label: 'Google Dork — X/Twitter indexado',
+        query: `site:twitter.com OR site:x.com (${topoGD})${vecGD}`,
+        tipo:  'Google Dork',
+        url:   gurl(`site:twitter.com OR site:x.com (${topoGD})${vecGD}`)
+      }
+    ],
+    facebook: [
+      {
+        label: 'Google Dork — Grupos de Facebook',
+        query: `site:facebook.com/groups (${topoGD})${vecGD}`,
+        tipo:  'Google Dork',
+        url:   gurl(`site:facebook.com/groups (${topoGD})${vecGD}`)
+      },
+      {
+        label: 'Google Dork — Páginas y perfiles Facebook',
+        query: `site:facebook.com (${topoGD})${vecGD} -site:facebook.com/groups`,
+        tipo:  'Google Dork',
+        url:   gurl(`site:facebook.com (${topoGD})${vecGD} -site:facebook.com/groups`)
+      }
+    ],
+    instagram: [
+      {
+        label: 'Google Dork — Instagram indexado',
+        query: `site:instagram.com (${topoGD})${vecGD}`,
+        tipo:  'Google Dork',
+        url:   gurl(`site:instagram.com (${topoGD})${vecGD}`)
+      },
+      {
+        label: 'Hashtag nativo Instagram',
+        query: `#${topos[0].replace(/\s+/g, '')} #${tipo.replace(/\s+/g, '')}`,
+        tipo:  'hashtag',
+        url:   `https://www.instagram.com/explore/tags/${encodeURIComponent(topos[0].replace(/\s+/g, '').toLowerCase())}/`
+      }
+    ],
+    telegram: [
+      {
+        label: 'Google Dork — Canales y grupos Telegram',
+        query: `site:t.me (${topoGD})${vecGD}`,
+        tipo:  'Google Dork',
+        url:   gurl(`site:t.me (${topoGD})${vecGD}`)
+      },
+      {
+        label: 'Directorio TGStat.es',
+        query: `${topos[0]} ${tipo}`,
+        tipo:  'directorio',
+        url:   `https://tgstat.es/search?q=${encodeURIComponent(topos[0] + ' ' + tipo)}`
+      }
+    ],
+    tiktok: [
+      {
+        label: 'Google Dork — TikTok vídeos y directos',
+        query: `site:tiktok.com (inurl:video OR inurl:live) (${topoGD})${vecGD}`,
+        tipo:  'Google Dork',
+        url:   gurl(`site:tiktok.com (inurl:video OR inurl:live) (${topoGD})${vecGD}`)
+      },
+      {
+        label: 'Búsqueda nativa TikTok',
+        query: `${topos[0]} ${tipo}`,
+        tipo:  'nativa',
+        url:   `https://www.tiktok.com/search?q=${encodeURIComponent(topos[0] + ' ' + tipo)}`
+      }
+    ]
+  };
+}
+
+const _MON_ICON = { x: '𝕏', facebook: '🔵', instagram: '📸', telegram: '✈', tiktok: '🎵' };
+const _MON_NAME = { x: 'X / Twitter', facebook: 'Facebook', instagram: 'Instagram', telegram: 'Telegram', tiktok: 'TikTok' };
+
+function _monPaso2(body, footer) {
+  const q     = APP._mon.queries;
+  const plats = ['x', 'facebook', 'instagram', 'telegram', 'tiktok'];
+
+  let html = `<div class="mon-refinar-box">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+      <span style="font-size:18px">✨</span>
+      <strong style="font-size:13px">Refinar búsquedas con IA</strong>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">La IA puede optimizar las cadenas de búsqueda para este tipo de incidente, añadir términos dialectales o locales y ajustar operadores para mejorar la precisión.</div>
+    <button class="btn btn-gh" id="mon-btn-refinar" onclick="refinarBusquedasIA()">✨ Refinar con IA</button>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Vectores de búsqueda generados</div>`;
+
+  plats.forEach(plat => {
+    const queries = q[plat] || [];
+    html += `<div class="mon-plat"><div class="mon-plat-hd">${_MON_ICON[plat] || '🔍'} ${_MON_NAME[plat] || plat}</div>`;
+    queries.forEach((item, idx) => {
+      const qid = `monq-${plat}-${idx}`;
+      html += `<div>
+        <div class="mon-query-label">${item.label} <span style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-size:10px;font-weight:400;text-transform:none;letter-spacing:0">${item.tipo}</span></div>
+        <div class="mon-query-row">
+          <textarea class="mon-query" id="${qid}" rows="2">${item.query}</textarea>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <button class="mon-copy" onclick="_monCopiar('${qid}',this)">📋 Copiar</button>
+            ${item.url ? `<a class="mon-ext" href="${item.url}" target="_blank" rel="noopener">↗ Abrir</a>` : ''}
+          </div>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  html += `<div class="card" style="margin-top:4px;border-left:3px solid var(--alert)">
+    <div class="card-title" style="margin-bottom:8px">⚠ Criterios de alerta — Canal limpio</div>
+    <div style="font-size:12px;display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;align-items:flex-start;gap:8px"><span>🔴</span><div><strong style="color:var(--red)">Alerta Roja</strong> — Contenido que atribuye intencionalidad humana al incidente, víctimas no confirmadas, incitación al pánico o a la evacuación desordenada.</div></div>
+      <div style="display:flex;align-items:flex-start;gap:8px"><span>🟡</span><div><strong style="color:var(--alert)">Alerta Ámbar</strong> — Desinformación en expansión, no confirmada, con alta velocidad de difusión o potencial de viralizarse entre la población.</div></div>
+      <div style="display:flex;align-items:flex-start;gap:8px"><span>🟢</span><div><strong style="color:var(--green)">Sin alarmas</strong> — Flujo informativo normal; los vectores monitorizados no presentan indicadores críticos.</div></div>
+      <div style="margin-top:4px;padding:8px 10px;background:var(--bg);border-radius:var(--r);font-size:11px;color:var(--muted)">
+        💡 <strong>Aislamiento audiovisual:</strong> identifica fotogramas clave en vídeos detectados y realiza búsqueda inversa de imagen (Google Lens, TinEye) para verificar el origen y la fecha del material visual antes de clasificarlo.
+      </div>
+    </div>
+  </div>`;
+
+  body.innerHTML = html;
+  footer.innerHTML = `
+    <button class="btn btn-gh" onclick="_monRenderPaso(1)">← Volver</button>
+    <button class="btn btn-p" onclick="_monAvanzar()">Registrar hallazgos →</button>`;
+}
+
+function _monCopiar(id, btn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado';
+    btn.style.background = 'var(--green)';
+    btn.style.color = '#fff';
+    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; }, 1600);
+  });
+}
+
+function refinarBusquedasIA() {
+  const btn = document.getElementById('mon-btn-refinar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Refinando…'; }
+  // Leer los valores actuales de los textareas (el operador puede haberlos editado)
+  const current = {};
+  ['x', 'facebook', 'instagram', 'telegram', 'tiktok'].forEach(plat => {
+    current[plat] = (APP._mon.queries[plat] || []).map((item, idx) => {
+      const el = document.getElementById(`monq-${plat}-${idx}`);
+      return { ...item, query: el ? el.value : item.query };
+    });
+  });
+  gas('refinarBusquedasMonitor', { params: APP._mon.params, queries: current }, res => {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Refinar con IA'; }
+    if (res?.queries) {
+      APP._mon.queries = res.queries;
+      ['x', 'facebook', 'instagram', 'telegram', 'tiktok'].forEach(plat => {
+        (res.queries[plat] || []).forEach((item, idx) => {
+          const el = document.getElementById(`monq-${plat}-${idx}`);
+          if (el) el.value = item.query;
+        });
+      });
+      toast('Búsquedas refinadas por IA ✓', 'ok');
+    } else toast('No se pudo refinar — revisa la conexión con GAS', 'err');
+  });
+}
+
+function _monPaso3(body, footer) {
+  const platsHtml = ['x', 'facebook', 'instagram', 'telegram', 'tiktok'].map(p => `
+    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px">
+      <input type="checkbox" id="mon-plat-${p}" ${APP._mon.plats[p] ? 'checked' : ''} onchange="APP._mon.plats['${p}']=this.checked" style="width:15px;height:15px;cursor:pointer">
+      ${_MON_ICON[p]} ${_MON_NAME[p]}
+    </label>`).join('');
+
+  body.innerHTML = `
+  <div style="margin-bottom:16px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Nivel de alerta detectado <span style="color:var(--red)">*</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="mon-alert-chip" id="mon-al-v" style="border-color:var(--green);color:var(--green);background:var(--green-bg)" onclick="_monSelAlerta('verde',this)">🟢 Verde — sin alarmas</button>
+      <button class="mon-alert-chip" id="mon-al-a" style="border-color:var(--alert);color:var(--alert);background:rgba(245,158,11,.08)" onclick="_monSelAlerta('amarillo',this)">🟡 Ámbar — monitorización activa</button>
+      <button class="mon-alert-chip" id="mon-al-r" style="border-color:var(--red);color:var(--red);background:rgba(239,68,68,.08)" onclick="_monSelAlerta('rojo',this)">🔴 Rojo — bulo crítico detectado</button>
+    </div>
+  </div>
+  <div style="margin-bottom:16px">
+    <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px">Plataformas monitorizadas en esta sesión</div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap">${platsHtml}</div>
+  </div>
+  <div style="margin-bottom:14px">
+    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:var(--text)">Hallazgos y observaciones <span style="color:var(--red)">*</span></label>
+    <textarea id="mon-hallazgos" class="inp" rows="5" placeholder="Describe lo encontrado: narrativas detectadas, cuentas que las difunden, material audiovisual sin verificar, patrones de difusión, evolución de la conversación…"></textarea>
+  </div>
+  <div style="margin-bottom:14px">
+    <label style="display:block;font-size:12px;font-weight:700;margin-bottom:5px;color:var(--text)">URLs relevantes detectadas <span style="font-size:11px;font-weight:400;color:var(--muted)">(una por línea)</span></label>
+    <textarea id="mon-urls" class="inp" rows="3" placeholder="https://twitter.com/…&#10;https://t.me/…&#10;https://www.instagram.com/p/…"></textarea>
+  </div>
+  <div style="padding:10px 12px;background:var(--bg);border-radius:var(--r);font-size:11px;color:var(--muted);border:1px solid var(--border)">
+    💾 Al guardar, esta sesión quedará registrada como dato J2 con fuente <strong>Monitor de Redes</strong>, clasificación <strong>E-6</strong> (no verificado — pendiente contraste) y vinculación completa a las cadenas de búsqueda utilizadas.
+  </div>`;
+
+  footer.innerHTML = `
+    <button class="btn btn-gh" onclick="_monRenderPaso(2)">← Volver</button>
+    <button class="btn btn-r" id="mon-btn-guardar" onclick="_monGuardar()">💾 Guardar sesión de monitorización</button>`;
+}
+
+function _monSelAlerta(nivel, btn) {
+  APP._mon.alerta = nivel;
+  ['mon-al-v', 'mon-al-a', 'mon-al-r'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('sel');
+  });
+  btn.classList.add('sel');
+}
+
+function _monGuardar() {
+  if (!APP._mon.alerta) { toast('Selecciona el nivel de alerta', 'err'); return; }
+  const hallazgos = (document.getElementById('mon-hallazgos')?.value || '').trim();
+  if (!hallazgos) { toast('Describe los hallazgos antes de guardar', 'err'); return; }
+  const urls       = (document.getElementById('mon-urls')?.value || '').split('\n').map(u => u.trim()).filter(Boolean);
+  const platsAct   = Object.keys(APP._mon.plats).filter(p => APP._mon.plats[p]).map(p => _MON_NAME[p] || p);
+  const btn        = document.getElementById('mon-btn-guardar');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+
+  const payload = {
+    id_incidente:    APP.incActivo?.id || APP.incActivo?.ID_Incidente || '',
+    params:          APP._mon.params,
+    queries:         APP._mon.queries,
+    alerta:          APP._mon.alerta,
+    plataformas:     platsAct.join(', '),
+    hallazgos:       hallazgos,
+    urls_relevantes: urls.join('\n'),
+    timestamp:       new Date().toISOString(),
+    operador:        APP.cfg?.operador || 'ARGOS'
+  };
+
+  gas('guardarMonitorizacion', payload, res => {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar sesión de monitorización'; }
+    if (res?.ok) {
+      toast('Sesión de monitorización guardada como dato J2 ✓', 'ok');
+      cerrarMonitor();
+      if (APP.incActivo && typeof cargarInteligencia === 'function') cargarInteligencia();
+    } else {
+      toast(res?.error || 'Error al guardar — revisa la conexión con GAS', 'err');
+    }
+  });
+}
+
 // Arranque — funciona desde cualquier host (GitHub Pages, GAS, local...)
 document.addEventListener('DOMContentLoaded', init);
 </script>
+
+<!-- ═══ MONITOR DE REDES SOCIALES — overlay ═══ -->
+<div id="mon-bd" onclick="if(event.target.id==='mon-bd')cerrarMonitor()">
+  <div id="mon-modal">
+    <!-- Cabecera -->
+    <div class="mh">
+      <div>
+        <div class="mh-title">🔍 Monitor de redes sociales — J2</div>
+        <div id="mon-step-lbl" style="font-size:11px;color:var(--muted);margin-top:2px">Paso 1 de 3 — Parámetros del incidente</div>
+      </div>
+      <button class="m-close" onclick="cerrarMonitor()">✕</button>
+    </div>
+    <!-- Barra de progreso por pasos -->
+    <div class="mon-step-bar">
+      <div class="mon-step-pill active" id="msp1"></div>
+      <div class="mon-step-pill" id="msp2"></div>
+      <div class="mon-step-pill" id="msp3"></div>
+    </div>
+    <!-- Cuerpo dinámico -->
+    <div id="mon-body" style="padding:20px;max-height:68vh;overflow-y:auto"></div>
+    <!-- Pie de diálogo -->
+    <div class="mf" id="mon-footer"></div>
+  </div>
+</div>
+
 </body>
 </html>
