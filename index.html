@@ -3911,7 +3911,6 @@ function _monPaso1(body, footer) {
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <label style="font-size:12px;font-weight:700;color:var(--text)">Variantes toponímicas <span style="font-size:11px;font-weight:400;color:var(--muted)">(una por línea)</span></label>
-        <button class="btn btn-gh btn-sm" id="mon-btn-top" onclick="sugerirToponimoIA()">✨ Sugerir con IA</button>
       </div>
       <textarea id="mon-variantes" class="inp" rows="2" placeholder="Bilbo, Casco Viejo Bilbao, Bilbao centro…"></textarea>
     </div>
@@ -3922,7 +3921,6 @@ function _monPaso1(body, footer) {
     <div class="fg full">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
         <label style="font-size:12px;font-weight:700;color:var(--text)">Vectores de rumorología <span style="font-size:11px;font-weight:400;color:var(--muted)">(uno por línea)</span></label>
-        <button class="btn btn-gh btn-sm" id="mon-btn-vec" onclick="sugerirVectoresIA()">✨ Sugerir con IA</button>
       </div>
       <textarea id="mon-vectores" class="inp" rows="4" placeholder="me dicen que\naudio de WhatsApp\nestán ocultando\nnube tóxica\npresa rota…"></textarea>
     </div>
@@ -3936,47 +3934,6 @@ function _monPaso1(body, footer) {
     <button class="btn btn-p" onclick="_monAvanzar()">Generar vectores de búsqueda →</button>`;
 }
 
-function sugerirToponimoIA() {
-  const ubi  = (document.getElementById('mon-ubi')?.value  || '').trim();
-  const tipo = (document.getElementById('mon-tipo')?.value || '').trim();
-  if (!ubi) { toast('Introduce la ubicación primero', 'err'); return; }
-  const btn = document.getElementById('mon-btn-top');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Consultando…'; }
-  const _t1 = setTimeout(() => { if (btn && btn.disabled) btn.textContent = '⏳ Espera, la IA trabaja…'; }, 12000);
-  gas('sugerirVariantesToponimicas', { ubicacion: ubi, tipo_incidente: tipo }, res => {
-    clearTimeout(_t1);
-    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
-    if (res?.variantes?.length) {
-      const ta = document.getElementById('mon-variantes');
-      if (ta) ta.value = res.variantes.join('\n');
-      toast(`${res.variantes.length} variantes sugeridas`, 'ok');
-    } else toast('No se obtuvieron sugerencias', 'err');
-  }, e => {
-    clearTimeout(_t1);
-    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
-  });
-}
-
-function sugerirVectoresIA() {
-  const tipo = (document.getElementById('mon-tipo')?.value || '').trim();
-  const ubi  = (document.getElementById('mon-ubi')?.value  || '').trim();
-  if (!tipo) { toast('Introduce el tipo de incidente primero', 'err'); return; }
-  const btn = document.getElementById('mon-btn-vec');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Consultando…'; }
-  const _t2 = setTimeout(() => { if (btn && btn.disabled) btn.textContent = '⏳ Espera, la IA trabaja…'; }, 12000);
-  gas('sugerirVectoresRumorologia', { tipo_incidente: tipo, ubicacion: ubi }, res => {
-    clearTimeout(_t2);
-    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
-    if (res?.vectores?.length) {
-      const ta = document.getElementById('mon-vectores');
-      if (ta) ta.value = res.vectores.join('\n');
-      toast(`${res.vectores.length} vectores sugeridos`, 'ok');
-    } else toast('No se obtuvieron sugerencias', 'err');
-  }, e => {
-    clearTimeout(_t2);
-    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
-  });
-}
 
 function _monAvanzar() {
   if (_monPaso === 1) {
