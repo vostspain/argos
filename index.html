@@ -1713,14 +1713,19 @@ const GAS_API_URL = 'https://script.google.com/macros/s/AKfycbxv5rrffhvLRbUgFiaK
 // ═══ GAS BRIDGE ══════════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPLn3hETppfNlOsHWucnSxcWl-nClhsr8tfIUlIWqh4XKmZZq8g_2IzUNYM-pgx-jG/exec';
 
-function gas(fn, arg, ok, err) {
+function gas(fn, arg, ok, err, timeoutMs) {
+  const ms = timeoutMs || 25000;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
   fetch(GAS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({ fn, arg })
+    body: JSON.stringify({ fn, arg }),
+    signal: ctrl.signal
   })
   .then(r => r.json())
   .then(res => {
+    clearTimeout(timer);
     if (res && res.ok === false) {
       toast('Error: ' + (res.error || 'desconocido'), 'err');
       if (err) err(res);
@@ -1729,7 +1734,12 @@ function gas(fn, arg, ok, err) {
     }
   })
   .catch(e => {
-    toast('Error de conexión con ARGOS.', 'err');
+    clearTimeout(timer);
+    if (e.name === 'AbortError') {
+      toast('La IA tardó demasiado. Inténtalo de nuevo.', 'err');
+    } else {
+      toast('Error de conexión con ARGOS.', 'err');
+    }
     if (err) err(e);
   });
 }
@@ -3933,13 +3943,18 @@ function sugerirToponimoIA() {
   if (!ubi) { toast('Introduce la ubicación primero', 'err'); return; }
   const btn = document.getElementById('mon-btn-top');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Consultando…'; }
+  const _t1 = setTimeout(() => { if (btn && btn.disabled) btn.textContent = '⏳ Espera, la IA trabaja…'; }, 12000);
   gas('sugerirVariantesToponimicas', { ubicacion: ubi, tipo_incidente: tipo }, res => {
+    clearTimeout(_t1);
     if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
     if (res?.variantes?.length) {
       const ta = document.getElementById('mon-variantes');
       if (ta) ta.value = res.variantes.join('\n');
       toast(`${res.variantes.length} variantes sugeridas`, 'ok');
     } else toast('No se obtuvieron sugerencias', 'err');
+  }, e => {
+    clearTimeout(_t1);
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
   });
 }
 
@@ -3949,13 +3964,18 @@ function sugerirVectoresIA() {
   if (!tipo) { toast('Introduce el tipo de incidente primero', 'err'); return; }
   const btn = document.getElementById('mon-btn-vec');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Consultando…'; }
+  const _t2 = setTimeout(() => { if (btn && btn.disabled) btn.textContent = '⏳ Espera, la IA trabaja…'; }, 12000);
   gas('sugerirVectoresRumorologia', { tipo_incidente: tipo, ubicacion: ubi }, res => {
+    clearTimeout(_t2);
     if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
     if (res?.vectores?.length) {
       const ta = document.getElementById('mon-vectores');
       if (ta) ta.value = res.vectores.join('\n');
       toast(`${res.vectores.length} vectores sugeridos`, 'ok');
     } else toast('No se obtuvieron sugerencias', 'err');
+  }, e => {
+    clearTimeout(_t2);
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Sugerir con IA'; }
   });
 }
 
