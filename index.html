@@ -142,11 +142,18 @@ tr:hover td{background:#F9FAFB}
 .bx-b{background:var(--primary-dim);color:var(--secondary)}
 .bx-m{background:#F3F4F6;color:var(--mid)}
 
-/* ── SEVERITY BADGES ── */
+/* ── SEVERITY BADGES — Niveles 0-3 (Estándar PC España) ── */
+.sv-N0,.sv-Nivel-0{background:var(--green-bg);color:var(--green)}
+.sv-N1,.sv-Nivel-1{background:var(--alert-bg);color:var(--alert)}
+.sv-N2,.sv-Nivel-2{background:rgba(249,115,22,.12);color:#ea580c}
+.sv-N3,.sv-Nivel-3{background:var(--red-bg);color:var(--red)}
+/* Legacy (datos anteriores) */
 .sv-Extremo{background:var(--red-bg);color:var(--red)}
 .sv-Alto{background:var(--alert-bg);color:var(--alert)}
 .sv-Medio{background:var(--primary-dim);color:var(--secondary)}
 .sv-Bajo{background:var(--green-bg);color:var(--green)}
+/* Badge naranja para Nivel 2 */
+.bx-o{background:rgba(249,115,22,.12);color:#ea580c}
 
 /* ── BUTTONS ── */
 .btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .13s,opacity .13s;border:none;font-family:var(--sans);white-space:nowrap}
@@ -1444,9 +1451,11 @@ let _mapaMiniMarker = null;
 function crearMarcadorSVG(tipo, gravedad) {
   const cfg   = getTipoConfig(tipo);
   const color = cfg.color;
-  const sizes = { Extremo: 36, Alto: 32, Medio: 28, Bajo: 26 };
+  const sizes = { 'Nivel 3': 36, 'Nivel 2': 32, 'Nivel 1': 28, 'Nivel 0': 24,
+                  Extremo: 36, Alto: 32, Medio: 28, Bajo: 26 };
   const sz    = sizes[gravedad] || 28;
-  const ringColors = { Extremo: '#ef4444', Alto: '#f59e0b', Medio: '#3b82f6', Bajo: '#10b981' };
+  const ringColors = { 'Nivel 3': '#ef4444', 'Nivel 2': '#ea580c', 'Nivel 1': '#f59e0b', 'Nivel 0': '#10b981',
+                       Extremo: '#ef4444', Alto: '#f59e0b', Medio: '#3b82f6', Bajo: '#10b981' };
   const ring  = ringColors[gravedad] || '#64748b';
   const svgHtml = `<div class="inc-marker" style="background:${color};width:${sz}px;height:${sz}px;border-color:${ring}">
     <svg viewBox="0 0 24 24" width="${sz*0.55}" height="${sz*0.55}" style="pointer-events:none">
@@ -1730,8 +1739,16 @@ function tc(s, n) { return s && s.length > n ? s.slice(0,n)+'…' : (s||'—'); 
 function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 function bGrav(v) {
-  const cls = {Extremo:'r', Alto:'a', Medio:'b', Bajo:'g'};
-  return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
+  // Niveles estándar PC España 0-3 + compatibilidad con valores legacy
+  const cls = {
+    'Nivel 0':'g', 'Nivel 1':'a', 'Nivel 2':'o', 'Nivel 3':'r',
+    Extremo:'r', Alto:'a', Medio:'b', Bajo:'g'
+  };
+  const labels = {
+    'Nivel 0':'N0', 'Nivel 1':'N1', 'Nivel 2':'N2', 'Nivel 3':'N3'
+  };
+  const display = labels[v] || v || '—';
+  return `<span class="bx bx-${cls[v]||'m'}" title="${v||''}">${display}</span>`;
 }
 function bEst(v) {
   const cls = {Activo:'g', Standby:'a', Cerrado:'m', Publicado:'g', Borrador:'m'};
@@ -1975,7 +1992,10 @@ function verEditarInc(o) {
         <select id="ei-tipo" ${cerrado?'disabled':''}>${tiposSelect(o.Tipo||'')}</select></div>
       <div class="fg"><label>Gravedad</label>
         <select id="ei-grav" ${cerrado?'disabled':''}>
-          ${['Bajo','Medio','Alto','Extremo'].map(g=>`<option${g===o.Gravedad?' selected':''}>${g}</option>`).join('')}
+          <option value="Nivel 0"${o.Gravedad==='Nivel 0'?' selected':''}>Nivel 0 — recursos locales</option>
+          <option value="Nivel 1"${o.Gravedad==='Nivel 1'?' selected':''}>Nivel 1 — medios de la CCAA</option>
+          <option value="Nivel 2"${o.Gravedad==='Nivel 2'?' selected':''}>Nivel 2 — medios del Estado</option>
+          <option value="Nivel 3"${o.Gravedad==='Nivel 3'?' selected':''}>Nivel 3 — interés nacional</option>
         </select></div>
       <div class="fg"><label>Estado</label>
         <select id="ei-est" ${cerrado?'disabled':''}>
@@ -2105,7 +2125,12 @@ function abrirModalNuevoInc() {
       <div class="fg full"><label>Tipo de incidente</label>
         <select id="i-tipo">${tiposSelect('')}</select></div>
       <div class="fg"><label>Nivel de gravedad</label>
-        <select id="i-grav"><option>Bajo</option><option selected>Medio</option><option>Alto</option><option>Extremo</option></select></div>
+        <select id="i-grav">
+          <option value="Nivel 0">Nivel 0 — recursos locales</option>
+          <option value="Nivel 1" selected>Nivel 1 — medios de la CCAA</option>
+          <option value="Nivel 2">Nivel 2 — medios del Estado</option>
+          <option value="Nivel 3">Nivel 3 — interés nacional</option>
+        </select></div>
       <div class="fg full">
         <label>Ubicación</label>
         <div class="fx g8">
