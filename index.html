@@ -4022,7 +4022,7 @@ function _cargarVectoresGuardados(incId) {
   gas('getVectoresMonitor', incId, res => {
     if (res?.vectores?.length || res?.toponimos?.length) _aplicarVectores(incId, res);
     else _vectoresEstado(incId, 'Aún no hay vectores para este incidente.', true);
-  }, () => {});
+  }, () => _vectoresEstado(incId, 'No se pudieron cargar los vectores guardados.', true));
 }
 
 function _vectoresEstado(incId, msg, conBoton) {
