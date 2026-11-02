@@ -28,14 +28,14 @@
 }
 
 /* ── BASE ── */
-html,body{height:100%;font-family:var(--sans);font-size:15px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden}
+html,body{height:100%;font-family:var(--sans);font-size:17px;line-height:1.5;color:var(--text);background:var(--bg);overflow:hidden}
 body{display:flex}
 
 /* ── SPLASH ── */
 #splash{position:fixed;inset:0;z-index:999;background:var(--dark);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;transition:opacity .4s}
 #splash.gone{opacity:0;pointer-events:none}
 .sp-logo{font-family:var(--sans);font-size:36px;font-weight:800;color:#fff;letter-spacing:.06em}
-.sp-sub{font-size:11px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.sp-sub{font-size:13px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
 .sp-spinner{width:22px;height:22px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--secondary);border-radius:50%;animation:rot .7s linear infinite;margin-top:6px}
 
 /* ── SIDEBAR ── */
@@ -46,12 +46,12 @@ body{display:flex}
 #logo-svg{width:140px;height:140px;flex-shrink:0}
 .sb-txt{display:none}/* texto eliminado — el logo ya incluye nombre y marca */
 .sb-nav{flex:1;padding:8px 0;overflow-y:auto}
-.sb-sec{padding:14px 16px 3px;font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
-.nb{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;border:none;background:none;width:calc(100% - 16px);text-align:left;cursor:pointer;color:rgba(255,255,255,.5);font-size:13px;font-weight:500;font-family:var(--sans);transition:background .13s,color .13s}
+.sb-sec{padding:14px 16px 3px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+.nb{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;border-radius:6px;border:none;background:none;width:calc(100% - 16px);text-align:left;cursor:pointer;color:rgba(255,255,255,.5);font-size:15px;font-weight:500;font-family:var(--sans);transition:background .13s,color .13s}
 .nb:hover{background:rgba(255,255,255,.06);color:#fff}
 .nb.active{background:rgba(14,165,233,.15);color:var(--secondary)}
 .nb svg{width:16px;height:16px;flex-shrink:0}
-.nb-bx{font-size:9px;font-weight:800;padding:1px 6px;border-radius:10px;background:var(--red);color:#fff;margin-left:auto;display:none}
+.nb-bx{font-size:11px;font-weight:800;padding:1px 6px;border-radius:10px;background:var(--red);color:#fff;margin-left:auto;display:none}
 .nb-bx.on{display:block}
 
 /* ── WRAPPER ── */
@@ -61,19 +61,19 @@ body{display:flex}
 #topbar{height:var(--th);background:var(--primary);border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;padding:0 22px;gap:14px;flex-shrink:0;position:relative;overflow:hidden}
 #topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,var(--secondary) 50%,transparent 100%);background-size:200% 100%;animation:scan 2.8s linear infinite}
 @keyframes scan{0%{background-position:-100% 0}100%{background-position:200% 0}}
-#tb-title{font-family:var(--sans);font-size:16px;font-weight:700;color:#fff}
+#tb-title{font-family:var(--sans);font-size:18px;font-weight:700;color:#fff}
 .tb-right{margin-left:auto;display:flex;align-items:center;gap:14px}
-.status-chip{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--green);font-size:11px;font-weight:700;letter-spacing:.04em}
+.status-chip{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:var(--green);font-size:13px;font-weight:700;letter-spacing:.04em}
 .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pls 1.8s ease-out infinite}
 @keyframes pls{0%{box-shadow:0 0 0 0 rgba(16,185,129,.7)}70%{box-shadow:0 0 0 7px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
-#clock{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,.5)}
+#clock{font-family:var(--mono);font-size:14px;color:rgba(255,255,255,.5)}
 
 /* ── INCIDENT BANNER ── */
 #inc-banner{display:none;background:var(--primary-dim);border-bottom:1px solid var(--border);padding:8px 22px;display:none;align-items:center;gap:12px}
 #inc-banner.show{display:flex}
-.ib-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.ib-label{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 #ib-nombre{font-weight:600;color:var(--primary)}
-#ib-id{font-family:var(--mono);font-size:11px;color:var(--muted)}
+#ib-id{font-family:var(--mono);font-size:13px;color:var(--muted)}
 
 /* ── CONTENT ── */
 #content{flex:1;overflow-y:auto;padding:22px}
@@ -90,17 +90,17 @@ body{display:flex}
 
 /* ── CARD ── */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:20px}
-.card-title{font-family:var(--serif);font-weight:600;font-size:14px;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title{font-family:var(--serif);font-weight:600;font-size:16px;color:var(--primary);margin-bottom:14px;display:flex;align-items:center;gap:8px}
 
 /* ── KPI ── */
 /* ── KPI (kept for other views) ── */
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:18px 18px 16px;position:relative;overflow:hidden}
 .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
 .kpi.b::before{background:var(--secondary)}.kpi.a::before{background:var(--alert)}.kpi.r::before{background:var(--red)}.kpi.g::before{background:var(--green)}
-.kpi-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.kpi-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
 .kpi-val{font-family:var(--sans);font-size:38px;font-weight:800;line-height:1;margin-bottom:4px}
 .kpi.b .kpi-val{color:var(--secondary)}.kpi.a .kpi-val{color:var(--alert)}.kpi.r .kpi-val{color:var(--red)}.kpi.g .kpi-val{color:var(--green)}
-.kpi-sub{font-size:11px;color:var(--muted)}
+.kpi-sub{font-size:13px;color:var(--muted)}
 /* ── DASH STRIP ── */
 .dash-strip{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);padding:10px 16px;display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:8px}
 .ds-kpis{display:flex;align-items:center;gap:0;flex-shrink:0}
@@ -108,10 +108,10 @@ body{display:flex}
 .ds-kpi:first-child{padding-left:4px}
 .ds-num{font-family:var(--mono);font-size:26px;font-weight:800;line-height:1}
 .ds-num.b{color:var(--secondary)}.ds-num.a{color:var(--alert)}.ds-num.g{color:var(--green)}.ds-num.r{color:var(--red)}
-.ds-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.ds-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
 .ds-div{width:1px;height:32px;background:var(--border);flex-shrink:0}
 .ds-srcs{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto;padding-left:16px}
-.ds-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:600;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .12s}
+.ds-chip{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:5px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .12s}
 .ds-chip:hover{background:var(--surface)}
 .ds-chip.ok{color:var(--green);border-color:rgba(16,185,129,.3);background:rgba(16,185,129,.06)}
 .ds-chip.warn{color:#b45309;border-color:rgba(245,158,11,.3);background:rgba(245,158,11,.06)}
@@ -127,15 +127,15 @@ body{display:flex}
 
 /* ── TABLE ── */
 .tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:13px}
-th{text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:7px 12px;border-bottom:2px solid var(--border);white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th{text-align:left;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:7px 12px;border-bottom:2px solid var(--border);white-space:nowrap}
 td{padding:9px 12px;border-bottom:1px solid var(--border);vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#F9FAFB}
-.mono{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+.mono{font-family:var(--mono);font-size:13.5px;color:var(--muted)}
 
 /* ── BADGES ── */
-.bx{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.bx{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:12.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .bx-g{background:var(--green-bg);color:var(--green)}
 .bx-a{background:var(--alert-bg);color:var(--alert)}
 .bx-r{background:var(--red-bg);color:var(--red)}
@@ -156,27 +156,27 @@ tr:hover td{background:#F9FAFB}
 .bx-o{background:rgba(249,115,22,.12);color:#ea580c}
 
 /* ── BUTTONS ── */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-size:13px;font-weight:600;cursor:pointer;transition:background .13s,opacity .13s;border:none;font-family:var(--sans);white-space:nowrap}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r);font-size:15px;font-weight:600;cursor:pointer;transition:background .13s,opacity .13s;border:none;font-family:var(--sans);white-space:nowrap}
 .btn:disabled{opacity:.45;cursor:not-allowed}
 .btn-p{background:var(--primary);color:#fff}.btn-p:hover:not(:disabled){background:var(--primary-h)}
 .btn-s{background:var(--secondary);color:#fff}.btn-s:hover:not(:disabled){background:#0891b2}
 .btn-g{background:var(--green-bg);color:var(--green);border:1px solid rgba(16,185,129,.3)}.btn-g:hover:not(:disabled){background:rgba(16,185,129,.2)}
 .btn-r{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.3)}.btn-r:hover:not(:disabled){background:rgba(239,68,68,.2)}
 .btn-gh{background:transparent;color:var(--muted);border:1px solid var(--border)}.btn-gh:hover:not(:disabled){background:var(--bg);color:var(--text)}
-.btn-sm{padding:5px 10px;font-size:12px}
+.btn-sm{padding:5px 10px;font-size:14px}
 
 /* ── FORMS ── */
 .fg{display:flex;flex-direction:column;gap:5px}
 .fgr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .fgr .full{grid-column:span 2}
-label{font-size:11.5px;font-weight:600;color:var(--mid)}
-input,select,textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:13px;padding:8px 12px;width:100%;transition:border-color .13s}
+label{font-size:13.5px;font-weight:600;color:var(--mid)}
+input,select,textarea{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:15px;padding:8px 12px;width:100%;transition:border-color .13s}
 input:focus,select:focus,textarea:focus{outline:none;border-color:var(--secondary)}
 select option{background:#fff}
 textarea{resize:vertical;min-height:80px}
 .range-row{display:flex;align-items:center;gap:10px}
 input[type=range]{flex:1;accent-color:var(--primary)}
-.range-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--primary);min-width:18px;text-align:center}
+.range-val{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--primary);min-width:18px;text-align:center}
 
 /* ── MODAL ── */
 #modal-bd{position:fixed;inset:0;z-index:1000;background:rgba(13,27,42,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center}
@@ -184,14 +184,14 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--rl);width:min(620px,96vw);max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.25);animation:mIn .18s ease-out;position:relative;z-index:1001}
 @keyframes mIn{from{opacity:0;transform:scale(.97) translateY(-8px)}}
 .mh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.mh-title{font-family:var(--sans);font-weight:700;font-size:15px;color:var(--primary)}
+.mh-title{font-family:var(--sans);font-weight:700;font-size:17px;color:var(--primary)}
 .m-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;line-height:1}
 .mb{padding:20px;display:flex;flex-direction:column;gap:13px}
 .mf{padding:14px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end}
 
 /* ── TOAST ── */
 #toast{position:fixed;bottom:20px;right:20px;z-index:300;display:flex;flex-direction:column;gap:8px;pointer-events:none}
-.ti{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 15px;font-size:13px;display:flex;align-items:center;gap:10px;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.12);animation:ti .2s ease-out}
+.ti{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:11px 15px;font-size:15px;display:flex;align-items:center;gap:10px;min-width:240px;box-shadow:0 4px 20px rgba(0,0,0,.12);animation:ti .2s ease-out}
 @keyframes ti{from{opacity:0;transform:translateX(16px)}}
 .ti.ok{border-left:3px solid var(--green)}.ti.err{border-left:3px solid var(--red)}.ti.info{border-left:3px solid var(--secondary)}
 
@@ -201,41 +201,41 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── DRAFT TABS ── */
 .ch-tabs{display:flex;gap:2px;border-bottom:2px solid var(--border);margin-bottom:14px}
-.cht{padding:8px 14px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .13s,border-color .13s;font-family:var(--sans)}
+.cht{padding:8px 14px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;transition:color .13s,border-color .13s;font-family:var(--sans)}
 .cht.active{color:var(--primary);border-bottom-color:var(--primary)}
 .cht:hover{color:var(--text)}
-.draft-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:13px;line-height:1.75;min-height:120px;white-space:pre-wrap;word-break:break-word;color:var(--text);font-family:var(--sans)}
+.draft-box{background:var(--bg);border:1.5px solid var(--border);border-radius:var(--r);padding:14px 16px;font-size:15px;line-height:1.75;min-height:120px;white-space:pre-wrap;word-break:break-word;color:var(--text);font-family:var(--sans)}
 .draft-empty{color:var(--muted);font-style:italic}
 
 /* ── NCRS METER ── */
 .ncrs-display{background:var(--bg);border:2px solid var(--border);border-radius:var(--rl);padding:14px 18px;text-align:center}
 .ncrs-num{font-family:var(--sans);font-size:42px;font-weight:800;line-height:1}
-.ncrs-tactica{font-size:12.5px;font-weight:600;margin-top:6px}
+.ncrs-tactica{font-size:14.5px;font-weight:600;margin-top:6px}
 .ncrs-1,.ncrs-2{color:var(--green)}.ncrs-3{color:var(--alert)}.ncrs-4,.ncrs-5{color:var(--red)}
 
 /* ── HIPOTESIS CARDS ── */
 .hip-card{border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
 .hip-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
 .hip-body{padding:16px}
-.hip-cat{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
+.hip-cat{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px;border-radius:4px}
 .hip-H1{background:var(--primary-dim);color:var(--primary)}
 .hip-H2{background:var(--red-bg);color:var(--red)}
 .hip-H3{background:var(--alert-bg);color:var(--alert)}
 .hip-H4{background:var(--green-bg);color:var(--green)}
-.hip-prob{font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px}
+.hip-prob{font-size:13px;font-weight:700;padding:2px 8px;border-radius:4px}
 .prob-Alta{background:var(--red-bg);color:var(--red)}
 .prob-Media{background:var(--alert-bg);color:var(--alert)}
 .prob-Baja{background:var(--green-bg);color:var(--green)}
-.prec-box{background:var(--bg);border-left:3px solid var(--secondary);padding:10px 12px;border-radius:0 6px 6px 0;margin-top:10px;font-size:12.5px;color:var(--mid)}
+.prec-box{background:var(--bg);border-left:3px solid var(--secondary);padding:10px 12px;border-radius:0 6px 6px 0;margin-top:10px;font-size:14.5px;color:var(--mid)}
 
 /* ── ALERT BOXES ── */
-.info-box{background:var(--primary-dim);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:var(--secondary);margin-bottom:14px}
-.warn-box{background:var(--alert-bg);border:1px solid rgba(245,158,11,.25);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:#92400E;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
-.crit-box{background:var(--red-bg);border:1px solid rgba(239,68,68,.25);border-radius:var(--r);padding:10px 14px;font-size:12.5px;color:var(--red);margin-bottom:14px}
+.info-box{background:var(--primary-dim);border:1px solid rgba(14,165,233,.2);border-radius:var(--r);padding:10px 14px;font-size:14.5px;color:var(--secondary);margin-bottom:14px}
+.warn-box{background:var(--alert-bg);border:1px solid rgba(245,158,11,.25);border-radius:var(--r);padding:10px 14px;font-size:14.5px;color:#92400E;margin-bottom:14px;display:flex;align-items:flex-start;gap:8px}
+.crit-box{background:var(--red-bg);border:1px solid rgba(239,68,68,.25);border-radius:var(--r);padding:10px 14px;font-size:14.5px;color:var(--red);margin-bottom:14px}
 
 /* ── EMPTY STATE ── */
 .empty{text-align:center;padding:40px 20px;color:var(--muted)}
-.ei{font-size:32px;margin-bottom:8px}.em{font-size:13px}
+.ei{font-size:32px;margin-bottom:8px}.em{font-size:15px}
 
 /* ── ALERT CARDS ── */
 .alert-card{padding:9px 12px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:6px}
@@ -247,12 +247,12 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 @media(prefers-color-scheme:dark){.alert-card.ign{background:#1e1030}.alert-card.procivil{background:#082030}}
 /* ── ALERT TABS ── */
 .at-tabs{display:flex;gap:3px;margin-bottom:10px;flex-wrap:wrap}
-.at-tab{padding:4px 9px;border-radius:5px;border:1px solid var(--border);background:none;font-size:11px;font-weight:600;cursor:pointer;color:var(--muted);font-family:var(--sans);transition:all .12s;display:flex;align-items:center;gap:4px}
+.at-tab{padding:4px 9px;border-radius:5px;border:1px solid var(--border);background:none;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted);font-family:var(--sans);transition:all .12s;display:flex;align-items:center;gap:4px}
 .at-tab:hover{background:var(--surface);color:var(--text)}
 .at-tab.active{background:var(--primary-dim);color:var(--primary);border-color:var(--primary)}
 .at-pane{display:none;max-height:230px;overflow-y:auto;padding-right:2px}
 .at-pane.active{display:block}
-.at-n{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;font-size:9px;font-weight:800;padding:0 4px;line-height:1}
+.at-n{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;border-radius:8px;font-size:11px;font-weight:800;padding:0 4px;line-height:1}
 .at-n.verde{background:rgba(16,185,129,.15);color:var(--green)}
 .at-n.alerta{background:rgba(245,158,11,.2);color:#b45309}
 .at-n.morado{background:rgba(124,58,237,.15);color:#7c3aed}
@@ -260,7 +260,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .at-n.gris{background:var(--border);color:var(--muted)}
 
 /* ── CONTADOR DE CARACTERES ── */
-.char-counter{font-family:var(--mono);font-size:11px;padding:5px 8px;border-radius:5px;
+.char-counter{font-family:var(--mono);font-size:13px;padding:5px 8px;border-radius:5px;
   display:flex;align-items:center;justify-content:space-between;margin-top:5px;
   background:var(--bg);border:1px solid var(--border);transition:border-color .2s}
 .char-counter.ok   {border-color:var(--green);color:var(--green)}
@@ -270,14 +270,14 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── NCRS VISUAL SELECTOR ── */
 .ncrs-dim{display:flex;flex-direction:column;gap:6px}
-.ncrs-dim-label{font-size:11.5px;font-weight:600;color:var(--mid)}
+.ncrs-dim-label{font-size:13.5px;font-weight:600;color:var(--mid)}
 .ncrs-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .ncrs-btn-v{border:1.5px solid var(--border);border-radius:6px;padding:7px 4px;cursor:pointer;
   font-family:var(--sans);background:var(--bg);color:var(--muted);transition:all .13s;
   text-align:center;display:flex;flex-direction:column;align-items:center;gap:3px}
 .ncrs-btn-v:hover{border-color:var(--secondary);color:var(--text)}
-.ncrs-btn-v .nv{font-weight:800;font-size:16px;line-height:1}
-.ncrs-btn-v .nd{font-size:9px;line-height:1.25;color:inherit;opacity:.85}
+.ncrs-btn-v .nv{font-weight:800;font-size:18px;line-height:1}
+.ncrs-btn-v .nd{font-size:11px;line-height:1.25;color:inherit;opacity:.85}
 .ncrs-btn-v.activo-1,.ncrs-btn-v.activo-2{background:var(--green-bg);border-color:var(--green);color:var(--green)}
 .ncrs-btn-v.activo-3{background:var(--alert-bg);border-color:var(--alert);color:var(--alert)}
 .ncrs-btn-v.activo-4,.ncrs-btn-v.activo-5{background:var(--red-bg);border-color:var(--red);color:var(--red)}
@@ -292,15 +292,15 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 #ai-thinking.show{display:flex}
 .ai-eye{animation:ai-pulse 1.2s ease-in-out infinite}
 @keyframes ai-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.92)}}
-.ai-msg{font-size:13px;font-weight:600;letter-spacing:.01em}
-.ai-sub{font-size:11px;color:rgba(255,255,255,.5);margin-left:auto;font-family:var(--mono)}
+.ai-msg{font-size:15px;font-weight:600;letter-spacing:.01em}
+.ai-sub{font-size:13px;color:rgba(255,255,255,.5);margin-left:auto;font-family:var(--mono)}
 .ai-dots::after{content:'';animation:dots 1.4s steps(4,end) infinite}
 @keyframes dots{0%{content:''}25%{content:'.'}50%{content:'..'}75%{content:'...'}100%{content:''}}
 
 /* ── TABS COMUNICACIÓN ── */
 .mod-tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:20px;gap:2px}
 .mod-tab{padding:9px 18px;border:none;background:none;color:var(--muted);cursor:pointer;
-  font-size:14px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;
+  font-size:16px;font-weight:600;border-bottom:2px solid transparent;margin-bottom:-2px;
   font-family:var(--sans);transition:color .13s,border-color .13s}
 .mod-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
 .mod-tab:hover{color:var(--text)}
@@ -309,17 +309,17 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .pub-card{border:1px solid var(--border);border-left:3px solid var(--green);
   border-radius:var(--rl);padding:16px 18px;margin-bottom:12px;background:var(--surface)}
 .pub-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
-.pub-ts{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.pub-canal{font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;
+.pub-ts{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.pub-canal{font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;
   text-transform:uppercase;letter-spacing:.06em}
 .pub-x{background:#000;color:#fff}
 .pub-tg{background:#0088cc;color:#fff}
 .pub-wa{background:#25d366;color:#fff}
 .pub-pr{background:var(--primary);color:#fff}
-.pub-txt{font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
+.pub-txt{font-size:15px;line-height:1.7;white-space:pre-wrap;word-break:break-word;
   color:var(--text);background:var(--bg);border-radius:var(--r);padding:12px 14px;margin-top:8px}
 .pub-copy{background:none;border:1px solid var(--border);border-radius:5px;padding:4px 10px;
-  font-size:11px;cursor:pointer;font-family:var(--sans);color:var(--muted);margin-top:8px}
+  font-size:13px;cursor:pointer;font-family:var(--sans);color:var(--muted);margin-top:8px}
 .pub-copy:hover{background:var(--bg);color:var(--text)}
 
 /* ── LOGIN SCREEN ── */
@@ -328,36 +328,36 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .login-box{width:min(400px,92vw);text-align:center}
 .login-eye{margin:0 auto 20px;display:block}
 .login-brand{font-family:var(--sans);font-size:34px;font-weight:800;color:#fff;letter-spacing:.06em;margin-bottom:4px}
-.login-sub{font-size:11px;color:rgba(255,255,255,.4);letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px}
+.login-sub{font-size:13px;color:rgba(255,255,255,.4);letter-spacing:.14em;text-transform:uppercase;margin-bottom:32px}
 .login-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:var(--rl);padding:28px}
-.login-label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;text-align:left;display:block}
-.login-input{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--sans);font-size:15px;padding:11px 14px;width:100%;transition:border-color .13s;text-align:center}
+.login-label{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:8px;text-align:left;display:block}
+.login-input{background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--sans);font-size:17px;padding:11px 14px;width:100%;transition:border-color .13s;text-align:center}
 .login-input:focus{outline:none;border-color:var(--secondary)}
 .login-input::placeholder{color:rgba(255,255,255,.25)}
-.login-btn{width:100%;padding:12px;background:var(--secondary);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:background .13s;margin-top:14px}
+.login-btn{width:100%;padding:12px;background:var(--secondary);color:#fff;border:none;border-radius:var(--r);font-family:var(--sans);font-size:16px;font-weight:700;cursor:pointer;transition:background .13s;margin-top:14px}
 .login-btn:hover:not(:disabled){background:#0891b2}
 .login-btn:disabled{opacity:.5;cursor:not-allowed}
-.login-err{background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:var(--r);padding:9px 13px;font-size:13px;color:var(--red);margin-top:12px;text-align:left;display:none}
-.login-ok{font-size:12px;color:rgba(255,255,255,.4);margin-top:12px;text-align:center}
+.login-err{background:var(--red-bg);border:1px solid rgba(239,68,68,.3);border-radius:var(--r);padding:9px 13px;font-size:15px;color:var(--red);margin-top:12px;text-align:left;display:none}
+.login-ok{font-size:14px;color:rgba(255,255,255,.4);margin-top:12px;text-align:center}
 .otp-boxes{display:flex;gap:8px;justify-content:center;margin:4px 0}
 .otp-box{width:46px;height:54px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);color:#fff;font-family:var(--mono);font-size:22px;font-weight:700;text-align:center;transition:border-color .13s}
 .otp-box:focus{outline:none;border-color:var(--secondary)}
-.login-back{background:none;border:none;color:rgba(255,255,255,.4);font-size:12px;cursor:pointer;margin-top:14px;font-family:var(--sans)}
+.login-back{background:none;border:none;color:rgba(255,255,255,.4);font-size:14px;cursor:pointer;margin-top:14px;font-family:var(--sans)}
 .login-back:hover{color:#fff}
-.login-timer{font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.3);margin-top:8px}
+.login-timer{font-family:var(--mono);font-size:13px;color:rgba(255,255,255,.3);margin-top:8px}
 
 /* ── TOPBAR USER ── */
-#tb-user{font-size:12px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:8px}
-#btn-logout{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans)}
+#tb-user{font-size:14px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:8px}
+#btn-logout{background:none;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.5);padding:4px 10px;border-radius:5px;font-size:13px;cursor:pointer;font-family:var(--sans)}
 #btn-logout:hover{background:rgba(255,255,255,.08);color:#fff}
 
 /* ── ADMIN PANEL ── */
-.admin-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:rgba(167,139,250,.15);color:#A78BFA}
+.admin-tag{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;background:rgba(167,139,250,.15);color:#A78BFA}
 
 /* ── MAPA LEAFLET ── */
 #mapa-dashboard{height:280px;border-radius:var(--rl);overflow:hidden;border:1px solid var(--border)}
 #mapa-mini{height:280px;border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);margin-top:8px}
-.leaflet-popup-content-wrapper{font-family:var(--sans);font-size:12px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
+.leaflet-popup-content-wrapper{font-family:var(--sans);font-size:14px;border-radius:8px!important;box-shadow:0 4px 16px rgba(0,0,0,.15)!important}
 .leaflet-popup-content{margin:10px 14px!important;line-height:1.5}
 .inc-marker{display:flex;align-items:center;justify-content:center;border-radius:50%;
   width:32px;height:32px;box-shadow:0 2px 6px rgba(0,0,0,.4);border:2px solid rgba(255,255,255,.9);cursor:pointer}
@@ -369,20 +369,20 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .foto-slot:hover{border-color:var(--secondary)}
 .foto-slot img{width:100%;height:100%;object-fit:cover}
 .foto-slot .rm{position:absolute;top:3px;right:3px;background:rgba(239,68,68,.9);color:#fff;
-  border:none;border-radius:3px;padding:1px 5px;font-size:10px;cursor:pointer;display:none}
+  border:none;border-radius:3px;padding:1px 5px;font-size:12px;cursor:pointer;display:none}
 .foto-slot:hover .rm{display:block}
-.foto-add{flex-direction:column;gap:4px;font-size:11px;color:var(--muted)}
+.foto-add{flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
 .foto-add svg{opacity:.5}
 
 /* ── v3: INTELIGENCIA (Almirantazgo) ── */
 .alm-badge{display:inline-flex;align-items:center;justify-content:center;
   width:36px;height:36px;border-radius:8px;font-family:var(--mono);font-weight:800;
-  font-size:14px;flex-shrink:0}
+  font-size:16px;flex-shrink:0}
 .alm-A{background:#D1FAE5;color:#065F46} .alm-B{background:#ECFDF5;color:#047857}
 .alm-C{background:#FEF3C7;color:#92400E} .alm-D{background:#FEF9C3;color:#713F12}
 .alm-E{background:#FEE2E2;color:#991B1B} .alm-F{background:#F3F4F6;color:#4B5563}
 .alm-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin:8px 0}
-.alm-cell{border-radius:4px;padding:4px 2px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all .12s}
+.alm-cell{border-radius:4px;padding:4px 2px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border:2px solid transparent;transition:all .12s}
 .alm-cell.sel{border-color:var(--primary);box-shadow:0 0 0 2px rgba(14,165,233,.3)}
 .alm-cell.conf{background:#D1FAE5;color:#065F46}
 .alm-cell.prob{background:#ECFDF5;color:#047857}
@@ -390,32 +390,32 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 .alm-cell.improbable{background:#FEE2E2;color:#991B1B}
 .alm-cell.nc{background:#F3F4F6;color:#4B5563}
 .verif-section{border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-top:10px;background:var(--bg)}
-.verif-estado{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:5px;font-size:11px;font-weight:700}
+.verif-estado{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:5px;font-size:13px;font-weight:700}
 .ve-detenido{background:#F3F4F6;color:#4B5563}
 .ve-proceso{background:#FEF3C7;color:#92400E}
 .ve-verificado{background:#D1FAE5;color:#065F46}
 .ve-imposible{background:#FEE2E2;color:#991B1B}
 .dato-card{border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:10px;background:var(--surface);display:flex;gap:12px;align-items:flex-start}
 .dato-body{flex:1;min-width:0}
-.dato-derivado{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:var(--primary)}
+.dato-derivado{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;background:var(--primary-dim);color:var(--primary)}
 
 /* ── v3: FUENTES OFICIALES ── */
 .fuente-card{border:1px solid var(--border);border-radius:var(--rl);padding:12px 14px;margin-bottom:8px;background:var(--surface)}
 .fuente-handles{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
-.handle-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:11px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);background:var(--bg);transition:all .12s}
+.handle-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:13px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);background:var(--bg);transition:all .12s}
 .handle-pill:hover{background:var(--secondary);color:#fff;border-color:var(--secondary)}
 .hx{background:#000;color:#fff;border-color:#000}
 .hbs{background:#0085FF;color:#fff;border-color:#0085FF}
 .hwa{background:#25D366;color:#fff;border-color:#25D366}
 .hweb{background:var(--primary);color:#fff;border-color:var(--primary)}
-.fuente-vincular{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:11px;font-weight:700;cursor:pointer;border:none;font-family:var(--sans)}
+.fuente-vincular{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:5px;font-size:13px;font-weight:700;cursor:pointer;border:none;font-family:var(--sans)}
 .fuente-vinculada{background:var(--green-bg);color:var(--green)}
 .fuente-no-vinculada{background:var(--bg);color:var(--muted);border:1px solid var(--border)}
 
 /* ── v3: BORRADORES EDITABLES ── */
-.draft-editable{width:100%;min-height:120px;border:1.5px solid var(--border);border-radius:var(--r);padding:12px;font-family:var(--sans);font-size:13px;line-height:1.6;resize:vertical;background:var(--bg);color:var(--text);transition:border-color .13s}
+.draft-editable{width:100%;min-height:120px;border:1.5px solid var(--border);border-radius:var(--r);padding:12px;font-family:var(--sans);font-size:15px;line-height:1.6;resize:vertical;background:var(--bg);color:var(--text);transition:border-color .13s}
 .draft-editable:focus{outline:none;border-color:var(--secondary)}
-.draft-editado-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EDE9FE;color:#5B21B6}
+.draft-editado-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:4px;background:#EDE9FE;color:#5B21B6}
 
 /* ── RESPONSIVE ── */
 @media(max-width:900px){#sidebar{width:52px}.sb-txt,.nb .lbl,.nb-bx,.sb-sec{display:none}.sb-brand{justify-content:center;padding:12px 8px}.nb{justify-content:center;padding:9px;margin:2px 6px}.nb svg{width:19px;height:19px}.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
@@ -423,15 +423,35 @@ input[type=range]{flex:1;accent-color:var(--primary)}
 
 /* ── MONITOR OSINT — vectores de búsqueda ── */
 .mon-plat{border:1px solid var(--border);border-radius:var(--rl);padding:14px 16px;margin-bottom:12px;background:var(--bg)}
-.mon-plat-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:13px}
-.mon-query{width:100%;font-family:var(--mono,'Courier New',monospace);font-size:11.5px;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;background:var(--surface);color:var(--text);resize:vertical;min-height:52px;line-height:1.5;transition:border-color .13s}
+.mon-plat-hd{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-weight:700;font-size:15px}
+.mon-query{width:100%;font-family:var(--mono,'Courier New',monospace);font-size:13.5px;border:1px solid var(--border);border-radius:var(--r);padding:8px 10px;background:var(--surface);color:var(--text);resize:vertical;min-height:52px;line-height:1.5;transition:border-color .13s}
 .mon-query:focus{outline:none;border-color:var(--secondary)}
-.mon-query-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.mon-query-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .mon-query-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:10px}
-.mon-copy{padding:5px 10px;font-size:11px;white-space:nowrap;cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);transition:all .12s;font-family:var(--sans)}
+.mon-copy{padding:5px 10px;font-size:13px;white-space:nowrap;cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--text);transition:all .12s;font-family:var(--sans)}
 .mon-copy:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-.mon-ext{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:11px;white-space:nowrap;cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--secondary);text-decoration:none;transition:all .12s;font-family:var(--sans)}
+.mon-ext{display:inline-flex;align-items:center;gap:4px;padding:5px 10px;font-size:13px;white-space:nowrap;cursor:pointer;border:1px solid var(--border);border-radius:var(--r);background:var(--surface);color:var(--secondary);text-decoration:none;transition:all .12s;font-family:var(--sans)}
 .mon-ext:hover{background:var(--secondary);color:#fff;border-color:var(--secondary)}
+/* ── Mejoras nov-2026: hipótesis legibles, vectores a demanda, lecciones ── */
+.hx-card{background:var(--card,#fff);border:1px solid var(--border);border-radius:var(--rl);margin-bottom:14px;overflow:hidden}
+.hx-sum{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 18px;cursor:pointer;list-style:none;background:var(--bg)}
+.hx-sum::-webkit-details-marker{display:none}
+.hx-sum::after{content:'▾';margin-left:auto;color:var(--muted)}
+.hx-card:not([open]) .hx-sum::after{content:'▸'}
+.hx-body{padding:6px 18px 16px}
+.hx-sec{margin-top:14px}
+.hx-lab{font-size:13px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.hx-ul{margin:0;padding-left:20px}
+.hx-ul li{margin:0 0 7px;line-height:1.6}
+.hx-prec{padding:10px 14px;background:var(--bg);border-left:3px solid var(--secondary);border-radius:6px}
+.hx-rec{padding:10px 14px;background:var(--green-bg);border-radius:6px;color:#065F46}
+.hx-chips{display:flex;flex-wrap:wrap;gap:6px}
+.hx-chip{padding:4px 10px;border:1px solid var(--border);border-radius:var(--rl);background:var(--bg);font-size:14.5px}
+.mon-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 12px}
+.mon-tab{padding:7px 14px;border:1px solid var(--border);border-radius:var(--rl);background:var(--bg);cursor:pointer;font-size:15px;font-weight:600;color:var(--text)}
+.mon-tab.active{background:var(--primary);border-color:var(--primary);color:#fff}
+.mon-tab .mon-n{margin-left:6px;font-size:13px;opacity:.7}
+.traza-row{display:flex;flex-wrap:wrap;gap:6px 10px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center}
 </style>
   <!-- Leaflet — carga diferida para no bloquear el render inicial -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
@@ -581,7 +601,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     <div class="tb-right">
       <div class="status-chip"><span class="pulse"></span><span>ARGOS ACTIVO</span></div>
       <div id="tb-user">
-        <span id="tb-nombre" style="font-size:12px;color:rgba(255,255,255,.7)"></span>
+        <span id="tb-nombre" style="font-size:14px;color:rgba(255,255,255,.7)"></span>
         <button id="btn-logout" onclick="cerrarSesion()">Salir</button>
       </div>
       <div id="clock"></div>
@@ -637,7 +657,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
       </div>
       <span class="ds-div" style="margin-left:8px"></span>
       <div class="ds-srcs" id="ds-sources">
-        <span style="font-size:11px;color:var(--muted);font-style:italic">Consultando fuentes…</span>
+        <span style="font-size:13px;color:var(--muted);font-style:italic">Consultando fuentes…</span>
       </div>
     </div>
 
@@ -660,11 +680,11 @@ input[type=range]{flex:1;accent-color:var(--primary)}
             Alertas externas
           </span>
           <div class="fx ai g8">
-            <span id="ext-alerts-ts" style="font-size:10px;color:var(--muted)"></span>
-            <button class="btn btn-gh" style="padding:2px 8px;font-size:11px" onclick="cargarAlertasExternas()" title="Actualizar">↻</button>
+            <span id="ext-alerts-ts" style="font-size:12px;color:var(--muted)"></span>
+            <button class="btn btn-gh" style="padding:2px 8px;font-size:13px" onclick="cargarAlertasExternas()" title="Actualizar">↻</button>
           </div>
         </div>
-        <div id="ext-alerts"><div style="color:var(--muted);font-size:12px">Consultando AEMET, CSN, IGN y Protección Civil...</div></div>
+        <div id="ext-alerts"><div style="color:var(--muted);font-size:14px">Consultando AEMET, CSN, IGN y Protección Civil...</div></div>
       </div>
     </div>
 
@@ -675,7 +695,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
           Mapa de incidentes
         </span>
-        <label class="fx ai g8" style="font-size:12px;font-weight:500;cursor:pointer">
+        <label class="fx ai g8" style="font-size:14px;font-weight:500;cursor:pointer">
           <input type="checkbox" id="map-show-closed" onchange="actualizarMapaDashboard()">
           Ver cerrados
         </label>
@@ -872,7 +892,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
                   <input id="nr-url" type="url" placeholder="https://..."></div>
               </div>
               <div style="border-top:1px solid var(--border);padding-top:14px">
-                <div style="font-size:11px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Escala NCRS — Puntúa cada dimensión del 1 al 5</div>
+                <div style="font-size:13px;font-weight:700;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">Escala NCRS — Puntúa cada dimensión del 1 al 5</div>
                 <div style="display:flex;flex-direction:column;gap:14px">
 
                   <div class="ncrs-dim">
@@ -923,7 +943,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
               </div>
               <div class="ncrs-display">
                 <div class="ncrs-num ncrs-1" id="ncrs-num">1</div>
-                <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">NCRS Total</div>
+                <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">NCRS Total</div>
                 <div class="ncrs-tactica ncrs-1" id="ncrs-tac">Solo monitorizar</div>
               </div>
               <div class="fx je"><button class="btn btn-p" onclick="guardarNarrativa()">Registrar narrativa</button></div>
@@ -950,8 +970,8 @@ input[type=range]{flex:1;accent-color:var(--primary)}
       <div class="card" style="margin-bottom:16px">
         <div class="fx ai g12 fw">
           <div style="flex:1">
-            <div style="font-family:var(--serif);font-size:15px;font-weight:600;color:var(--primary)">Generación de hipótesis con IA + búsqueda web</div>
-            <div style="font-size:12.5px;color:var(--muted);margin-top:3px">El sistema analizará el incidente, buscará precedentes históricos reales en internet y generará 4 hipótesis operativas.</div>
+            <div style="font-family:var(--serif);font-size:17px;font-weight:600;color:var(--primary)">Generación de hipótesis con IA + búsqueda web</div>
+            <div style="font-size:14.5px;color:var(--muted);margin-top:3px">El sistema analizará el incidente, buscará precedentes históricos reales en internet y generará 4 hipótesis operativas.</div>
           </div>
           <button class="btn btn-s" id="btn-gen-hip" onclick="generarHipotesis()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -970,14 +990,19 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     <div class="sh">
       <div class="sh-title">Lecciones aprendidas</div>
       <div class="fx ai g8">
+        <button class="btn btn-gh" onclick="abrirImportarLeccionesExternas()">📚 Importar lección externa</button>
         <button class="btn btn-gh" onclick="abrirImportarLecciones()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-          Importar archivo
+          Importar al incidente
         </button>
         <button class="btn btn-p" onclick="abrirModalNuevaLec()">+ Añadir lección</button>
       </div>
     </div>
     <input type="file" id="file-lecciones" accept=".md,.txt,.pdf" style="display:none" onchange="procesarArchivoLecciones(event)">
+    <div class="mod-tabs">
+      <button class="mod-tab active" id="tab-lec-inc" onclick="cambiarTabLec('inc')">Del incidente activo</button>
+      <button class="mod-tab" id="tab-lec-ext" onclick="cambiarTabLec('ext')">📚 Biblioteca externa</button>
+    </div>
     <div id="lec-sel-banner" class="info-box" style="display:none">Selecciona un incidente para ver sus lecciones aprendidas.</div>
     <div id="lec-panel" style="display:none">
       <div class="card">
@@ -994,7 +1019,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     <div class="sh">
       <div>
         <div class="sh-title">Control de acceso</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:2px">Solo el administrador puede gestionar quién tiene acceso a ARGOS.</div>
+        <div style="font-size:15px;color:var(--muted);margin-top:2px">Solo el administrador puede gestionar quién tiene acceso a ARGOS.</div>
       </div>
       <button class="btn btn-p" onclick="abrirModalNuevoUsuario()">+ Añadir usuario</button>
     </div>
@@ -1011,7 +1036,7 @@ input[type=range]{flex:1;accent-color:var(--primary)}
     <div class="sh">
       <div>
         <div class="sh-title">J2 Inteligencia</div>
-        <div style="font-size:13px;color:var(--muted);margin-top:2px">Sistema del Almirantazgo — clasificación y verificación de datos de monitorización</div>
+        <div style="font-size:15px;color:var(--muted);margin-top:2px">Sistema del Almirantazgo — clasificación y verificación de datos de monitorización</div>
       </div>
       <div class="fx ai g8">
         <button class="btn btn-p" onclick="abrirModalNuevoDato()">+ Registrar dato</button>
@@ -1032,25 +1057,25 @@ input[type=range]{flex:1;accent-color:var(--primary)}
         <div class="card-title" style="margin-bottom:8px">Tabla de clasificación — Sistema del Almirantazgo</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Fiabilidad de la fuente</div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-A" style="width:24px;height:24px;font-size:11px">A</span><span style="font-size:11px">Completamente fiable</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-B" style="width:24px;height:24px;font-size:11px">B</span><span style="font-size:11px">Generalmente fiable</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-C" style="width:24px;height:24px;font-size:11px">C</span><span style="font-size:11px">Bastante fiable</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-D" style="width:24px;height:24px;font-size:11px">D</span><span style="font-size:11px">No siempre fiable</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-E" style="width:24px;height:24px;font-size:11px">E</span><span style="font-size:11px">No fiable</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-F" style="width:24px;height:24px;font-size:11px">F</span><span style="font-size:11px">Fiabilidad no valorable</span></div>
+            <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Fiabilidad de la fuente</div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-A" style="width:24px;height:24px;font-size:13px">A</span><span style="font-size:13px">Completamente fiable</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-B" style="width:24px;height:24px;font-size:13px">B</span><span style="font-size:13px">Generalmente fiable</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-C" style="width:24px;height:24px;font-size:13px">C</span><span style="font-size:13px">Bastante fiable</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-D" style="width:24px;height:24px;font-size:13px">D</span><span style="font-size:13px">No siempre fiable</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-E" style="width:24px;height:24px;font-size:13px">E</span><span style="font-size:13px">No fiable</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-F" style="width:24px;height:24px;font-size:13px">F</span><span style="font-size:13px">Fiabilidad no valorable</span></div>
           </div>
           <div>
-            <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Credibilidad del dato</div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-A" style="width:24px;height:24px;font-size:11px">1</span><span style="font-size:11px">Confirmado por otras fuentes</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-A" style="width:24px;height:24px;font-size:11px">2</span><span style="font-size:11px">Probablemente cierto</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-C" style="width:24px;height:24px;font-size:11px">3</span><span style="font-size:11px">Posiblemente cierto</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-E" style="width:24px;height:24px;font-size:11px">4</span><span style="font-size:11px">Dudoso</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-E" style="width:24px;height:24px;font-size:11px">5</span><span style="font-size:11px">Improbable</span></div>
-            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-F" style="width:24px;height:24px;font-size:11px">6</span><span style="font-size:11px">Credibilidad no valorable</span></div>
+            <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Credibilidad del dato</div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-A" style="width:24px;height:24px;font-size:13px">1</span><span style="font-size:13px">Confirmado por otras fuentes</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-A" style="width:24px;height:24px;font-size:13px">2</span><span style="font-size:13px">Probablemente cierto</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-C" style="width:24px;height:24px;font-size:13px">3</span><span style="font-size:13px">Posiblemente cierto</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-E" style="width:24px;height:24px;font-size:13px">4</span><span style="font-size:13px">Dudoso</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-E" style="width:24px;height:24px;font-size:13px">5</span><span style="font-size:13px">Improbable</span></div>
+            <div class="fx ai g8" style="margin-bottom:3px"><span class="alm-badge alm-F" style="width:24px;height:24px;font-size:13px">6</span><span style="font-size:13px">Credibilidad no valorable</span></div>
           </div>
         </div>
-        <div style="margin-top:8px;font-size:11px;color:var(--muted);padding:6px 10px;background:var(--bg);border-radius:var(--r)">
+        <div style="margin-top:8px;font-size:13px;color:var(--muted);padding:6px 10px;background:var(--bg);border-radius:var(--r)">
           <b>A1 = máxima confianza</b> — no requiere verificación adicional. Cualquier otra combinación inicia el proceso de verificación.
         </div>
       </div>
@@ -1473,12 +1498,12 @@ function renderizarMarcadores(incs) {
     const estado_color = { Activo:'#10B981', Standby:'#F59E0B', Cerrado:'#9CA3AF' };
     const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${estado_color[inc.Estado]||'#64748b'};margin-right:5px"></span>`;
     marker.bindPopup(`<div style="min-width:200px">
-      <div style="font-weight:700;font-size:13px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
-      <div style="font-size:11px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
-      <div style="font-size:11px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
-      <div style="font-size:10px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
-      ${inc.Ubicacion ? '<div style="font-size:11px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
-      <button onclick="abrirIncDesdeMap('${inc.ID_Incidente}')" style="margin-top:8px;background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;width:100%">Abrir incidente →</button>
+      <div style="font-weight:700;font-size:15px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
+      <div style="font-size:13px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
+      <div style="font-size:13px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
+      <div style="font-size:12px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
+      ${inc.Ubicacion ? '<div style="font-size:13px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
+      <button onclick="abrirIncDesdeMap('${inc.ID_Incidente}')" style="margin-top:8px;background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:13px;cursor:pointer;width:100%">Abrir incidente →</button>
     </div>`);
     marker.addTo(_mapaDash);
   });
@@ -1515,12 +1540,12 @@ function actualizarMapaDashboard() {
       const estado_color = { Activo:'#10B981', Standby:'#F59E0B', Cerrado:'#9CA3AF' };
       const dot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${estado_color[inc.Estado]||'#64748b'};margin-right:5px"></span>`;
       marker.bindPopup(`<div style="min-width:200px">
-        <div style="font-weight:700;font-size:13px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
-        <div style="font-size:11px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
-        <div style="font-size:11px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
-        <div style="font-size:10px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
-        ${inc.Ubicacion ? '<div style="font-size:11px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
-        <button onclick="abrirIncDesdeMap('${inc.ID_Incidente}')" style="margin-top:8px;background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:11px;cursor:pointer;width:100%">Abrir incidente →</button>
+        <div style="font-weight:700;font-size:15px;color:#0F3460;margin-bottom:4px">${inc.Nombre||inc.ID_Incidente}</div>
+        <div style="font-size:13px;color:#4A5568;margin-bottom:3px">${inc.Tipo||'—'}</div>
+        <div style="font-size:13px">${dot}${inc.Estado} · ${inc.Gravedad}</div>
+        <div style="font-size:12px;color:#9CA3AF;margin-top:4px;font-family:monospace">${inc.ID_Incidente}</div>
+        ${inc.Ubicacion ? '<div style="font-size:13px;color:#4A5568;margin-top:3px">📍 '+inc.Ubicacion+'</div>' : ''}
+        <button onclick="abrirIncDesdeMap('${inc.ID_Incidente}')" style="margin-top:8px;background:#0ea5e9;color:#fff;border:none;border-radius:4px;padding:4px 12px;font-size:13px;cursor:pointer;width:100%">Abrir incidente →</button>
       </div>`);
       marker.addTo(_mapaDash);
     });
@@ -1629,11 +1654,12 @@ function irA(v) {
   document.getElementById('view-' + v)?.classList.add('active');
   document.querySelector(`[data-v="${v}"]`)?.classList.add('active');
   document.getElementById('tb-title').textContent = TITULOS[v] || v;
-  const needsInc = ['actualizaciones','notas','narrativas','hipotesis','lecciones'];
+  const needsInc = ['actualizaciones','notas','narrativas','hipotesis'];
   if (needsInc.includes(v)) {
     if (!APP.incActivo) mostrarSelectorInc(v);
     else cargarModulo(v);
   }
+  if (v === 'lecciones')    cargarLecciones();
   if (v === 'dashboard')    cargarDashboard();
   if (v === 'incidentes')  cargarIncidentes();
   if (v === 'admin')       cargarAdmin();
@@ -1841,6 +1867,10 @@ function cargarDashboard() {
 
 
 
+function urlSegura(u) {
+  return /^https?:\/\//i.test(u || '') ? String(u).replace(/"/g, '%22').replace(/</g, '%3C') : '';
+}
+
 function _tabsAlertas(res) {
   const nA = res.aemet?.length || 0;
   const nC = res.csn?.length || 0;
@@ -1853,22 +1883,22 @@ function _tabsAlertas(res) {
   const pA = nA
     ? res.aemet.map(a => {
         const cls = a.color?.match(/RED|ROJO|4/) ? 'rojo' : 'naranja';
-        const esp = (a.tipo==='especial'||a.tipo==='informativa') ? `<span style="font-size:10px;background:#1e3a5f;color:#93c5fd;border-radius:3px;padding:1px 5px;margin-left:4px">${a.tipo==='especial'?'Aviso especial':'Nota informativa'}</span>` : '';
-        return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:12px">${esc(a.evento||'—')}${esp}</div><div style="font-size:11px;color:var(--muted)">📍 ${esc(a.zona)} · ${esc(a.severidad)}</div></div>`;
+        const esp = (a.tipo==='especial'||a.tipo==='informativa') ? `<span style="font-size:12px;background:#1e3a5f;color:#93c5fd;border-radius:3px;padding:1px 5px;margin-left:4px">${a.tipo==='especial'?'Aviso especial':'Nota informativa'}</span>` : '';
+        return `<div class="alert-card ${cls}"><div style="font-weight:600;font-size:14px">${esc(a.evento||'—')}${esp}</div><div style="font-size:13px;color:var(--muted)">📍 ${esc(a.zona)} · ${esc(a.severidad)}${urlSegura(a.url)?` · <a href="${urlSegura(a.url)}" target="_blank" rel="noopener" style="color:#0369a1">Ver aviso</a>`:''}</div></div>`;
       }).join('')
-    : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Sin alertas activas</div>';
+    : '<div style="font-size:14px;color:var(--muted);padding:8px 0">Sin alertas en los últimos 3 días</div>';
   // Contenido CSN
   const pC = nC
-    ? res.csn.map(s => `<div class="alert-card csn"><div style="font-weight:600;font-size:12px">${esc(tc(s.titulo,65))}</div><div style="font-size:11px;color:var(--muted)">${esc(s.instalacion)} · ${esc(s.nivelInes)}</div></div>`).join('')
-    : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Sin sucesos notificados</div>';
+    ? res.csn.map(s => `<div class="alert-card csn"><div style="font-weight:600;font-size:14px">${esc(tc(s.titulo,65))}</div><div style="font-size:13px;color:var(--muted)">${esc(s.instalacion)} · ${esc(s.nivelInes)}${urlSegura(s.url)?` · <a href="${urlSegura(s.url)}" target="_blank" rel="noopener" style="color:#0369a1">Ver suceso</a>`:''}</div></div>`).join('')
+    : '<div style="font-size:14px;color:var(--muted);padding:8px 0">Sin sucesos en los últimos 3 días</div>';
   // Contenido Sismología
   const pI = nI
-    ? res.ign.map(s => `<div class="alert-card ign"><div style="font-weight:600;font-size:12px">M ${s.magnitud} — ${esc(tc(s.zona,50))}</div><div style="font-size:11px;color:var(--muted)">${esc(s.fecha)}${s.profundidad?' · Prof. '+esc(s.profundidad)+' km':''}</div></div>`).join('')
-    : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Sin sismos recientes</div>';
+    ? res.ign.map(s => `<div class="alert-card ign"><div style="font-weight:600;font-size:14px">M ${s.magnitud} — ${esc(tc(s.zona,50))}</div><div style="font-size:13px;color:var(--muted)">${esc(s.fecha)}${s.profundidad?' · Prof. '+esc(s.profundidad)+' km':''}${urlSegura(s.url)?` · <a href="${urlSegura(s.url)}" target="_blank" rel="noopener" style="color:#0369a1">Ver sismo</a>`:''}</div></div>`).join('')
+    : '<div style="font-size:14px;color:var(--muted);padding:8px 0">Sin sismos en los últimos 3 días</div>';
   // Contenido Protección Civil
   const pP = nP
-    ? res.procivil.map(n => `<div class="alert-card procivil"><div style="font-weight:600;font-size:12px">${esc(tc(n.titulo,70))}</div><div style="font-size:11px;color:var(--muted)">${n.url?`<a href="${esc(n.url)}" target="_blank" style="color:#0369a1">Ver noticia</a>`:'—'}</div></div>`).join('')
-    : '<div style="font-size:12px;color:var(--muted);padding:8px 0">Sin novedades recientes</div>';
+    ? res.procivil.map(n => `<div class="alert-card procivil"><div style="font-weight:600;font-size:14px">${esc(tc(n.titulo,70))}</div><div style="font-size:13px;color:var(--muted)">${n.url?`<a href="${esc(n.url)}" target="_blank" style="color:#0369a1">Ver noticia</a>`:'—'}</div></div>`).join('')
+    : '<div style="font-size:14px;color:var(--muted);padding:8px 0">Sin novedades en los últimos 3 días</div>';
   return `
     <div class="at-tabs">
       <button class="at-tab${first==='at'?' active':''}" onclick="swAt(this,'at-a')">⚡ AEMET${badge(nA,'alerta')}</button>
@@ -1910,12 +1940,12 @@ function renderAlertas(data) {
 function cargarAlertasExternas() {
   const c  = document.getElementById('ext-alerts');
   const ts = document.getElementById('ext-alerts-ts');
-  c.innerHTML = '<div style="color:var(--muted);font-size:12px">Consultando AEMET, CSN, IGN y Protección Civil...</div>';
+  c.innerHTML = '<div style="color:var(--muted);font-size:14px">Consultando AEMET, CSN, IGN y Protección Civil...</div>';
   gas('getAlertasExternas', undefined, res => {
     c.innerHTML = _tabsAlertas(res);
     if (ts) { const now = new Date(); ts.textContent = `Última actualización: ${now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'})}`; }
   }, () => {
-    c.innerHTML = '<div style="font-size:12px;color:var(--muted)">No se pudieron cargar las alertas.</div>';
+    c.innerHTML = '<div style="font-size:14px;color:var(--muted)">No se pudieron cargar las alertas.</div>';
     if (ts) ts.textContent = 'Error al consultar';
   });
 }
@@ -1975,8 +2005,8 @@ function renderInc(list) {
     const abierto  = o.Estado !== 'Cerrado';
     const duracion = calcularDuracion(o.Timestamp, o.Fecha_Cierre || null);
     const durLabel = abierto
-      ? `<span style="font-family:var(--mono);font-size:11px;color:var(--secondary)">⏱ ${duracion}</span>`
-      : `<span style="font-family:var(--mono);font-size:11px;color:var(--muted)">${duracion}</span>`;
+      ? `<span style="font-family:var(--mono);font-size:13px;color:var(--secondary)">⏱ ${duracion}</span>`
+      : `<span style="font-family:var(--mono);font-size:13px;color:var(--muted)">${duracion}</span>`;
     return `<tr>
       <td><span class="mono">${o.ID_Incidente||'—'}</span></td>
       <td><strong>${tc(o.Nombre,38)}</strong></td>
@@ -1984,12 +2014,13 @@ function renderInc(list) {
       <td>${bGrav(o.Gravedad)}</td>
       <td>${bEst(o.Estado)}</td>
       <td>${tc(o.Ubicacion,22)}</td>
-      <td class="mono" style="font-size:11px">${o.Timestamp||'—'}</td>
+      <td class="mono" style="font-size:13px">${o.Timestamp||'—'}</td>
       <td>${durLabel}</td>
       <td>
         <div class="fx g8">
           <button class="btn btn-gh btn-sm" onclick='verEditarInc(${JSON.stringify(o)})'>Ver / Editar</button>
           <button class="btn btn-gh btn-sm" onclick='seleccionarIncTrabajo(${JSON.stringify(o)})'>Trabajar</button>
+          ${APP.rol === 'Administrador' ? `<button class="btn btn-gh btn-sm" style="color:var(--red)" onclick="confirmarBorrado('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Borrar</button>` : ''}
           ${abierto?`<button class="btn btn-r btn-sm" onclick="confirmarCierre('${o.ID_Incidente}','${(o.Nombre||'').replace(/'/g,"\\'")}')">Cerrar</button>`:''}
         </div>
       </td>
@@ -1997,13 +2028,32 @@ function renderInc(list) {
   }).join('');
 }
 
+function confirmarBorrado(id, nombre) {
+  if (APP.rol !== 'Administrador') { toast('Solo el administrador puede borrar incidentes.', 'err'); return; }
+  abrirModal('Borrar incidente', `
+    <div class="crit-box">Vas a borrar <strong>${esc(nombre)}</strong> y <strong>todos sus datos</strong>: actualizaciones, notas, narrativas, hipótesis, lecciones, datos de J2 e historial de niveles. No se puede deshacer.</div>
+    <div class="fg"><label>Para confirmar, escribe el ID: <span class="mono">${esc(id)}</span></label>
+      <input id="borrar-conf" type="text" autocomplete="off"></div>
+  `, 'Borrar definitivamente', 'btn-r', () => {
+    if ((document.getElementById('borrar-conf').value || '').trim() !== id) { toast('El ID no coincide', 'err'); return; }
+    cerrarModales();
+    gas('borrarIncidente', { id, email: APP.email }, () => {
+      toast('Incidente ' + id + ' borrado', 'ok');
+      if (APP.incActivo && APP.incActivo.id === id) ocultarBanner();
+      APP.incs = (APP.incs || []).filter(i => i.ID_Incidente !== id);
+      cargarIncidentes();
+      cargarDashboard();
+    });
+  });
+}
+
 function verEditarInc(o) {
   const cerrado  = o.Estado === 'Cerrado';
   const duracion = calcularDuracion(o.Timestamp, o.Fecha_Cierre || null);
   abrirModal('Ficha del incidente', `
     <div style="margin-bottom:14px;padding:10px 14px;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--secondary)">
-      <div class="mono" style="font-size:11px;color:var(--muted)">${esc(o.ID_Incidente)}</div>
-      <div style="font-size:13px;margin-top:2px">
+      <div class="mono" style="font-size:13px;color:var(--muted)">${esc(o.ID_Incidente)}</div>
+      <div style="font-size:15px;margin-top:2px">
         Apertura: <strong>${esc(o.Timestamp||'—')}</strong>
         ${o.Fecha_Cierre ? ` · Cierre: <strong>${esc(o.Fecha_Cierre)}</strong>` : ''}
         · Duración: <strong style="color:var(--secondary)">${duracion}</strong>
@@ -2032,8 +2082,8 @@ function verEditarInc(o) {
           ${!cerrado?`<button class="btn btn-gh btn-sm" onclick="geocodificarEdicion()">📍 Geocodificar</button>`:''}
         </div>
         <div class="fx g8" style="margin-top:6px">
-          <input id="ei-lat" type="text" value="${esc(o.Latitud||'')}" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:12px" ${cerrado?'disabled':''}>
-          <input id="ei-lon" type="text" value="${esc(o.Longitud||'')}" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:12px" ${cerrado?'disabled':''}>
+          <input id="ei-lat" type="text" value="${esc(o.Latitud||'')}" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:14px" ${cerrado?'disabled':''}>
+          <input id="ei-lon" type="text" value="${esc(o.Longitud||'')}" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:14px" ${cerrado?'disabled':''}>
         </div>
       </div>
       <div class="fg full"><label>Situación actual</label>
@@ -2042,15 +2092,23 @@ function verEditarInc(o) {
         <label>Hashtags del incidente</label>
         <input id="ei-hashtags" type="text" value="${esc(o.Hashtags||'')}"
           placeholder="#VOSTSpain #TipoIncidente #Lugar"
-          style="font-family:var(--mono);font-size:13px" ${cerrado?'disabled':''}>
-        ${!cerrado?'<div style="font-size:10px;color:var(--muted);margin-top:3px">Se incluirán automáticamente en todos los borradores</div>':''}
+          style="font-family:var(--mono);font-size:15px" ${cerrado?'disabled':''}>
+        ${!cerrado?'<div style="font-size:12px;color:var(--muted);margin-top:3px">Se incluirán automáticamente en todos los borradores</div>':''}
       </div>
     </div>
+    ${!cerrado?`<div class="fg full" style="margin-top:10px"><label>Motivo del cambio de nivel o de estado</label>
+      <input id="ei-motivo" type="text" placeholder="Obligatorio si cambias la gravedad o el estado"></div>`:''}
+    <div style="margin-top:14px"><div class="hx-lab">Historial de cambios de nivel y estado</div>
+      <div id="ei-traza" style="font-size:15px;color:var(--muted)">Cargando…</div></div>
     ${cerrado?'<div class="info-box" style="margin-top:8px">Este incidente está cerrado. Los datos son de solo lectura.</div>':''}
   `, cerrado ? 'Cerrar' : 'Guardar cambios', cerrado ? 'btn-gh' : 'btn-p', () => {
     if (cerrado) { cerrarModales(); return; }
     const nombre = document.getElementById('ei-nom').value.trim();
     if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+    const motivo = (document.getElementById('ei-motivo')?.value || '').trim();
+    const cambiaNivelEst = (document.getElementById('ei-grav').value !== (o.Gravedad || '')) ||
+                           (document.getElementById('ei-est').value  !== (o.Estado   || ''));
+    if (cambiaNivelEst && !motivo) { toast('Indica el motivo del cambio de nivel o de estado', 'err'); return; }
     const cambiaVect = (document.getElementById('ei-ubi').value !== (o.Ubicacion || '')) ||
                        (document.getElementById('ei-tipo').value !== (o.Tipo || '')) ||
                        (document.getElementById('ei-sit').value !== (o.Situacion || ''));
@@ -2064,7 +2122,9 @@ function verEditarInc(o) {
       latitud:   document.getElementById('ei-lat').value,
       longitud:  document.getElementById('ei-lon').value,
       situacion: document.getElementById('ei-sit').value,
-      hashtags:  document.getElementById('ei-hashtags')?.value || ''
+      hashtags:  document.getElementById('ei-hashtags')?.value || '',
+      operador:  APP.operador,
+      motivo
     }, () => {
       toast('Incidente actualizado', 'ok');
       cerrarModales();
@@ -2073,6 +2133,22 @@ function verEditarInc(o) {
       if (cambiaVect) _triggerVectoresMonitor(o.ID_Incidente);
     });
   });
+  cargarTrazaInc(o.ID_Incidente);
+}
+
+function cargarTrazaInc(id) {
+  gas('getTrazaNiveles', id, res => {
+    const el = document.getElementById('ei-traza');
+    if (!el) return;
+    const d = res.data || [];
+    if (!d.length) { el.textContent = 'Sin cambios registrados.'; return; }
+    el.innerHTML = [...d].reverse().map(t => `<div class="traza-row">
+      <span class="mono" style="font-size:14px">${esc(t.Timestamp||'')}</span>
+      <span class="bx bx-m">${esc(t.Tipo_Cambio||'')}</span>
+      <span>${t.Valor_Anterior ? esc(t.Valor_Anterior) + ' → ' : ''}<strong>${esc(t.Valor_Nuevo||'')}</strong></span>
+      <span style="color:var(--muted)">${esc(t.Operador||'')}${t.Motivo ? ' · ' + esc(t.Motivo) : ''}</span>
+    </div>`).join('');
+  }, () => { const el = document.getElementById('ei-traza'); if (el) el.textContent = 'No se pudo cargar el historial.'; });
 }
 
 async function geocodificarEdicion() {
@@ -2106,13 +2182,13 @@ function seleccionarIncTrabajo(inc) {
 function confirmarCierre(id, nombre) {
   abrirModal('Cerrar incidente', `
     <p>¿Seguro que quieres cerrar <strong>${nombre}</strong>?</p>
-    <p style="margin-top:8px;font-size:12px;color:var(--muted)">ARGOS enviará notificaciones a Slack y Telegram y generará el informe de lecciones aprendidas automáticamente (puede tardar hasta 60 segundos).</p>
+    <p style="margin-top:8px;font-size:14px;color:var(--muted)">ARGOS enviará notificaciones a Slack y Telegram y generará el informe de lecciones aprendidas automáticamente (puede tardar hasta 60 segundos).</p>
   `, 'Cerrar incidente', 'btn-r', () => {
     cerrarModales();
     aiThinking('Cerrando incidente y enviando notificaciones...');
 
     // Paso 1: cerrar el incidente (rápido)
-    gas('cerrarIncidente', id, res => {
+    gas('cerrarIncidente', { id, operador: APP.operador }, res => {
       toast(`Incidente cerrado · ${res.nombre || id}`, 'ok');
       cargarIncidentes();
       cargarDashboard();
@@ -2154,8 +2230,8 @@ function abrirModalNuevoInc() {
         <select id="i-tipo">${tiposSelect('')}</select></div>
       <div class="fg"><label>Nivel de gravedad</label>
         <select id="i-grav">
-          <option value="Nivel 0">Nivel 0 — recursos locales</option>
-          <option value="Nivel 1" selected>Nivel 1 — medios de la CCAA</option>
+          <option value="Nivel 0" selected>Nivel 0 — recursos locales</option>
+          <option value="Nivel 1">Nivel 1 — medios de la CCAA</option>
           <option value="Nivel 2">Nivel 2 — medios del Estado</option>
           <option value="Nivel 3">Nivel 3 — interés nacional</option>
         </select></div>
@@ -2166,19 +2242,19 @@ function abrirModalNuevoInc() {
           <button class="btn btn-gh btn-sm" id="btn-geo" type="button" onclick="geocodificar()">📍 Geocodificar</button>
         </div>
         <div class="fx g8" style="margin-top:6px">
-          <input id="i-lat" type="text" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:12px">
-          <input id="i-lon" type="text" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:12px">
+          <input id="i-lat" type="text" placeholder="Latitud" style="flex:1;font-family:var(--mono);font-size:14px">
+          <input id="i-lon" type="text" placeholder="Longitud" style="flex:1;font-family:var(--mono);font-size:14px">
         </div>
         <div id="mapa-mini"></div>
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">💡 Pincha en el mapa para fijar la ubicación exacta</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">💡 Pincha en el mapa para fijar la ubicación exacta</div>
       </div>
       <div class="fg full"><label>Situación inicial</label>
         <textarea id="i-sit" rows="3" placeholder="Breve descripción de la situación actual..."></textarea></div>
       <div class="fg full">
         <label>Hashtags del incidente</label>
         <input id="i-hashtags" type="text" placeholder="Ej: #VOSTSpain #IncendioForestal #SierraCulebra"
-          style="font-family:var(--mono);font-size:13px">
-        <div style="font-size:10px;color:var(--muted);margin-top:3px">Se incluirán automáticamente en todos los borradores de comunicación</div>
+          style="font-family:var(--mono);font-size:15px">
+        <div style="font-size:12px;color:var(--muted);margin-top:3px">Se incluirán automáticamente en todos los borradores de comunicación</div>
       </div>
     </div>
   `, 'Crear incidente', 'btn-p', () => {
@@ -2230,7 +2306,7 @@ function cambiarTabAct(tab) {
   if (tab === 'hist' && APP.incActivo) {
     // Fetch fresco cada vez que el usuario abre el historial
     document.getElementById('hist-lista').innerHTML =
-      '<div style="text-align:center;padding:32px"><div class="sp"></div><div style="margin-top:12px;font-size:13px;color:var(--muted)">Cargando publicaciones...</div></div>';
+      '<div style="text-align:center;padding:32px"><div class="sp"></div><div style="margin-top:12px;font-size:15px;color:var(--muted)">Cargando publicaciones...</div></div>';
     if (document.getElementById('hist-vacio'))
       document.getElementById('hist-vacio').style.display = 'none';
     gas('getActualizaciones', APP.incActivo.id, res => {
@@ -2281,20 +2357,20 @@ function renderHistorial(acts) {
     }).filter(Boolean).join('');
     // Canal badges para la cabecera colapsada
     const canalBadges = canales.filter(c => a[c.key] && String(a[c.key]).trim())
-      .map(c => `<span class="pub-canal ${c.cls}" style="font-size:10px;padding:2px 6px">${c.label}</span>`).join('');
+      .map(c => `<span class="pub-canal ${c.cls}" style="font-size:12px;padding:2px 6px">${c.label}</span>`).join('');
 
     return `<div class="pub-card" style="padding:0">
       <div class="pub-header" style="cursor:pointer;padding:10px 14px" onclick="var b=document.getElementById('${uid}');b.style.display=b.style.display==='none'?'block':'none';this.querySelector('.pub-toggle').textContent=b.style.display==='none'?'▶':'▼'">
         <span class="bx bx-g" style="flex-shrink:0">✓ Publicado</span>
         <span class="pub-ts" style="flex-shrink:0">${esc(a.Timestamp || '—')}</span>
-        <span style="font-size:12px;color:var(--muted);flex:1;margin:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(tc(a.INPUT_Hechos, 90))}</span>
+        <span style="font-size:14px;color:var(--muted);flex:1;margin:0 8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(tc(a.INPUT_Hechos, 90))}</span>
         <span style="display:flex;gap:4px;flex-wrap:wrap;flex-shrink:0">${canalBadges}</span>
-        <span class="pub-toggle" style="margin-left:8px;font-size:11px;color:var(--muted);flex-shrink:0">▶</span>
+        <span class="pub-toggle" style="margin-left:8px;font-size:13px;color:var(--muted);flex-shrink:0">▶</span>
       </div>
       <div id="${uid}" style="display:none;padding:0 14px 14px">
         ${fotosHtml ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">${fotosHtml}</div>` : ''}
         ${bloques ||
-          '<div style="font-size:12px;color:var(--muted);padding:8px 0">Esta publicación fue marcada sin borradores guardados.</div>'}
+          '<div style="font-size:14px;color:var(--muted);padding:8px 0">Esta publicación fue marcada sin borradores guardados.</div>'}
       </div>
     </div>`;
   }).join('');
@@ -2310,7 +2386,7 @@ function renderActs(acts) {
     return `<tr${esPublicada ? ' style="background:var(--green-bg)"' : ''}>
       <td class="mono">${a.Timestamp||'—'}</td>
       <td style="max-width:300px;white-space:normal;word-break:break-word">${tc(a.INPUT_Hechos,120)}</td>
-      <td>${bEst(a.Estado)}${esPublicada ? ' <span style="font-size:12px">✅</span>' : ''}</td>
+      <td>${bEst(a.Estado)}${esPublicada ? ' <span style="font-size:14px">✅</span>' : ''}</td>
       <td><button class="btn btn-gh btn-sm" onclick="selActualizacion('${a.ID_Actualizacion}')">Generar borradores</button></td>
     </tr>`;
   }).join('');
@@ -2494,13 +2570,13 @@ function renderNotas(notas) {
     return `
     <div style="padding:12px;border-bottom:1px solid var(--border);border-radius:6px;margin-bottom:4px;${!leida ? 'background:rgba(14,165,233,.07);border-left:3px solid var(--secondary)' : ''}">
       <div class="fx ai g8 fw" style="margin-bottom:4px">
-        ${!leida ? '<span style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0">● No leída</span>' : ''}
+        ${!leida ? '<span style="font-size:12px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.06em;flex-shrink:0">● No leída</span>' : ''}
         <span class="bx bx-m">${esc(n.Categoria)}</span>
         <span class="mono">${esc(n.Timestamp)}</span>
-        <span style="font-size:11px;color:var(--muted)">${esc(n.Operador)}</span>
-        ${!leida ? `<button class="btn btn-gh btn-sm" style="margin-left:auto;font-size:10px;padding:2px 8px" onclick="marcarNotaLeida('${nid}')">✓ Marcar leída</button>` : ''}
+        <span style="font-size:13px;color:var(--muted)">${esc(n.Operador)}</span>
+        ${!leida ? `<button class="btn btn-gh btn-sm" style="margin-left:auto;font-size:12px;padding:2px 8px" onclick="marcarNotaLeida('${nid}')">✓ Marcar leída</button>` : ''}
       </div>
-      <div style="font-size:13px;line-height:1.6;white-space:pre-wrap">${esc(n.Contenido)}</div>
+      <div style="font-size:15px;line-height:1.6;white-space:pre-wrap">${esc(n.Contenido)}</div>
     </div>`;
   }).join('');
   actualizarBadgeNotas(sinLeer);
@@ -2552,7 +2628,7 @@ function renderNarrativas(nars) {
 
     // Badge de cabecera: NCRS para narrativas analizadas, Almirantazgo para entradas J2
     const encabezadoBadge = esDeJ2
-      ? `<span class="bx bx-a" title="Escala del Almirantazgo (J2)">🔍 ${almLabel}</span>`
+      ? `<span class="bx bx-a" title="Escala del Almirantazgo (J2)">🔍 J2 · ${almLabel}</span>`
       : bNcrs(ncrs);
 
     // Clase de alerta (solo aplica si se ha hecho análisis NCRS)
@@ -2571,27 +2647,31 @@ function renderNarrativas(nars) {
 
     // Aviso específico para ítems derivados de J2
     const avisoJ2 = esDeJ2 ? `
-      <div style="margin-bottom:10px;padding:8px 12px;background:rgba(245,158,11,.1);border-left:3px solid var(--alert);border-radius:4px;font-size:12px;color:var(--mid)">
+      <div style="margin-bottom:10px;padding:8px 12px;background:rgba(245,158,11,.1);border-left:3px solid var(--alert);border-radius:4px;font-size:14px;color:var(--mid)">
         <strong>⚠ Dato procedente de J2 Inteligencia</strong><br>
         Escala del Almirantazgo: <strong>${almLabel}</strong>
         ${n.Cal_Fuente ? ` (${ALM_FUENTE_LABELS[n.Cal_Fuente]||''} / ${ALM_DATO_LABELS[n.Cal_Dato]||'No valorable'})` : ' (E-6 — fuente no valorable / credibilidad no valorable)'}<br>
-        <span style="color:var(--red)">El análisis NCRS no está disponible para este ítem. El operador debe realizar el análisis manual (Alcance, Verosimilitud, Velocidad, Malicia) antes de tratarlo como narrativa clasificada.</span>
+        <span style="color:var(--red)">Este ítem no tiene NCRS. Cópialo y pégalo en «Registrar narrativa» con sus cuatro valores (alcance, verosimilitud, velocidad y malicia) para que se calcule el NCRS total.</span>
+        <div class="fx g8" style="margin-top:8px">
+          <button class="btn btn-gh btn-sm" onclick="copiarNarrativaJ2('${n.ID_Narrativa}')">Copiar texto</button>
+          <button class="btn btn-p btn-sm" onclick="registrarNarrativaDesdeJ2('${n.ID_Narrativa}')">Pasar al formulario</button>
+        </div>
       </div>` : '';
 
     return `<div class="alert-card ${publicado ? '' : cls}" style="margin-bottom:10px;${publicado ? 'opacity:.7' : ''}${esDeJ2 && !publicado ? ';border-left:3px solid var(--alert)' : ''}">
       <div class="fx ai g8 fw" style="margin-bottom:4px;cursor:pointer" onclick="document.getElementById('${uid}').style.display=document.getElementById('${uid}').style.display==='none'?'block':'none';this.querySelector('.nar-toggle').textContent=document.getElementById('${uid}').style.display==='none'?'▶':'▼'">
         ${encabezadoBadge}
         <span class="bx bx-m">${esc(n.Plataforma)}</span>
-        <span class="mono" style="font-size:11px">${esc(n.Timestamp)}</span>
-        <span style="flex:1;font-size:12px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:200px">${esc(tc(n.Descripcion, 60))}</span>
+        <span class="mono" style="font-size:13px">${esc(n.Timestamp)}</span>
+        <span style="flex:1;font-size:14px;color:var(--text);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:200px">${esc(tc(n.Descripcion, 60))}</span>
         <span style="margin-left:auto;flex-shrink:0">${estBadge}</span>
-        <span class="nar-toggle" style="margin-left:8px;font-size:11px;color:var(--muted);flex-shrink:0">▶</span>
+        <span class="nar-toggle" style="margin-left:8px;font-size:13px;color:var(--muted);flex-shrink:0">▶</span>
       </div>
       <div id="${uid}" style="display:none;padding-top:8px;border-top:1px solid var(--border);margin-top:6px">
         ${avisoJ2}
-        <div style="font-size:13px;line-height:1.6;margin-bottom:6px">${esc(n.Descripcion)}</div>
-        <div style="font-size:12px;color:var(--mid);font-weight:600;margin-bottom:8px">${esc(n.Tactica)}</div>
-        ${n.Fuente_Origen ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">Fuente: ${esc(n.Fuente_Origen)}</div>` : ''}
+        <div style="font-size:15px;line-height:1.6;margin-bottom:6px">${esc(n.Descripcion)}</div>
+        <div style="font-size:14px;color:var(--mid);font-weight:600;margin-bottom:8px">${esc(n.Tactica)}</div>
+        ${n.Fuente_Origen ? `<div style="font-size:13px;color:var(--muted);margin-bottom:8px">Fuente: ${esc(n.Fuente_Origen)}</div>` : ''}
         <div class="fx g8 fw">
           ${!publicado ? `<button class="btn btn-r btn-sm" onclick="generarDesmentido('${n.ID_Narrativa}')">
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
@@ -2623,6 +2703,25 @@ function actualizarNcrs() {
     5:'Desmentido urgente + contactar autoridades'
   };
   if (te) { te.textContent = tacticas[ncrs] || ''; te.className = `ncrs-tactica ncrs-${ncrs}`; }
+}
+
+function _narPorId(id) { return (APP.narrativas || []).find(n => n.ID_Narrativa === id); }
+
+function copiarNarrativaJ2(id) {
+  const n = _narPorId(id); if (!n) return;
+  navigator.clipboard.writeText(n.Descripcion || '');
+  toast('Texto copiado. Pégalo en «Registrar narrativa».', 'ok');
+}
+
+function registrarNarrativaDesdeJ2(id) {
+  const n = _narPorId(id); if (!n) return;
+  const d = document.getElementById('nr-desc');
+  d.value = n.Descripcion || '';
+  const f = document.getElementById('nr-fuente');
+  if (f) f.value = (n.Fuente_Origen || '').replace(/^J2 Inteligencia · /, '');
+  d.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  d.focus();
+  toast('Texto cargado en el formulario. Ajusta los valores NCRS y registra la narrativa.', 'info');
 }
 
 function guardarNarrativa() {
@@ -2661,7 +2760,7 @@ function marcarDesmentidoPublicado(idNarrativa) {
 function generarDesmentido(idNarrativa) {
   abrirModal('Generar desmentido', `
     <p>Se generarán borradores de corrección (X, Bluesky, Telegram, WhatsApp) usando la técnica de pre-impugnación.</p>
-    <p style="margin-top:8px;font-size:12px;color:var(--muted)">La corrección se guardará en la narrativa y podrás copiarla para publicar manualmente.</p>
+    <p style="margin-top:8px;font-size:14px;color:var(--muted)">La corrección se guardará en la narrativa y podrás copiarla para publicar manualmente.</p>
   `, 'Generar desmentido', 'btn-r', () => {
     cerrarModales();
     aiThinking('Generando desmentido...');
@@ -2682,7 +2781,7 @@ function generarDesmentido(idNarrativa) {
           <button class="btn btn-gh btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('desm-txt').textContent)">Copiar</button>
           <button class="btn btn-p btn-sm" onclick="enviarDesmentidoAComunicacion()">→ Enviar a Comunicación</button>
         </div>
-        <div id="desm-env-ok" style="display:none;margin-top:8px;font-size:12px;color:var(--green)">✓ Borradores enviados a Comunicación — aparecerán en el historial de publicaciones.</div>
+        <div id="desm-env-ok" style="display:none;margin-top:8px;font-size:14px;color:var(--green)">✓ Borradores enviados a Comunicación — aparecerán en el historial de publicaciones.</div>
       `, 'Cerrar', 'btn-gh', cerrarModales);
     });
   });
@@ -2741,8 +2840,8 @@ function generarHipotesis() {
   document.getElementById('hip-resultado').innerHTML = `
     <div style="text-align:center;padding:48px 20px;color:var(--muted)">
       <div class="sp" style="width:32px;height:32px;border-width:3px;margin:0 auto 18px;border-top-color:var(--primary)"></div>
-      <div style="font-size:15px;font-weight:600;color:var(--primary);margin-bottom:8px">Analizando el incidente...</div>
-      <div style="font-size:13px;line-height:1.7;max-width:400px;margin:0 auto">
+      <div style="font-size:17px;font-weight:600;color:var(--primary);margin-bottom:8px">Analizando el incidente...</div>
+      <div style="font-size:15px;line-height:1.7;max-width:400px;margin:0 auto">
         Está revisando los datos del incidente, buscando precedentes históricos reales
         y generando las 4 hipótesis operativas.<br><br>
         <strong>Este proceso puede tardar entre 1 y 3 minutos. No cierres la página.</strong>
@@ -2761,6 +2860,13 @@ function generarHipotesis() {
   });
 }
 
+function _frases(t) {
+  return String(t || '').split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ¿¡0-9])/).map(x => x.trim()).filter(Boolean);
+}
+function _ul(items) {
+  return items.length ? '<ul class="hx-ul">' + items.map(i => `<li>${esc(i)}</li>`).join('') + '</ul>' : '';
+}
+
 function renderHipotesis(data) {
   const hips = data.hipotesis || [];
   if (!hips.length) {
@@ -2770,34 +2876,38 @@ function renderHipotesis(data) {
   const catCls = { 'Evolución física':'H1', 'Narrativas hostiles':'H2', 'Comportamiento ciudadano':'H3', 'Estrategia informativa':'H4' };
   let h = '';
   if (data.resumen_ejecutivo) {
+    const fr = _frases(data.resumen_ejecutivo);
     h += `<div class="card" style="margin-bottom:16px">
       <div class="card-title">Resumen ejecutivo</div>
-      <p style="font-size:15px;line-height:1.8;color:var(--text)">${esc(data.resumen_ejecutivo)}</p>
+      ${fr.length > 2 ? _ul(fr) : `<p style="line-height:1.7">${esc(data.resumen_ejecutivo)}</p>`}
       ${data.alerta_temprana ? `<div class="crit-box" style="margin-top:12px;margin-bottom:0"><strong>⚡ Alerta temprana:</strong> ${esc(data.alerta_temprana)}</div>` : ''}
     </div>`;
   }
-  h += '<div class="g2">' + hips.map(hip => {
-    const num     = hip.numero || 1;
+  h += hips.map((hip, i) => {
+    const num     = hip.numero || (i + 1);
     const catKey  = Object.keys(catCls).find(k => (hip.categoria||'').includes(k)) || '';
     const cls     = catCls[catKey] || `H${num}`;
     const prec    = hip.precedente || {};
-    return `<div class="hip-card">
-      <div class="hip-header">
+    const puntos  = (hip.puntos_clave && hip.puntos_clave.length) ? hip.puntos_clave : _frases(hip.descripcion);
+    const ind     = Array.isArray(hip.indicadores) ? hip.indicadores : [];
+    return `<details class="hx-card" open>
+      <summary class="hx-sum">
         <span class="hip-cat hip-${cls}">${esc(hip.categoria||`Hipótesis ${num}`)}</span>
         <span class="hip-prob prob-${hip.probabilidad||'Media'}">${hip.probabilidad||'—'}</span>
-        <span style="font-weight:700;font-size:14px;margin-left:4px;flex:1">${esc(hip.titulo||'')}</span>
-      </div>
-      <div class="hip-body">
-        <p style="font-size:15px;line-height:1.75;color:var(--text);margin-bottom:10px">${esc(hip.descripcion||'')}</p>
-        ${prec.descripcion ? `<div class="prec-box">
-          <div style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">📚 Precedente histórico</div>
-          <div style="font-size:12px">${esc(prec.descripcion)}</div>
-          ${prec.lugar_fecha ? `<div style="font-size:11px;color:var(--muted);margin-top:3px">${esc(prec.lugar_fecha)} · ${esc(prec.fuente||'')}</div>` : ''}
+        <span style="font-weight:700;flex:1;min-width:200px">${esc(hip.titulo||'')}</span>
+      </summary>
+      <div class="hx-body">
+        <div class="hx-sec"><div class="hx-lab">Qué puede ocurrir</div>${_ul(puntos)}</div>
+        ${ind.length ? `<div class="hx-sec"><div class="hx-lab">Señales a vigilar</div>${_ul(ind)}</div>` : ''}
+        ${prec.descripcion ? `<div class="hx-sec hx-prec">
+          <div class="hx-lab" style="color:var(--secondary)">📚 Precedente histórico</div>
+          <div>${esc(prec.descripcion)}</div>
+          ${prec.lugar_fecha ? `<div style="font-size:14px;color:var(--muted);margin-top:4px">${esc(prec.lugar_fecha)}${prec.fuente ? ' · ' + esc(prec.fuente) : ''}</div>` : ''}
         </div>` : ''}
-        ${hip.recomendacion_argos ? `<div style="margin-top:10px;padding:9px 12px;background:var(--green-bg);border-radius:6px;font-size:12.5px;color:#065F46"><strong>Recomendación ARGOS:</strong> ${esc(hip.recomendacion_argos)}</div>` : ''}
+        ${hip.recomendacion_argos ? `<div class="hx-sec hx-rec"><div class="hx-lab" style="color:#065F46">Qué hacer</div>${esc(hip.recomendacion_argos)}</div>` : ''}
       </div>
-    </div>`;
-  }).join('') + '</div>';
+    </details>`;
+  }).join('');
   document.getElementById('hip-resultado').innerHTML = h;
 }
 
@@ -2805,16 +2915,30 @@ function renderHipotesis(data) {
 // Cache de lecciones para el modal
 let _leccionesCache = [];
 
+let _lecTab = 'inc';
+function cambiarTabLec(t) { _lecTab = t; cargarLecciones(); }
+
 function cargarLecciones() {
-  if (!APP.incActivo) { mostrarPanel('lec', false); return; }
-  mostrarPanel('lec', true);
+  if (!APP.incActivo && _lecTab === 'inc') _lecTab = 'ext';
+  const ext = _lecTab === 'ext';
+  document.getElementById('tab-lec-inc')?.classList.toggle('active', !ext);
+  document.getElementById('tab-lec-ext')?.classList.toggle('active', ext);
+  const banner = document.getElementById('lec-sel-banner');
+  const panel  = document.getElementById('lec-panel');
+  if (!ext && !APP.incActivo) { banner.style.display = 'block'; panel.style.display = 'none'; return; }
+  banner.style.display = 'none'; panel.style.display = 'block';
   document.getElementById('t-lec').innerHTML =
     '<tr><td colspan="8" style="text-align:center;padding:32px"><div class="sp"></div></td></tr>';
-  gas('getLecciones', APP.incActivo.id, res => {
+  gas('getLecciones', ext ? '__EXTERNAS__' : APP.incActivo.id, res => {
     const data = res.data || [];
     _leccionesCache = data;
     const t = document.getElementById('t-lec');
     if (!data.length) {
+      if (ext) {
+        t.innerHTML = `<tr><td colspan="8"><div class="empty"><div class="ei">📚</div>
+          <div class="em">Aún no hay lecciones externas. Importa un informe con «Importar lección externa» y la IA lo usará como referencia en incidentes parecidos.</div></div></td></tr>`;
+        return;
+      }
       const inc     = APP.incs.find(i => i.ID_Incidente === APP.incActivo.id);
       const cerrado = inc && inc.Estado === 'Cerrado';
       t.innerHTML = `<tr><td colspan="8"><div class="empty">
@@ -2830,11 +2954,11 @@ function cargarLecciones() {
     t.innerHTML = data.map((l, idx) => `<tr style="cursor:pointer" onclick="verLeccion(${idx})">
       <td class="mono">${esc(l.ID_Leccion||'—')}</td>
       <td><strong>${esc(tc(l.Titulo,42))}</strong></td>
-      <td><span class="bx bx-m">${esc(l.Categoria||'—')}</span></td>
+      <td><span class="bx bx-m">${esc(ext ? (l.Tipo_Emergencia || l.Categoria || '—') : (l.Categoria||'—'))}</span>${ext && l.Ambito ? `<div style="font-size:13px;color:var(--muted);margin-top:3px">${esc(l.Ambito)}</div>` : ''}</td>
       <td>${bGrav(l.Prioridad)}</td>
       <td>${esc(tc(l.Accion_Correctiva,50))}</td>
       <td>${bEst(l.Estado)}</td>
-      <td><span class="bx ${l.Generada_Por&&l.Generada_Por.startsWith('IA')?'bx-b':'bx-m'}">${esc(l.Generada_Por||'—')}</span></td>
+      <td><span class="bx ${l.Generada_Por&&l.Generada_Por.startsWith('IA')?'bx-b':'bx-m'}">${esc(ext ? (l.Fuente_Documento || l.Generada_Por || '—') : (l.Generada_Por||'—'))}</span></td>
       <td><button class="btn btn-gh btn-sm" onclick="event.stopPropagation();verLeccion(${idx})">Ver</button></td>
     </tr>`).join('');
   });
@@ -2855,15 +2979,20 @@ function verLeccion(idx) {
   const esIA = l.Generada_Por && l.Generada_Por.startsWith('IA');
   let cuerpo = `
     <div style="margin-bottom:14px">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Título</div>
-      <div style="font-size:15px;font-weight:700;color:var(--primary)">${esc(l.Titulo||'—')}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Título</div>
+      <div style="font-size:17px;font-weight:700;color:var(--primary)">${esc(l.Titulo||'—')}</div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Categoría</div><span class="bx bx-m">${esc(l.Categoria||'—')}</span></div>
-      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Prioridad</div>${bGrav(l.Prioridad)}</div>
-      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Estado</div>${bEst(l.Estado)}</div>
-      <div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Generada por</div><span class="mono">${esc(l.Generada_Por||'—')}</span></div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Categoría</div><span class="bx bx-m">${esc(l.Categoria||'—')}</span></div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Prioridad</div>${bGrav(l.Prioridad)}</div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Estado</div>${bEst(l.Estado)}</div>
+      <div><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Generada por</div><span class="mono">${esc(l.Generada_Por||'—')}</span></div>
     </div>`;
+
+  if (l.Origen === 'Externa') {
+    cuerpo += `<div style="margin-bottom:14px;padding:8px 12px;background:var(--bg);border-radius:var(--r);font-size:15px">
+      <strong>Lección externa</strong> · ${esc(l.Tipo_Emergencia || 'General')}${l.Ambito ? ' · ' + esc(l.Ambito) : ''}${l.Fuente_Documento ? '<br>Documento: ' + esc(l.Fuente_Documento) : ''}</div>`;
+  }
 
   // Si tiene informe IA completo, mostrarlo formateado
   if (esIA && l.JSON_Completo && l.JSON_Completo.trim() && l.JSON_Completo !== '') {
@@ -2871,10 +3000,10 @@ function verLeccion(idx) {
       const inf = JSON.parse(l.JSON_Completo);
       const sec = (titulo, contenido) =>
         `<div style="margin-bottom:14px;padding:12px 14px;background:var(--bg);border-radius:var(--r);border-left:3px solid var(--secondary)">
-          <div style="font-size:10px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${titulo}</div>
-          <div style="font-size:13px;line-height:1.7;color:var(--text)">${contenido}</div>
+          <div style="font-size:12px;font-weight:700;color:var(--secondary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">${titulo}</div>
+          <div style="font-size:15px;line-height:1.7;color:var(--text)">${contenido}</div>
         </div>`;
-      const lista = (items) => (items||[]).map(i => `<div style="padding:3px 0;font-size:13px">• ${esc(i)}</div>`).join('');
+      const lista = (items) => (items||[]).map(i => `<div style="padding:3px 0;font-size:15px">• ${esc(i)}</div>`).join('');
 
       if (inf.resumen_ejecutivo)
         cuerpo += sec('Resumen ejecutivo', esc(inf.resumen_ejecutivo));
@@ -2902,20 +3031,20 @@ function verLeccion(idx) {
 
     } catch(_) {
       // Si no parsea, mostrar el texto plano
-      if (l.Descripcion) cuerpo += `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap">${esc(l.Descripcion)}</div>`;
+      if (l.Descripcion) cuerpo += `<div style="font-size:15px;line-height:1.7;white-space:pre-wrap">${esc(l.Descripcion)}</div>`;
     }
   } else {
     // Lección manual: mostrar descripción y acción correctiva
     if (l.Descripcion)
-      cuerpo += `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Descripción</div><div style="font-size:13px;line-height:1.7">${esc(l.Descripcion)}</div></div>`;
+      cuerpo += `<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Descripción</div><div style="font-size:15px;line-height:1.7">${esc(l.Descripcion)}</div></div>`;
     if (l.Accion_Correctiva)
-      cuerpo += `<div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Acción correctiva</div><div style="font-size:13px;line-height:1.7">${esc(l.Accion_Correctiva)}</div></div>`;
+      cuerpo += `<div><div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Acción correctiva</div><div style="font-size:15px;line-height:1.7">${esc(l.Accion_Correctiva)}</div></div>`;
   }
 
   // Cambio de estado de la lección
   const estados = ['Pendiente', 'Leído', 'En curso', 'Implementada', 'Descartada'];
   cuerpo += `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-    <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Cambiar estado</span>
+    <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Cambiar estado</span>
     <select id="lec-estado-sel" style="max-width:180px">
       ${estados.map(e => `<option value="${e}" ${e === (l.Estado || 'Pendiente') ? 'selected' : ''}>${e}</option>`).join('')}
     </select>
@@ -3206,8 +3335,33 @@ async function subirFotosSiHay(idActualizacion) {
 
 // ═══ IMPORTAR LECCIONES DESDE ARCHIVO ═══════════════════════
 
+function abrirImportarLeccionesExternas() {
+  abrirModal('Importar lección externa', `
+    <p style="font-size:15px;margin-bottom:12px">Sube un informe (txt, md o pdf) sobre una emergencia que no hayas gestionado tú. ARGOS extrae las lecciones y la IA las usa como referencia en incidentes parecidos.</p>
+    <div class="fgr">
+      <div class="fg full"><label>Tipo de emergencia</label>
+        <select id="lx-tipo"><option value="IA">Que lo clasifique la IA</option>${tiposSelect('')}<option value="General">General</option></select></div>
+      <div class="fg"><label>Ámbito</label>
+        <select id="lx-amb"><option>Local</option><option>Autonómico</option><option selected>Nacional</option><option>Internacional</option></select></div>
+      <div class="fg"><label>Documento o fuente</label>
+        <input id="lx-fuente" type="text" placeholder="Ej.: informe oficial, año"></div>
+    </div>
+  `, 'Elegir archivo…', 'btn-p', () => {
+    APP._lecExt = {
+      tipo_emergencia:  document.getElementById('lx-tipo').value,
+      ambito:           document.getElementById('lx-amb').value,
+      fuente_documento: document.getElementById('lx-fuente').value.trim()
+    };
+    cerrarModales();
+    const f = document.getElementById('file-lecciones');
+    f.value = '';
+    f.click();
+  });
+}
+
 function abrirImportarLecciones() {
-  if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  if (!APP.incActivo) { toast('Selecciona un incidente primero, o usa «Importar lección externa»', 'err'); return; }
+  APP._lecExt = null;
   document.getElementById('file-lecciones').value = '';
   document.getElementById('file-lecciones').click();
 }
@@ -3229,8 +3383,11 @@ function procesarArchivoLecciones(event) {
   reader.onload = () => {
     aiThinking(`Extrayendo lecciones de «${file.name}» — puede tardar unos segundos`);
 
+    const externa = !!APP._lecExt;
+    const clasif  = APP._lecExt || null;
     gas('importarLecciones', {
-      id_incidente:   APP.incActivo.id,
+      id_incidente:   externa ? '' : APP.incActivo.id,
+      clasificacion:  clasif,
       contenido:      reader.result,
       tipo:           esPdf ? 'pdf' : 'text',
       nombre_archivo: file.name,
@@ -3238,6 +3395,8 @@ function procesarArchivoLecciones(event) {
     }, res => {
       aiDone();
       toast(`${res.total} lección${res.total !== 1 ? 'es' : ''} importada${res.total !== 1 ? 's' : ''} correctamente`, 'ok');
+      APP._lecExt = null;
+      _lecTab = externa ? 'ext' : 'inc';
       cargarLecciones();
     }, () => { aiDone(); });
   };
@@ -3278,7 +3437,7 @@ function cargarAdmin() {
         <td>
           ${u.Email!==APP.email?`<button class="btn btn-${activo?'r':'g'} btn-sm" onclick="toggleUsuario('${esc(u.Email)}')">
             ${activo?'Desactivar':'Activar'}
-          </button>`:'<span style="font-size:11px;color:var(--muted)">(tú)</span>'}
+          </button>`:'<span style="font-size:13px;color:var(--muted)">(tú)</span>'}
         </td>
       </tr>`;
     }).join('');
@@ -3444,6 +3603,7 @@ function cargarInteligencia() {
 }
 
 function renderInteligencia(datos) {
+  APP._datosJ2 = datos;
   const c = document.getElementById('lista-int');
   if (!datos.length) {
     c.innerHTML = '<div class="empty"><div class="ei">🔍</div><div class="em">Sin datos registrados. Pulsa «+ Registrar dato» para añadir.</div></div>';
@@ -3472,11 +3632,11 @@ function renderInteligencia(datos) {
       <div class="alm-badge alm-${d.Cal_Fuente||'F'}">${cal}</div>
       <div class="dato-body">
         <div class="fx ai g8 fw" style="margin-bottom:6px">
-          <span style="font-weight:600;font-size:13px;flex:1">${esc(tc(d.Contenido, 80))}</span>
+          <span style="font-weight:600;font-size:15px;flex:1">${esc(tc(d.Contenido, 80))}</span>
           <span class="verif-estado ${estCls}">${esc(d.Verificacion_Estado||'Detenido')}</span>
           ${derivadoBadge}
         </div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:6px">
           Fuente: ${esc(d.Fuente_Descripcion||'—')} ·
           ${esc(ALM_FUENTE_LABELS[d.Cal_Fuente]||'')} / ${esc(ALM_DATO_LABELS[d.Cal_Dato]||'')}
           · ${esc(d.Operador||'—')} · ${esc(d.Timestamp||'—')}
@@ -3511,12 +3671,12 @@ function abrirModalNuevoDato() {
       <div class="fg full">
         <label>Fiabilidad de la fuente (A = más fiable → F = no valorable)</label>
         <div class="alm-grid" style="grid-template-columns:repeat(6,1fr)">${fuenteOps}</div>
-        <div id="alm-f-desc" style="font-size:11px;color:var(--muted);margin-top:3px">Selecciona la fiabilidad</div>
+        <div id="alm-f-desc" style="font-size:13px;color:var(--muted);margin-top:3px">Selecciona la fiabilidad</div>
       </div>
       <div class="fg full">
         <label>Credibilidad del dato (1 = confirmado → 6 = no valorable)</label>
         <div class="alm-grid" style="grid-template-columns:repeat(6,1fr)">${datoOps}</div>
-        <div id="alm-d-desc" style="font-size:11px;color:var(--muted);margin-top:3px">Selecciona la credibilidad</div>
+        <div id="alm-d-desc" style="font-size:13px;color:var(--muted);margin-top:3px">Selecciona la credibilidad</div>
       </div>
       <div id="aviso-a1" style="display:none" class="info-box" style="background:var(--green-bg);color:var(--green)">
         ✓ Clasificación A1 — máxima confianza. No requiere verificación adicional.
@@ -3598,8 +3758,16 @@ function derivarDatoA(dest, idDato) {
       if (APP.incActivo) setIncActivo(APP.incs.find(i=>i.ID_Incidente===APP.incActivo.id)||APP.incActivo);
       irA('actualizaciones');
     } else {
-      toast('Dato enviado a Narrativas como bulo', 'ok');
-      irA('narrativas');
+      toast('Dato enviado a Narrativas como input de J2', 'ok');
+      const d = (APP._datosJ2 || []).find(x => x.ID_Dato === idDato);
+      abrirModal('Dato enviado a Narrativas', `
+        <div class="warn-box"><span><strong>Falta un paso.</strong> La narrativa llega marcada como <strong>input de J2</strong>, pero todavía <strong>no tiene NCRS</strong>.
+        Para que se calcule el NCRS total, copia el texto y pégalo en <strong>«Registrar narrativa»</strong>, con los cuatro valores (alcance, verosimilitud, velocidad y malicia).</span></div>
+        ${d ? `<div id="j2-txt" class="draft-box" style="min-height:60px">${esc(d.Contenido || '')}</div>
+        <div style="margin-top:10px"><button class="btn btn-gh btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('j2-txt').textContent);toast('Texto copiado','ok')">Copiar texto</button></div>` : ''}
+      `, 'Ir a Narrativas', 'btn-p', () => { cerrarModales(); irA('narrativas'); });
+      cargarInteligencia();
+      return;
     }
     cargarInteligencia();
   });
@@ -3670,16 +3838,16 @@ function renderFuentesDir(fuentes) {
 
     return `<div class="fuente-card">
       <div class="fx ai g8 fw" style="margin-bottom:4px">
-        <span style="font-weight:700;font-size:13px;flex:1">${esc(f.Organismo)}</span>
+        <span style="font-weight:700;font-size:15px;flex:1">${esc(f.Organismo)}</span>
         <span class="bx bx-m">${esc(f.Categoria)}</span>
-        <span style="font-size:11px;color:var(--muted)">${esc(f.CCAA||f.Ambito||'Nacional')}</span>
+        <span style="font-size:13px;color:var(--muted)">${esc(f.CCAA||f.Ambito||'Nacional')}</span>
         ${APP.incActivo ? `<button class="fuente-vincular ${vinculada?'fuente-vinculada':'fuente-no-vinculada'}"
           onclick="toggleVincularFuente('${f.ID_Fuente}',${vinculada})">
           ${vinculada ? '✓ Vinculada' : '+ Vincular'}
         </button>` : ''}
       </div>
-      ${f.Notas ? `<div style="font-size:11px;color:var(--muted);margin-bottom:4px">${esc(f.Notas)}</div>` : ''}
-      <div class="fuente-handles">${handles || '<span style="font-size:11px;color:var(--muted)">Sin perfiles registrados</span>'}</div>
+      ${f.Notas ? `<div style="font-size:13px;color:var(--muted);margin-bottom:4px">${esc(f.Notas)}</div>` : ''}
+      <div class="fuente-handles">${handles || '<span style="font-size:13px;color:var(--muted)">Sin perfiles registrados</span>'}</div>
     </div>`;
   }).join('');
 }
@@ -3699,7 +3867,7 @@ function renderFuentesInc(fuentes) {
     ].filter(Boolean).join('');
     return `<div class="fuente-card">
       <div class="fx ai g8 fw" style="margin-bottom:4px">
-        <span style="font-weight:700;font-size:13px;flex:1">${esc(f.Organismo)}</span>
+        <span style="font-weight:700;font-size:15px;flex:1">${esc(f.Organismo)}</span>
         <span class="bx bx-m">${esc(f.Categoria)}</span>
         <button class="fuente-vincular fuente-vinculada" onclick="toggleVincularFuente('${f.ID_Fuente}',true)">✓ Vinculada</button>
       </div>
@@ -3828,7 +3996,7 @@ function importarFuentesCSV(input) {
     }));
     abrirModal('Importar fuentes CSV', `
       <p>Se van a importar <strong>${filas.length} fuentes</strong> desde el archivo <em>${esc(file.name)}</em>.</p>
-      <p style="margin-top:8px;font-size:12px;color:var(--muted)">Todas las filas se envían en una sola operación (rápido).</p>
+      <p style="margin-top:8px;font-size:14px;color:var(--muted)">Todas las filas se envían en una sola operación (rápido).</p>
     `, 'Importar', 'btn-p', () => {
       cerrarModales();
       toast(`Importando ${filas.length} fuentes…`, 'info');
@@ -4061,7 +4229,7 @@ function _vectoresEstado(incId, msg, conBoton) {
   const body = document.getElementById('int-vectores-body');
   if (!card || !body) return;
   card.style.display = '';
-  body.innerHTML = `<div style="font-size:12px;color:var(--muted)">${esc(msg)}</div>` +
+  body.innerHTML = `<div style="font-size:14px;color:var(--muted)">${esc(msg)}</div>` +
     (conBoton ? `<div style="margin-top:10px"><button class="btn btn-p btn-sm" onclick="_triggerVectoresMonitor('${esc(incId)}')">↻ Generar vectores</button></div>` : '');
 }
 
@@ -4077,53 +4245,56 @@ function _refrescarVectoresCard() {
   _renderVectoresCard(APP._monVect);
 }
 
-// Renderiza el contenido de la tarjeta OSINT inline en J2 Inteligencia.
+// Renderiza la tarjeta OSINT de J2: topónimos y vectores siempre visibles; las consultas, a demanda por red social.
 function _renderVectoresCard({ toponimos, vectores, queries }) {
   const body = document.getElementById('int-vectores-body');
   if (!body) return;
 
-  // Topónimos detectados
-  let html = `<div style="margin-bottom:14px">
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Topónimos detectados</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${(toponimos || []).map(t => `<span style="padding:3px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);font-size:12px">${esc(t)}</span>`).join('')}
-    </div>
+  let html = `<div style="margin-bottom:12px">
+    <div class="hx-lab">Topónimos detectados</div>
+    <div class="hx-chips">${(toponimos || []).map(t => `<span class="hx-chip">${esc(t)}</span>`).join('')}</div>
+  </div>
+  <div style="margin-bottom:14px">
+    <div class="hx-lab">Vectores de rumorología</div>
+    <div class="hx-chips">${(vectores || []).map(v => `<span class="hx-chip" style="background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.25);color:var(--red)">${esc(v)}</span>`).join('')}</div>
   </div>`;
 
-  // Vectores de rumorología
-  html += `<div style="margin-bottom:14px">
-    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Vectores de rumorología</div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${(vectores || []).map(v => `<span style="padding:3px 10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:var(--rl);font-size:12px;color:var(--red)">${esc(v)}</span>`).join('')}
-    </div>
-  </div>`;
+  const plats = ['x', 'facebook', 'instagram', 'telegram', 'tiktok'].filter(p => (queries?.[p] || []).length);
+  html += `<div class="hx-lab">Consultas por red social</div>
+    <div class="mon-tabs">${plats.map(p => `<button class="mon-tab" id="mon-tab-${p}" onclick="_monTogglePlat('${p}')">${_MON_ICON[p] || '🔍'} ${_MON_NAME[p] || p}<span class="mon-n">${queries[p].length}</span></button>`).join('')}</div>`;
 
-  // Queries por plataforma
-  ['x', 'facebook', 'instagram', 'telegram', 'tiktok'].forEach(plat => {
-    const items = (queries?.[plat] || []);
-    if (!items.length) return;
-    html += `<div class="mon-plat"><div class="mon-plat-hd">${_MON_ICON[plat] || '🔍'} ${_MON_NAME[plat] || plat}</div>`;
-    items.forEach((item, idx) => {
+  plats.forEach(plat => {
+    html += `<div class="mon-plat" id="mon-pane-${plat}" style="display:none"><div class="mon-plat-hd">${_MON_ICON[plat] || '🔍'} ${_MON_NAME[plat] || plat}</div>`;
+    queries[plat].forEach((item, idx) => {
       const qid = `osintq-${plat}-${idx}`;
       html += `<div>
-        <div class="mon-query-label">${item.label} <span style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-size:10px;font-weight:400;text-transform:none;letter-spacing:0">${item.tipo}</span></div>
+        <div class="mon-query-label">${esc(item.label)} <span style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-size:12px;font-weight:400;text-transform:none;letter-spacing:0">${esc(item.tipo)}</span></div>
         <div class="mon-query-row">
           <textarea class="mon-query" id="${qid}" rows="2">${esc(item.query)}</textarea>
           <div style="display:flex;flex-direction:column;gap:4px">
             <button class="mon-copy" onclick="_monCopiar('${qid}',this)">📋 Copiar</button>
-            ${item.url ? `<a class="mon-ext" href="${item.url}" target="_blank" rel="noopener">↗ Abrir</a>` : ''}
+            ${urlSegura(item.url) ? `<a class="mon-ext" href="${urlSegura(item.url)}" target="_blank" rel="noopener">↗ Abrir</a>` : ''}
           </div>
         </div>
       </div>`;
     });
     html += `</div>`;
   });
-
   body.innerHTML = html;
 }
 
-
-
+// Abre solo la red elegida; pulsar de nuevo la cierra.
+function _monTogglePlat(plat) {
+  const pane = document.getElementById('mon-pane-' + plat);
+  if (!pane) return;
+  const abierta = pane.style.display !== 'none';
+  document.querySelectorAll('[id^="mon-pane-"]').forEach(e => e.style.display = 'none');
+  document.querySelectorAll('.mon-tab').forEach(e => e.classList.remove('active'));
+  if (!abierta) {
+    pane.style.display = 'block';
+    document.getElementById('mon-tab-' + plat)?.classList.add('active');
+  }
+}
 
 // Arranque — funciona desde cualquier host (GitHub Pages, GAS, local...)
 document.addEventListener('DOMContentLoaded', init);
