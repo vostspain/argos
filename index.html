@@ -1775,7 +1775,7 @@ function bGrav(v) {
   return `<span class="bx bx-${cls[v]||'m'}" title="${v||''}">${display}</span>`;
 }
 function bEst(v) {
-  const cls = {Activo:'g', Standby:'a', Cerrado:'m', Publicado:'g', Borrador:'m'};
+  const cls = {Activo:'g', Standby:'a', Cerrado:'m', Publicado:'g', Borrador:'m', 'En curso':'a', Implementada:'g', Descartada:'m'};
   return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
 }
 function bNcrs(n) {
@@ -2904,10 +2904,32 @@ function verLeccion(idx) {
       cuerpo += `<div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Acción correctiva</div><div style="font-size:13px;line-height:1.7">${esc(l.Accion_Correctiva)}</div></div>`;
   }
 
-  // Botón de exportar a PDF usando el informe
+  // Cambio de estado de la lección
+  const estados = ['Pendiente', 'En curso', 'Implementada', 'Descartada'];
+  cuerpo += `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+    <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Cambiar estado</span>
+    <select id="lec-estado-sel" style="max-width:180px">
+      ${estados.map(e => `<option value="${e}" ${e === (l.Estado || 'Pendiente') ? 'selected' : ''}>${e}</option>`).join('')}
+    </select>
+    <button class="btn btn-p btn-sm" onclick="guardarEstadoLeccion(${idx})">Guardar estado</button>
+  </div>`;
+
   abrirModal(l.Titulo || 'Lección aprendida', cuerpo, 'Cerrar', 'btn-gh', cerrarModales);
   // Cambiar botón OK para que solo cierre
   document.getElementById('m-ok').onclick = cerrarModales;
+}
+
+function guardarEstadoLeccion(idx) {
+  const l = _leccionesCache[idx];
+  const sel = document.getElementById('lec-estado-sel');
+  if (!l || !sel) return;
+  const estado = sel.value;
+  gas('crearLeccion', { id: l.ID_Leccion, estado }, () => {
+    l.Estado = estado;
+    toast('Estado actualizado a «' + estado + '»', 'ok');
+    cerrarModales();
+    cargarLecciones();
+  });
 }
 
 function regenerarLecciones(idIncidente) {
