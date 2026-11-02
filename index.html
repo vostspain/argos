@@ -1775,7 +1775,7 @@ function bGrav(v) {
   return `<span class="bx bx-${cls[v]||'m'}" title="${v||''}">${display}</span>`;
 }
 function bEst(v) {
-  const cls = {Activo:'g', Standby:'a', Cerrado:'m', Publicado:'g', Borrador:'m', 'En curso':'a', Implementada:'g', Descartada:'m'};
+  const cls = {Activo:'g', Standby:'a', Cerrado:'m', Publicado:'g', Borrador:'m', 'Leído':'b', 'En curso':'a', Implementada:'g', Descartada:'m'};
   return `<span class="bx bx-${cls[v]||'m'}">${v||'—'}</span>`;
 }
 function bNcrs(n) {
@@ -2844,6 +2844,14 @@ function verLeccion(idx) {
   const l = _leccionesCache[idx];
   if (!l) return;
 
+  // Al abrir una lección pendiente, pasa a «Leído» automáticamente.
+  if ((l.Estado || 'Pendiente') === 'Pendiente') {
+    l.Estado = 'Leído';
+    gas('crearLeccion', { id: l.ID_Leccion, estado: 'Leído' },
+      () => cargarLecciones(),
+      () => { l.Estado = 'Pendiente'; });
+  }
+
   const esIA = l.Generada_Por && l.Generada_Por.startsWith('IA');
   let cuerpo = `
     <div style="margin-bottom:14px">
@@ -2905,7 +2913,7 @@ function verLeccion(idx) {
   }
 
   // Cambio de estado de la lección
-  const estados = ['Pendiente', 'En curso', 'Implementada', 'Descartada'];
+  const estados = ['Pendiente', 'Leído', 'En curso', 'Implementada', 'Descartada'];
   cuerpo += `<div style="margin-top:16px;padding-top:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <span style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em">Cambiar estado</span>
     <select id="lec-estado-sel" style="max-width:180px">
