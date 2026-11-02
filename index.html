@@ -1708,20 +1708,41 @@ function toast(msg, tipo='ok') {
 // ═══ GAS BRIDGE ══════════════════════════════════════════════
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPLn3hETppfNlOsHWucnSxcWl-nClhsr8tfIUlIWqh4XKmZZq8g_2IzUNYM-pgx-jG/exec';
 
+// Tiempos máximos de espera por función (ms). Las llamadas a la IA tardan más que las de la hoja.
+const GAS_TIMEOUTS = {
+  generarDesmentido: 150000, generarDrafts: 150000, generarNotaPrensa: 150000,
+  generarHipotesis: 180000, generarLeccionesIncidente: 150000, generarInformeHTML: 150000,
+  importarLecciones: 240000, generarVectoresMonitor: 90000
+};
+const GAS_FN_IA = Object.keys(GAS_TIMEOUTS);
+
 function gas(fn, arg, ok, err, timeoutMs) {
-  const ms = timeoutMs || 25000;
+  const ms   = timeoutMs || GAS_TIMEOUTS[fn] || 40000;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
+  const fallo = (msg, e) => {
+    clearTimeout(timer);
+    if (GAS_FN_IA.indexOf(fn) !== -1 && typeof aiDone === 'function') aiDone();
+    toast(msg, 'err');
+    if (err) err(e || { ok: false, error: msg });
+  };
   fetch(GAS_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify({ fn, arg }),
     signal: ctrl.signal
   })
-  .then(r => r.json())
-  .then(res => {
+  .then(r => r.text())
+  .then(txt => {
+    let res;
+    try { res = JSON.parse(txt); }
+    catch (_) {
+      // Google devuelve una página HTML cuando el script supera su límite o falla al arrancar.
+      return fallo('El servidor no devolvió una respuesta válida (probable límite de tiempo en Google). Vuelve a intentarlo.');
+    }
     clearTimeout(timer);
     if (res && res.ok === false) {
+      if (GAS_FN_IA.indexOf(fn) !== -1 && typeof aiDone === 'function') aiDone();
       toast('Error: ' + (res.error || 'desconocido'), 'err');
       if (err) err(res);
     } else {
@@ -1729,13 +1750,11 @@ function gas(fn, arg, ok, err, timeoutMs) {
     }
   })
   .catch(e => {
-    clearTimeout(timer);
-    if (e.name === 'AbortError') {
-      toast('La IA tardó demasiado. Inténtalo de nuevo.', 'err');
+    if (e && e.name === 'AbortError') {
+      fallo('La respuesta tardó más de ' + Math.round(ms / 1000) + ' s. Comprueba si el resultado ya se ha guardado antes de repetir.');
     } else {
-      toast('Error de conexión con ARGOS.', 'err');
+      fallo('Error de conexión con ARGOS.', e);
     }
-    if (err) err(e);
   });
 }
 
@@ -1789,7 +1808,7 @@ function cargarDashboard() {
     if (bxNar) { bxNar.textContent = criticas; bxNar.classList.toggle('on', criticas > 0); }
 
     // Incidentes recientes
-    APP.incs = recientes;
+    APP.incs = recientes.concat((APP.incs || []).filter(i => !recientes.some(r => r.ID_Incidente === i.ID_Incidente)));
     const t  = document.getElementById('t-recientes');
     if (t) {
       t.innerHTML = !recientes.length
@@ -2032,6 +2051,9 @@ function verEditarInc(o) {
     if (cerrado) { cerrarModales(); return; }
     const nombre = document.getElementById('ei-nom').value.trim();
     if (!nombre) { toast('El nombre es obligatorio', 'err'); return; }
+    const cambiaVect = (document.getElementById('ei-ubi').value !== (o.Ubicacion || '')) ||
+                       (document.getElementById('ei-tipo').value !== (o.Tipo || '')) ||
+                       (document.getElementById('ei-sit').value !== (o.Situacion || ''));
     gas('actualizarIncidente', {
       id:        o.ID_Incidente,
       nombre,
@@ -2048,7 +2070,7 @@ function verEditarInc(o) {
       cerrarModales();
       cargarIncidentes();
       if (_mapaDash) actualizarMapaDashboard();
-      _triggerVectoresMonitor(o.ID_Incidente);
+      if (cambiaVect) _triggerVectoresMonitor(o.ID_Incidente);
     });
   });
 }
@@ -2647,17 +2669,18 @@ function generarDesmentido(idNarrativa) {
       aiDone();
       const d = res.drafts || {};
       const titulo = res.titulo || '';
+      APP._desm = { id: idNarrativa, drafts: d, titulo };
       abrirModal('Borradores de desmentido', `
         <div class="ch-tabs">
-          <button class="cht active" onclick="cambiarDesmentido('x',this,${JSON.stringify(d).replace(/"/g,"'")})">𝕏 Twitter</button>
-          <button class="cht" onclick="cambiarDesmentido('bluesky',this,${JSON.stringify(d).replace(/"/g,"'")})">🦋 Bluesky</button>
-          <button class="cht" onclick="cambiarDesmentido('telegram',this,${JSON.stringify(d).replace(/"/g,"'")})">✈ Telegram</button>
-          <button class="cht" onclick="cambiarDesmentido('whatsapp',this,${JSON.stringify(d).replace(/"/g,"'")})">💬 WhatsApp</button>
+          <button class="cht active" onclick="cambiarDesmentido('x',this)">𝕏 Twitter</button>
+          <button class="cht" onclick="cambiarDesmentido('bluesky',this)">🦋 Bluesky</button>
+          <button class="cht" onclick="cambiarDesmentido('telegram',this)">✈ Telegram</button>
+          <button class="cht" onclick="cambiarDesmentido('whatsapp',this)">💬 WhatsApp</button>
         </div>
         <div id="desm-txt" class="draft-box">${esc(d.x?.contenido||'Sin contenido')}</div>
         <div class="fx g8" style="margin-top:10px">
           <button class="btn btn-gh btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('desm-txt').textContent)">Copiar</button>
-          <button class="btn btn-p btn-sm" onclick="enviarDesmentidoAComunicacion('${idNarrativa}',${JSON.stringify(d).replace(/"/g,"'")},${JSON.stringify(titulo).replace(/"/g,"'")})">→ Enviar a Comunicación</button>
+          <button class="btn btn-p btn-sm" onclick="enviarDesmentidoAComunicacion()">→ Enviar a Comunicación</button>
         </div>
         <div id="desm-env-ok" style="display:none;margin-top:8px;font-size:12px;color:var(--green)">✓ Borradores enviados a Comunicación — aparecerán en el historial de publicaciones.</div>
       `, 'Cerrar', 'btn-gh', cerrarModales);
@@ -2665,15 +2688,17 @@ function generarDesmentido(idNarrativa) {
   });
 }
 
-function cambiarDesmentido(canal, btn, drafts) {
+function cambiarDesmentido(canal, btn) {
   document.querySelectorAll('.cht').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   const el = document.getElementById('desm-txt');
-  if (el) el.textContent = drafts[canal]?.contenido || 'Sin borrador';
+  if (el) el.textContent = APP._desm?.drafts?.[canal]?.contenido || 'Sin borrador';
 }
 
-function enviarDesmentidoAComunicacion(idNarrativa, drafts, titulo) {
+function enviarDesmentidoAComunicacion() {
   if (!APP.incActivo) { toast('Selecciona un incidente primero', 'err'); return; }
+  const { id: idNarrativa, drafts = {}, titulo } = APP._desm || {};
+  if (!idNarrativa) { toast('No hay borradores que enviar', 'err'); return; }
   const btn = document.querySelector('#desm-env-ok');
   gas('crearActualizacionDesdeDesmentido', {
     id_incidente: APP.incActivo.id,
@@ -3385,7 +3410,7 @@ function cargarInteligencia() {
   if (!APP.incActivo) { mostrarPanel('int', false); return; }
   mostrarPanel('int', true);
   gas('getInteligencia', APP.incActivo.id, res => renderInteligencia(res.data || []));
-  _refrescarVectoresCard();
+  _cargarVectoresGuardados(APP.incActivo.id);
 }
 
 function renderInteligencia(datos) {
@@ -3870,7 +3895,13 @@ function _monCopiar(id, btn) {
 }
 
 function _monGenerarQueries({ ubi, tipo, variantes, vectores, excluir }) {
-  const topos  = [ubi, ...variantes].filter(Boolean);
+  variantes = Array.isArray(variantes) ? variantes : [];
+  vectores  = Array.isArray(vectores)  ? vectores  : [];
+  excluir   = Array.isArray(excluir)   ? excluir   : [];
+  tipo      = tipo || '';
+  let topos = [ubi, ...variantes].filter(Boolean);
+  if (!topos.length) topos = [tipo || 'incidente'];
+  const t0 = topos[0];
   const topoQ  = topos.map(t => `"${t}"`).join(' OR ');
   const vecQ   = vectores.length ? '(' + vectores.map(v => `"${v}"`).join(' OR ') + ')' : `"${tipo}"`;
   const excXQ  = excluir.length ? ' ' + excluir.map(h => `-from:${h.replace('@', '')}`).join(' ') : '';
@@ -3918,9 +3949,9 @@ function _monGenerarQueries({ ubi, tipo, variantes, vectores, excluir }) {
       },
       {
         label: 'Hashtag nativo Instagram',
-        query: `#${topos[0].replace(/\s+/g, '')} #${tipo.replace(/\s+/g, '')}`,
+        query: `#${t0.replace(/\s+/g, '')} #${tipo.replace(/\s+/g, '')}`,
         tipo:  'hashtag',
-        url:   `https://www.instagram.com/explore/tags/${encodeURIComponent(topos[0].replace(/\s+/g, '').toLowerCase())}/`
+        url:   `https://www.instagram.com/explore/tags/${encodeURIComponent(t0.replace(/\s+/g, '').toLowerCase())}/`
       }
     ],
     telegram: [
@@ -3932,9 +3963,9 @@ function _monGenerarQueries({ ubi, tipo, variantes, vectores, excluir }) {
       },
       {
         label: 'Directorio TGStat.es',
-        query: `${topos[0]} ${tipo}`,
+        query: `${t0} ${tipo}`,
         tipo:  'directorio',
-        url:   `https://tgstat.es/search?q=${encodeURIComponent(topos[0] + ' ' + tipo)}`
+        url:   `https://tgstat.es/search?q=${encodeURIComponent(t0 + ' ' + tipo)}`
       }
     ],
     tiktok: [
@@ -3946,9 +3977,9 @@ function _monGenerarQueries({ ubi, tipo, variantes, vectores, excluir }) {
       },
       {
         label: 'Búsqueda nativa TikTok',
-        query: `${topos[0]} ${tipo}`,
+        query: `${t0} ${tipo}`,
         tipo:  'nativa',
-        url:   `https://www.tiktok.com/search?q=${encodeURIComponent(topos[0] + ' ' + tipo)}`
+        url:   `https://www.tiktok.com/search?q=${encodeURIComponent(t0 + ' ' + tipo)}`
       }
     ]
   };
@@ -3960,30 +3991,55 @@ const _MON_NAME = { x: 'X / Twitter', facebook: 'Facebook', instagram: 'Instagra
 // Dispara la generación de vectores OSINT cuando se crea o actualiza un incidente.
 // Llama a Claude (vía GAS) para obtener topónimos y vectores, luego construye
 // las queries algorítmicamente con _monGenerarQueries y guarda el resultado en APP._monVect.
+function _aplicarVectores(incId, res) {
+  const inc = APP.incs?.find(i => i.ID_Incidente === incId) || {};
+  const queries = _monGenerarQueries({
+    ubi:       res.ubicacion || inc.Ubicacion || '',
+    tipo:      res.tipo      || inc.Tipo      || '',
+    variantes: res.toponimos || [],
+    vectores:  res.vectores  || [],
+    excluir:   []
+  });
+  APP._monVect = { incId, toponimos: res.toponimos || [], vectores: res.vectores || [], queries };
+  if (APP.incActivo?.id === incId) _refrescarVectoresCard();
+}
+
 function _triggerVectoresMonitor(incId) {
   if (!incId) return;
-  APP._monVect = null;  // invalida la caché del incidente anterior
+  if (APP._monVect && APP._monVect.incId !== incId) APP._monVect = null;
+  _vectoresEstado(incId, 'Generando topónimos y vectores…');
   gas('generarVectoresMonitor', incId, res => {
-    if (!res?.ok) return;  // silencioso — no interrumpe al operador
-    const inc  = APP.incs?.find(i => i.ID_Incidente === incId) || {};
-    const queries = _monGenerarQueries({
-      ubi:       inc.Ubicacion || '',
-      tipo:      inc.Tipo      || '',
-      variantes: res.toponimos  || [],
-      vectores:  res.vectores   || [],
-      excluir:   []
-    });
-    APP._monVect = { toponimos: res.toponimos || [], vectores: res.vectores || [], queries };
-    // Si J2 está visible y el incidente activo coincide, refresca la tarjeta
-    if (APP.incActivo?.id === incId) _refrescarVectoresCard();
-  }, null, 60000);  // timeout generoso de 60 s para la llamada a Claude
+    if (!res?.ok) return;
+    _aplicarVectores(incId, res);
+  }, () => _vectoresEstado(incId, 'No se pudieron generar los vectores. Puedes reintentarlo desde aquí.', true));
+}
+
+// Carga los vectores ya guardados del incidente (rápido, sin IA).
+function _cargarVectoresGuardados(incId) {
+  if (!incId) return;
+  if (APP._monVect && APP._monVect.incId === incId) { _refrescarVectoresCard(); return; }
+  APP._monVect = null;
+  gas('getVectoresMonitor', incId, res => {
+    if (res?.vectores?.length || res?.toponimos?.length) _aplicarVectores(incId, res);
+    else _vectoresEstado(incId, 'Aún no hay vectores para este incidente.', true);
+  }, () => {});
+}
+
+function _vectoresEstado(incId, msg, conBoton) {
+  if (APP.incActivo?.id !== incId) return;
+  const card = document.getElementById('int-vectores-card');
+  const body = document.getElementById('int-vectores-body');
+  if (!card || !body) return;
+  card.style.display = '';
+  body.innerHTML = `<div style="font-size:12px;color:var(--muted)">${esc(msg)}</div>` +
+    (conBoton ? `<button class="btn btn-gh btn-sm" style="margin-top:8px" onclick="_triggerVectoresMonitor('${esc(incId)}')">Generar vectores</button>` : '');
 }
 
 // Refresca la tarjeta de vectores en J2 Inteligencia con los datos en caché.
 function _refrescarVectoresCard() {
   const card = document.getElementById('int-vectores-card');
   if (!card) return;
-  if (!APP._monVect) {
+  if (!APP._monVect || APP._monVect.incId !== APP.incActivo?.id) {
     card.style.display = 'none';
     return;
   }
@@ -4000,7 +4056,7 @@ function _renderVectoresCard({ toponimos, vectores, queries }) {
   let html = `<div style="margin-bottom:14px">
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Topónimos detectados</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${(toponimos || []).map(t => `<span style="padding:3px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);font-size:12px">${t}</span>`).join('')}
+      ${(toponimos || []).map(t => `<span style="padding:3px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rl);font-size:12px">${esc(t)}</span>`).join('')}
     </div>
   </div>`;
 
@@ -4008,7 +4064,7 @@ function _renderVectoresCard({ toponimos, vectores, queries }) {
   html += `<div style="margin-bottom:14px">
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Vectores de rumorología</div>
     <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${(vectores || []).map(v => `<span style="padding:3px 10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:var(--rl);font-size:12px;color:var(--red)">${v}</span>`).join('')}
+      ${(vectores || []).map(v => `<span style="padding:3px 10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.25);border-radius:var(--rl);font-size:12px;color:var(--red)">${esc(v)}</span>`).join('')}
     </div>
   </div>`;
 
@@ -4022,7 +4078,7 @@ function _renderVectoresCard({ toponimos, vectores, queries }) {
       html += `<div>
         <div class="mon-query-label">${item.label} <span style="background:var(--bg);border:1px solid var(--border);border-radius:3px;padding:1px 6px;font-size:10px;font-weight:400;text-transform:none;letter-spacing:0">${item.tipo}</span></div>
         <div class="mon-query-row">
-          <textarea class="mon-query" id="${qid}" rows="2">${item.query}</textarea>
+          <textarea class="mon-query" id="${qid}" rows="2">${esc(item.query)}</textarea>
           <div style="display:flex;flex-direction:column;gap:4px">
             <button class="mon-copy" onclick="_monCopiar('${qid}',this)">📋 Copiar</button>
             ${item.url ? `<a class="mon-ext" href="${item.url}" target="_blank" rel="noopener">↗ Abrir</a>` : ''}
