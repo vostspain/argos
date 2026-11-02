@@ -4011,7 +4011,7 @@ function _triggerVectoresMonitor(incId) {
   gas('generarVectoresMonitor', incId, res => {
     if (!res?.ok) return;
     _aplicarVectores(incId, res);
-  }, () => _vectoresEstado(incId, 'No se pudieron generar los vectores. Puedes reintentarlo desde aquí.', true));
+  }, e => _vectoresEstado(incId, 'No se pudieron generar los vectores. Motivo: ' + ((e && (e.error || e.message)) || 'sin respuesta') + '. Puedes reintentarlo con el botón.', true));
 }
 
 // Carga los vectores ya guardados del incidente (rápido, sin IA).
@@ -4032,7 +4032,7 @@ function _vectoresEstado(incId, msg, conBoton) {
   if (!card || !body) return;
   card.style.display = '';
   body.innerHTML = `<div style="font-size:12px;color:var(--muted)">${esc(msg)}</div>` +
-    (conBoton ? `<button class="btn btn-gh btn-sm" style="margin-top:8px" onclick="_triggerVectoresMonitor('${esc(incId)}')">Generar vectores</button>` : '');
+    (conBoton ? `<div style="margin-top:10px"><button class="btn btn-p btn-sm" onclick="_triggerVectoresMonitor('${esc(incId)}')">↻ Generar vectores</button></div>` : '');
 }
 
 // Refresca la tarjeta de vectores en J2 Inteligencia con los datos en caché.
